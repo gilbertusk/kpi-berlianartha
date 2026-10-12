@@ -829,3 +829,24 @@ CI juga menemukan dua masalah portabilitas/infrastruktur yang telah diperbaiki s
 - batas memori PHPUnit diterapkan pada proses Pest/PHPUnit yang sebenarnya, bukan hanya proses induk Artisan (`646dfba` dan `e053044`).
 
 DEC-003, DEC-004, DEC-005, dan DEC-006 tetap terbuka. Karena itu Step 06 secara teknis selesai, tetapi penggunaan KPI/template sebagai konfigurasi bisnis resmi tetap menunggu keputusan dan sign-off. Gate berikutnya adalah Step 07.
+
+### Addendum 2026-10-13 — regression test temuan code review Step 06
+
+Code review Step 06 tidak menemukan temuan Critical atau High. Perbaikan temuan Medium dan Low sudah masuk commit `7427674`, tetapi belum memiliki test khusus. Addendum ini menambahkan `tests/Feature/KpiGovernance/VersionTimelineTest.php` yang berisi 6 test (31 assertions).
+
+| Temuan review | Perbaikan (sudah ada di `7427674`) | Bukti test baru |
+|---|---|---|
+| **MEDIUM: supersede vs retire race** — versi lama yang ditutup tidak menaikkan `lock_version`, dan retire tidak mengunci row | `VersionTimeline` menutup versi lama lewat optimistic lock. Retire mengunci induk lalu row versi | Retire dengan lock yang sudah basi ditolak (`ConcurrencyConflict`). Retire yang memperpanjang melewati versi baru ditolak (`invalid_period`). Tanggal akhir v1 tetap 2026-11-01 |
+| **MEDIUM: versi terjadwal tidak dapat dibatalkan** tanpa menciptakan celah periode | `withdrawScheduled`: versi berubah menjadi retired dengan interval kosong, dan versi sebelumnya dibuka kembali | Setelah pembatalan, 2026-11-15 kembali memakai v1. Audit `kpi_definition.withdrawn` tercatat. Versi yang sudah berlaku ditolak (`not_scheduled`). Versi koreksi v3 tetap dapat dipublish |
+| **LOW: insert langsung berstatus non-draft** | Trigger `*_insert_guard` di PostgreSQL dan SQLite | `INSERT` berstatus `published` lewat SQL langsung ditolak. Assertion dibungkus savepoint agar aman di PostgreSQL |
+| **Test gap: aturan timeline di level template** | Logika timeline dipakai bersama definisi dan template | Mencakup: `retroactive_change`, `returnToDraft` beserta alasannya, `effective_overlap`, publish v2, withdraw v2 (v1 dibuka kembali), dan retire v1. Resolver memberi hasil tepat untuk 2026-11-15, 2026-11-30, dan 2026-12-01 |
+| **LOW: versi KPI yang dipin berakhir di tengah masa template** | `pinnedKpiWarnings` tampil di preview template | Peringatan muncul setelah KPI di-retire pada 2026-12-01 |
+| **Test gap: `addItem` dengan KPI di luar scope** | `authorize('view', definition)` saat menambah item | HR ber-scope ACC menambah KPI Woven ditolak (403). Menambah KPI AR berhasil |
+
+Validasi lokal (PHP 8.4.25):
+
+- `vendor/bin/pint --test`: passed.
+- `phpstan`: 0 error.
+- `php artisan test`: 334 test (332 passed, 2 skipped), 1.218 assertions.
+
+Status Step 06 tetap **PASS** untuk scope implementasi. DEC-003/004/005/006 tetap terbuka. Gate berikutnya tetap Step 07.
