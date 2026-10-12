@@ -156,7 +156,7 @@ services:
     restart: unless-stopped
 
   redis:
-    image: redis:8.2.10-alpine
+    image: redis:8.10.2-alpine
     command: ["redis-server", "--appendonly", "yes"]
     volumes:
       - redis-data:/data
