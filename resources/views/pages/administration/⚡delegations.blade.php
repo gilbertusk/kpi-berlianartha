@@ -4,7 +4,7 @@ use App\Models\User;
 use App\Modules\IdentityAccess\Application\DelegationService;
 use App\Modules\IdentityAccess\Domain\Capability;
 use App\Modules\IdentityAccess\Domain\Role;
-use App\Modules\IdentityAccess\Http\Livewire\AdministrationPage;
+use App\Modules\IdentityAccess\Http\Livewire\GuardedPage;
 use App\Modules\IdentityAccess\Infrastructure\Persistence\Models\Delegation;
 use App\Modules\IdentityAccess\Infrastructure\Persistence\Models\RoleAssignment;
 use App\Modules\Organization\Application\OrganizationDirectory;
@@ -19,7 +19,7 @@ use Livewire\Attributes\Title;
 use Livewire\Attributes\Url;
 use Livewire\WithPagination;
 
-new #[Title('Delegasi')] class extends AdministrationPage {
+new #[Title('Delegasi')] class extends GuardedPage {
     use WithPagination;
 
     private const PER_PAGE = 25;

@@ -1,7 +1,7 @@
 <?php
 
 use App\Modules\IdentityAccess\Domain\Capability;
-use App\Modules\IdentityAccess\Http\Livewire\AdministrationPage;
+use App\Modules\IdentityAccess\Http\Livewire\GuardedPage;
 use App\Modules\Organization\Application\OrganizationDirectory;
 use App\Modules\Organization\Application\OrganizationStructureService;
 use App\Modules\Organization\Application\UnitNode;
@@ -16,7 +16,7 @@ use Livewire\Attributes\Title;
 use Livewire\Attributes\Url;
 use Livewire\WithPagination;
 
-new #[Title('Struktur organisasi')] class extends AdministrationPage {
+new #[Title('Struktur organisasi')] class extends GuardedPage {
     use WithPagination;
 
     private const PER_PAGE = 25;

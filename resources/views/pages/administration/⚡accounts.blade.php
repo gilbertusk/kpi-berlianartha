@@ -4,7 +4,7 @@ use App\Models\User;
 use App\Modules\IdentityAccess\Application\AccountService;
 use App\Modules\IdentityAccess\Domain\AccountStatus;
 use App\Modules\IdentityAccess\Domain\Capability;
-use App\Modules\IdentityAccess\Http\Livewire\AdministrationPage;
+use App\Modules\IdentityAccess\Http\Livewire\GuardedPage;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Database\Eloquent\Builder;
 use Livewire\Attributes\Computed;
@@ -13,7 +13,7 @@ use Livewire\Attributes\Title;
 use Livewire\Attributes\Url;
 use Livewire\WithPagination;
 
-new #[Title('Akun')] class extends AdministrationPage {
+new #[Title('Akun')] class extends GuardedPage {
     use WithPagination;
 
     private const PER_PAGE = 25;

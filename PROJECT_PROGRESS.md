@@ -723,3 +723,83 @@ GitHub Actions run `38255706324` (`ci`, push ke `main`) berakhir dengan conclusi
 | Docker Compose | success | Bootstrap dari checkout bersih lulus. `test-pgsql` di dalam stack (PostgreSQL `kpi_test` + Redis): 254 passed, 2 skipped (889 assertions) |
 
 Gate berikutnya: Step 06 (kamus KPI dan template berversi). Publish KPI tetap diblokir oleh DEC-003, DEC-005, dan DEC-006.
+
+## 2026-10-12 — Step 06 Kamus KPI dan Template Berversi
+
+**Status:** PARTIAL — scope implementasi dan seluruh gate lokal lulus; validasi PostgreSQL/Redis, image, dan Compose menunggu GitHub Actions pada commit Step 06. Belum ada KPI atau template resmi yang dipublish.
+
+### Scope selesai
+
+- Menambahkan modul `KpiGovernance` untuk kamus KPI, versi definisi, template scorecard, versi template, dan item template yang menunjuk versi definisi secara eksplisit.
+- Mengimplementasikan lifecycle `DRAFT → REVIEW → PUBLISHED → RETIRED`, pengembalian `REVIEW → DRAFT`, pembatalan versi terjadwal, optimistic locking, larangan self-review, audit trail, alasan perubahan, dan effective dating tanpa overlap.
+- Published/review content serta item template non-draft dilindungi trigger database pada PostgreSQL dan SQLite. Perubahan isi published harus melalui versi baru.
+- Mengimplementasikan bobot presisi empat desimal tanpa float dan validasi total tepat 100% sebelum review/publish.
+- Mengimplementasikan formula sebagai uraian dan scoring rule sebagai strategy allowlist berversi; tidak ada `eval`, expression engine, atau executable input dari pengguna.
+- Menambahkan template per unit dan subject (`employee`/`team`), jabatan opsional, komponen, urutan, mandatory flag, serta applicability berupa daftar jabatan terstruktur.
+- Menambahkan UI Livewire untuk dashboard governance, dictionary/filter, detail/editor, perbandingan versi dan alasan, builder/preview template, review/publish/retire/withdraw, referensi penggunaan versi KPI, serta audit history.
+- Menambahkan capability dan policy ter-scope. Hanya HR Performance dapat mengelola/publish; Management, Head, Team Leader, dan Auditor read-only sesuai scope; Employee dan System Admin ditolak.
+- Menambahkan importer/seeder idempotent untuk **252** kandidat Lampiran A PRD sebagai `DRAFT` dengan `origin = prd_candidate`. Import pertama membuat 252; import kedua membuat 0 dan mengenali 252 existing.
+- Menambahkan `TemplateResolver` sebagai kontrak Step 07 agar periode berbeda dapat memilih versi template sesuai business date tanpa mengubah histori.
+- Mendokumentasikan schema, lifecycle, akses, precision, candidate boundary, serta aturan append-only untuk vocabulary dan scoring strategy.
+
+### Schema dan strategi
+
+Tabel baru:
+
+- `kpi_definitions` dan `kpi_definition_versions`;
+- `kpi_templates` dan `kpi_template_versions`;
+- `kpi_template_items`.
+
+Strategy allowlist tersedia:
+
+- `ratio_to_target@1`;
+- `inverse_ratio_to_target@1`;
+- `range_band@1`;
+- `binary@1`;
+- `milestone_stage@1`.
+
+Strategy tersebut adalah mekanisme teknis tervalidasi, bukan formula/rating bisnis yang sudah disetujui. DEC-004 tetap OPEN.
+
+### Published-versus-draft
+
+- Import kandidat pada database uji kosong: `DRAFT prd_candidate = 252`.
+- KPI kandidat yang dipublish otomatis: **0**.
+- Template resmi yang di-seed atau dipublish otomatis: **0**.
+- Publish tetap membutuhkan definisi lengkap, strategy dan parameter valid, effective date, approval chain, sign-off reference, reviewer berbeda, serta—untuk template—KPI published yang berlaku dan bobot tepat 100%.
+
+### Validasi lokal (PHP 8.4)
+
+| # | Command/gate | Exit | Hasil |
+|---|---|---:|---|
+| 1 | Targeted Step 06 (`tests/Unit/KpiGovernance` + `tests/Feature/KpiGovernance`) | 0 | 72 passed, 217 assertions |
+| 2 | Seluruh `php artisan test` | 0 | 328 test: 326 passed, 2 skipped (registrasi dorman), 1.187 assertions |
+| 3 | `vendor/bin/pint --test` | 0 | passed |
+| 4 | `vendor/bin/phpstan analyse --no-progress --memory-limit=1G` | 0 | 0 error |
+| 5 | `composer validate --strict` / `composer audit --locked` | 0 / 0 | valid / tidak ada security advisory |
+| 6 | `npm audit --audit-level=high` / `npm run build` | 0 / 0 | 0 vulnerability / production assets built |
+| 7 | Empty SQLite migrate → rollback → migrate | 0 | seluruh migration, termasuk `000400`, lulus dan dapat di-rollback |
+| 8 | `OrganizationReferenceSeeder` + `kpi:import-candidates` dua kali | 0 | 252 created lalu 0 created + 252 existing |
+| 9 | `php artisan route:list --path=kpi` | 0 | 5 route Livewire KPI terdaftar |
+| 10 | `git diff --check` | 0 | bersih |
+
+Perintah agregat `composer test` tidak dipakai sebagai bukti tunggal di Windows karena executable child `pint` memilih PHP XAMPP 8.2.12. Semua gate penyusunnya dijalankan langsung dan lulus memakai PHP 8.4; CI memakai PHP 8.4 secara eksplisit.
+
+### Code review
+
+Temuan sebelum commit sudah diperbaiki dan diuji:
+
+- Tiga temuan tipe Larastan pada query row-lock dan union collection diperbaiki di sumber tanpa suppression.
+- Referensi "versi KPI dipakai template" semula dapat menampilkan kode template dari unit di luar scope pembaca. Query sekarang dibatasi oleh `kpi_template.view` dan unit scope; regression test lintas unit ditambahkan.
+
+### Keputusan dan blocker bisnis
+
+- DEC-003 (bobot scorecard) masih PROPOSED; tidak ada komposisi bobot PRD yang dijadikan template resmi.
+- DEC-004 (rating/scoring rules), DEC-005 (release scope KPI), dan DEC-006 (definisi KPI resmi) masih OPEN.
+- Kandidat Lampiran A hanya nama dan unit pemilik; target, formula, source, owner, evidence, approver, dan sign-off tidak dikarang.
+- Hak bersyarat Manager/Team Leader pada `ROLE_APPROVAL_MATRIX` belum diaktifkan karena kondisi bisnisnya belum disetujui.
+- Validasi PostgreSQL 18 + Redis, Docker image, Compose, scan vulnerability, dan SBOM menunggu CI commit Step 06.
+
+### Gate berikutnya
+
+- Commit dan push Step 06 ke `origin/main`, lalu tunggu seluruh GitHub Actions lulus dan catat addendum PASS.
+- Setelah CI Step 06 lulus, Step 07 dapat dimulai. Penggunaan KPI/template sebagai konfigurasi resmi tetap diblokir sampai DEC-003/004/005/006 memiliki sign-off yang diperlukan.

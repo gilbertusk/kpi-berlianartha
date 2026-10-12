@@ -25,17 +25,23 @@ final class RoleCapabilityMatrix
                 Capability::RoleView,
                 Capability::DelegationView,
                 Capability::AccessReviewView,
+                Capability::KpiDefinitionView,
+                Capability::KpiTemplateView,
                 Capability::ApprovalDecide,
             ],
             Role::DepartmentHead->value => [
                 Capability::OrganizationView,
                 Capability::EmployeeView,
+                Capability::KpiDefinitionView,
+                Capability::KpiTemplateView,
                 Capability::KpiValueModify,
                 Capability::ApprovalDecide,
             ],
             Role::TeamLeader->value => [
                 Capability::OrganizationView,
                 Capability::EmployeeView,
+                Capability::KpiDefinitionView,
+                Capability::KpiTemplateView,
                 Capability::KpiValueModify,
                 Capability::ApprovalDecide,
             ],
@@ -52,6 +58,12 @@ final class RoleCapabilityMatrix
                 Capability::DelegationView,
                 Capability::DelegationManage,
                 Capability::AccessReviewView,
+                Capability::KpiDefinitionView,
+                Capability::KpiDefinitionManage,
+                Capability::KpiDefinitionPublish,
+                Capability::KpiTemplateView,
+                Capability::KpiTemplateManage,
+                Capability::KpiTemplatePublish,
                 Capability::KpiValueModify,
                 Capability::ApprovalDecide,
             ],
@@ -62,6 +74,8 @@ final class RoleCapabilityMatrix
                 Capability::RoleView,
                 Capability::DelegationView,
                 Capability::AccessReviewView,
+                Capability::KpiDefinitionView,
+                Capability::KpiTemplateView,
             ],
             Role::SystemAdmin->value => [
                 Capability::OrganizationView,
@@ -121,8 +135,8 @@ final class RoleCapabilityMatrix
 
         foreach ([Role::SystemAdmin, Role::Auditor] as $role) {
             foreach ($this->capabilitiesFor($role) as $capability) {
-                if ($capability->changesKpiValues()) {
-                    throw new LogicException("[{$role->value}] must not change KPI values ([{$capability->value}]).");
+                if ($capability->changesKpiValues() || $capability->configuresKpis()) {
+                    throw new LogicException("[{$role->value}] must not change KPI values or configuration ([{$capability->value}]).");
                 }
             }
         }

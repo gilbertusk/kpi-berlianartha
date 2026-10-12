@@ -1,7 +1,7 @@
 <?php
 
 use App\Modules\IdentityAccess\Domain\Capability;
-use App\Modules\IdentityAccess\Http\Livewire\AdministrationPage;
+use App\Modules\IdentityAccess\Http\Livewire\GuardedPage;
 use App\Modules\Organization\Application\EmployeeService;
 use App\Modules\Organization\Application\OrganizationDirectory;
 use App\Modules\Organization\Application\UnitNode;
@@ -15,7 +15,7 @@ use Livewire\Attributes\Computed;
 use Livewire\Attributes\Locked;
 use Livewire\Attributes\Title;
 
-new #[Title('Detail pegawai')] class extends AdministrationPage {
+new #[Title('Detail pegawai')] class extends GuardedPage {
 
     #[Locked]
     public string $employeeId = '';

@@ -21,6 +21,8 @@ class DatabaseSeeder extends Seeder
 
         if (app()->environment('local')) {
             $this->call(DevelopmentIdentitySeeder::class);
+            // PRD candidates as DRAFT only; elsewhere HR runs kpi:import-candidates.
+            $this->call(KpiCandidateSeeder::class);
         }
     }
 }

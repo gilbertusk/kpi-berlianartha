@@ -17,10 +17,11 @@ use Livewire\Attributes\Locked;
 use Livewire\Component;
 
 /**
- * Base class for administration Livewire pages. Components stay thin: they
- * authorize, call an application service, and show safe domain errors.
+ * Base class for authorized Livewire pages (administration, KPI governance).
+ * Components stay thin: they authorize, call an application service, and
+ * show safe domain errors.
  */
-abstract class AdministrationPage extends Component
+abstract class GuardedPage extends Component
 {
     #[Locked]
     public ?string $flash = null;

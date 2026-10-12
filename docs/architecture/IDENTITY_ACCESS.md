@@ -87,13 +87,16 @@ Legenda: `A` diizinkan dalam scope, `—` ditolak, `R*` plafon untuk modul KPI b
 | `delegation.view` | A | — | — | — | A | A | A |
 | `delegation.manage` | — | — | — | — | A | — | — |
 | `access_review.view` | A | — | — | — | A | A | A |
+| `kpi_definition.view` / `kpi_template.view` (Step 06) | A | A | A | — | A | A | — |
+| `kpi_definition.manage` / `kpi_template.manage` (Step 06) | — | — | — | — | A | — | — |
+| `kpi_definition.publish` / `kpi_template.publish` (Step 06) | — | — | — | — | A | — | — |
 | `kpi.value.modify` | — | R* | R* | R* | R* | — | — |
 | `approval.decide` | R* | R* | R* | — | R* | — | — |
 
 Invariant berikut ditegakkan di constructor matrix dan diuji:
 
 - Auditor hanya memegang capability `*.view`.
-- System Admin dan Auditor tidak pernah memegang `kpi.value.modify` atau `approval.decide`.
+- System Admin dan Auditor tidak pernah memegang `kpi.value.modify` atau `approval.decide`, dan juga tidak pernah memegang capability konfigurasi KPI (`kpi_definition.manage/publish`, `kpi_template.manage/publish`). Lihat `KPI_GOVERNANCE.md`.
 
 ### Aturan keputusan (`AccessControl::decide`)
 

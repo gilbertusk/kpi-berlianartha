@@ -37,6 +37,24 @@ test('system admin and auditor can never change KPI values or approvals', functi
         ->and($matrix->allows($role, Capability::ApprovalDecide))->toBeFalse();
 })->with([Role::SystemAdmin, Role::Auditor]);
 
+test('only HR Performance configures KPIs; system admin and auditor never do', function (): void {
+    $matrix = new RoleCapabilityMatrix;
+
+    foreach (Capability::cases() as $capability) {
+        if (! $capability->configuresKpis()) {
+            continue;
+        }
+
+        foreach (Role::cases() as $role) {
+            expect($matrix->allows($role, $capability))->toBe($role === Role::HrPerformance, "{$role->value} / {$capability->value}");
+        }
+    }
+
+    expect($matrix->allows(Role::Auditor, Capability::KpiDefinitionView))->toBeTrue()
+        ->and($matrix->allows(Role::SystemAdmin, Capability::KpiDefinitionView))->toBeFalse()
+        ->and($matrix->allows(Role::Employee, Capability::KpiTemplateView))->toBeFalse();
+});
+
 test('system admin manages accounts and role plumbing but no organization or employee master data', function (): void {
     $matrix = new RoleCapabilityMatrix;
 

@@ -42,7 +42,6 @@ it('shows a no-data placeholder for modules that are not implemented yet', funct
         ->assertSeeInOrder(['<main id="main-content"', '<h1', $title, '</h1>'], escape: false)
         ->assertSee('Modul belum tersedia');
 })->with([
-    ['kpi.index', 'KPI'],
     ['approvals.index', 'Approval'],
     ['reports.index', 'Reports'],
 ]);

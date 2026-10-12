@@ -6,7 +6,7 @@ use App\Modules\IdentityAccess\Application\Grant;
 use App\Modules\IdentityAccess\Application\UnitScope;
 use App\Modules\IdentityAccess\Domain\Capability;
 use App\Modules\IdentityAccess\Domain\Role;
-use App\Modules\IdentityAccess\Http\Livewire\AdministrationPage;
+use App\Modules\IdentityAccess\Http\Livewire\GuardedPage;
 use App\Modules\Organization\Application\OrganizationDirectory;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Support\Facades\Gate;
@@ -15,7 +15,7 @@ use Livewire\Attributes\Title;
 use Livewire\Attributes\Url;
 use Livewire\WithPagination;
 
-new #[Title('Access review')] class extends AdministrationPage {
+new #[Title('Access review')] class extends GuardedPage {
     use WithPagination;
 
     #[Url(as: 'cari')]

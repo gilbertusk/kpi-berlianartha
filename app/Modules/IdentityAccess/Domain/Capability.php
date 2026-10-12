@@ -22,6 +22,14 @@ enum Capability: string
     case DelegationManage = 'delegation.manage';
     case AccessReviewView = 'access_review.view';
 
+    /** KPI dictionary and scorecard templates (Step 06). */
+    case KpiDefinitionView = 'kpi_definition.view';
+    case KpiDefinitionManage = 'kpi_definition.manage';
+    case KpiDefinitionPublish = 'kpi_definition.publish';
+    case KpiTemplateView = 'kpi_template.view';
+    case KpiTemplateManage = 'kpi_template.manage';
+    case KpiTemplatePublish = 'kpi_template.publish';
+
     /**
      * Reserved for the KPI modules (Step 06–10). Step 05 only fixes the role
      * ceiling from ROLE_APPROVAL_MATRIX.md; ownership, workflow state, and
@@ -43,6 +51,20 @@ enum Capability: string
     public function changesKpiValues(): bool
     {
         return $this === self::KpiValueModify || $this === self::ApprovalDecide;
+    }
+
+    /**
+     * Authoring or publishing KPI definitions and templates changes how
+     * scores are computed, so technical and audit roles may never hold it.
+     */
+    public function configuresKpis(): bool
+    {
+        return in_array($this, [
+            self::KpiDefinitionManage,
+            self::KpiDefinitionPublish,
+            self::KpiTemplateManage,
+            self::KpiTemplatePublish,
+        ], true);
     }
 
     /**

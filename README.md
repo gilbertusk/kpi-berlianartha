@@ -5,7 +5,8 @@ Repository untuk pengembangan Sistem Manajemen KPI PT Berlian Artha Label.
 ## Status saat ini
 
 - Step 02 (bootstrap aplikasi): skeleton Laravel 13 + Livewire starter kit, application shell, UI primitives, halaman error, `/health`, dan smoke test.
-- **Modul KPI belum diimplementasikan.** Tidak ada template, bobot, formula, target, approver, atau data KPI. Menu KPI, Approval, dan Reports masih placeholder tanpa data.
+- Step 06 (kamus KPI dan template berversi): lifecycle DRAFT → REVIEW → PUBLISHED → RETIRED, versi published immutable, strategi skor allowlist, bobot template tepat 100%, dan kandidat PRD sebagai draft. Detail: `docs/architecture/KPI_GOVERNANCE.md`.
+- **Belum ada KPI resmi.** Bobot, formula, target, approver, dan rating menunggu keputusan bisnis (DEC-003 s.d. DEC-006). Menu Approval dan Reports masih placeholder.
 - Step 03 (infrastruktur lokal dan CI): Dockerfile multi-stage, Docker Compose (nginx, php-fpm, worker, scheduler, PostgreSQL 18, Redis, S3-compatible SeaweedFS, Mailpit), script developer, dan GitHub Actions. Detail: `docs/operations/`.
 - Step 04 (fondasi data): audit append-only, transactional outbox, idempotency, optimistic locking, metadata object storage.
 - Step 05 (identity, organisasi, otorisasi): login lokal di balik adapter, struktur 3 group/department dan 21 team bertanggal efektif, penugasan pegawai, role terpisah dari scope, delegasi bertanggal, policy server-side, dan halaman Administration. Detail: `docs/architecture/IDENTITY_ACCESS.md`. SSO belum ada (DEC-013).

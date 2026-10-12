@@ -13,7 +13,9 @@ Aplikasi dibuat dari official Laravel Livewire starter kit (Laravel 13, Livewire
 | `app/Actions/Fortify`, `app/Providers/FortifyServiceProvider.php` | Authentication lokal dari starter kit. Kredensial diperiksa lewat adapter `CredentialAuthenticator` (Step 05). Registrasi publik nonaktif; akun dibuat oleh System Admin (DEC-013) |
 | `app/Modules/Shared` | Fondasi data Step 04 (audit, outbox, idempotency, optimistic lock, storage metadata) serta cast `BusinessDate`, `BusinessRuleViolation`, `Actor`, dan `GuardsInput` |
 | `app/Modules/Organization` | Hierarki company → department → team bertanggal efektif, pegawai, penugasan, `OrganizationDirectory` (kontrak baca publik), dan policy |
-| `app/Modules/IdentityAccess` | Role/capability, `AccessControl`, role assignment, delegasi, lifecycle akun, audit login, middleware session/MFA, dan base page Livewire administrasi. Detail: `IDENTITY_ACCESS.md` |
+| `app/Modules/IdentityAccess` | Role/capability, `AccessControl`, role assignment, delegasi, lifecycle akun, audit login, middleware session/MFA, dan base page Livewire `GuardedPage`. Detail: `IDENTITY_ACCESS.md` |
+| `app/Modules/KpiGovernance` | Kamus KPI dan template scorecard berversi, strategi skor allowlist, kandidat PRD, dan `TemplateResolver`. Detail: `KPI_GOVERNANCE.md` |
+| `resources/views/pages/kpi/` | Halaman Livewire KPI (kamus, detail/versi/perbandingan, template builder/preview) |
 | `resources/views/pages/administration/` | Halaman Livewire Administration (organisasi, pegawai, akun, role, delegasi, access review) |
 | `app/Support/Operations/Heartbeat.php`, `app/Console/Commands/Operations/*`, `app/Jobs/Operations/QueueSmokeJob.php` | Tooling operasional platform (Step 03): heartbeat worker/scheduler, `ops:readiness`, `ops:queue-smoke`. Bukan modul bisnis |
 | `config/navigation.php` | Definisi menu utama. Menu Administration memakai ability `administration.view` |

@@ -1,7 +1,7 @@
 <?php
 
 use App\Modules\IdentityAccess\Domain\Capability;
-use App\Modules\IdentityAccess\Http\Livewire\AdministrationPage;
+use App\Modules\IdentityAccess\Http\Livewire\GuardedPage;
 use App\Modules\Organization\Application\EmployeeQuery;
 use App\Modules\Organization\Application\EmployeeService;
 use App\Modules\Organization\Application\OrganizationDirectory;
@@ -17,7 +17,7 @@ use Livewire\Attributes\Title;
 use Livewire\Attributes\Url;
 use Livewire\WithPagination;
 
-new #[Title('Pegawai & penugasan')] class extends AdministrationPage {
+new #[Title('Pegawai & penugasan')] class extends GuardedPage {
     use WithPagination;
 
     #[Url(as: 'tanggal')]
