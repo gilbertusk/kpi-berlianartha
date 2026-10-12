@@ -9,12 +9,11 @@ use App\Modules\Shared\Domain\Exceptions\ConcurrencyConflict;
 
 test('error mapper exposes only the safe concurrency presentation', function (): void {
     $presentation = (new ExceptionMapper)->map(
-        new ConcurrencyConflict('object', 'internal-42', 3),
+        new ConcurrencyConflict('object', 3),
     );
 
     expect($presentation->code)->toBe(ErrorCode::CONCURRENCY_CONFLICT)
         ->and($presentation->httpStatus)->toBe(409)
-        ->and($presentation->message)->not->toContain('internal-42')
         ->and($presentation->context)->toBe([
             'entity_type' => 'object',
             'expected_version' => 3,

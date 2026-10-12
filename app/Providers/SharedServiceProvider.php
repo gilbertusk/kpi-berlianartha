@@ -11,6 +11,7 @@ use App\Modules\Shared\Application\Storage\ObjectMetadataStore;
 use App\Modules\Shared\Application\Time\BusinessTime;
 use App\Modules\Shared\Infrastructure\Storage\EloquentObjectMetadataStore;
 use Illuminate\Contracts\Foundation\Application;
+use Illuminate\Support\Facades\Config;
 use Illuminate\Support\ServiceProvider;
 
 final class SharedServiceProvider extends ServiceProvider
@@ -21,8 +22,8 @@ final class SharedServiceProvider extends ServiceProvider
         $this->app->singleton(ExceptionMapper::class);
         $this->app->singleton(
             BusinessTime::class,
-            fn (Application $app): BusinessTime => new BusinessTime(
-                (string) $app['config']->get('app.business_timezone', 'Asia/Jakarta'),
+            fn (): BusinessTime => new BusinessTime(
+                Config::string('app.business_timezone', 'Asia/Jakarta'),
             ),
         );
         $this->app->singleton(

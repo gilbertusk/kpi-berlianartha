@@ -6,6 +6,7 @@ namespace App\Modules\Shared\Application\Transactions;
 
 use Closure;
 use Illuminate\Support\Facades\DB;
+use InvalidArgumentException;
 
 final class TransactionBoundary
 {
@@ -17,6 +18,10 @@ final class TransactionBoundary
      */
     public function run(Closure $operation, int $attempts = 3): mixed
     {
+        if ($attempts < 1) {
+            throw new InvalidArgumentException('Transaction attempts must be at least one.');
+        }
+
         return DB::transaction($operation, $attempts);
     }
 }

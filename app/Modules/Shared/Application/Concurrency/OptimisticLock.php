@@ -39,7 +39,6 @@ final class OptimisticLock
         if ($affected !== 1) {
             throw new ConcurrencyConflict(
                 $model->getMorphClass(),
-                (string) $model->getKey(),
                 $expectedVersion,
             );
         }

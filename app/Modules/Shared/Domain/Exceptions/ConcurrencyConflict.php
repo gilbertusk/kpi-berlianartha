@@ -8,7 +8,7 @@ use App\Modules\Shared\Domain\ErrorCode;
 
 final class ConcurrencyConflict extends SafeDomainException
 {
-    public function __construct(string $entityType, string $entityId, int $expectedVersion)
+    public function __construct(string $entityType, int $expectedVersion)
     {
         parent::__construct(
             ErrorCode::CONCURRENCY_CONFLICT,
