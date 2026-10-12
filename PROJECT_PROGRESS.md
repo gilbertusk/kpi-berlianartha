@@ -339,3 +339,77 @@ GitHub Actions run `38223018889` (`ci`, push ke `main`) berakhir dengan conclusi
 | Docker Compose | success | Bootstrap dari checkout bersih; `/health` ok; readiness OK; bucket anonim HTTP 403; queue smoke tepat 1 kali; heartbeat worker dan scheduler sehat; `test-pgsql` 96 passed; uji persistensi lulus |
 
 Gate berikutnya tetap: Step 04 (fondasi data, audit, dan transaksi).
+
+## 2026-10-12 — Step 04 Fondasi Data, Audit, dan Transaksi
+
+**Status:** PASS — acceptance criteria fondasi data, transaksi, audit, idempotency, concurrency, outbox, object metadata, dan error aman lulus pada PostgreSQL/Redis serta stack Docker Compose. Sinkronisasi checkout lokal tidak dapat diverifikasi karena executor Codex tetap gagal dengan `helper_unknown_error: setup refresh had errors`; status remote dan CI diverifikasi langsung melalui GitHub.
+
+### Git preflight
+
+- Branch Step 04 dibuat dari `origin/main` pada commit `89865684ab6fa20cbe9bd587de4ad67c17f57fd2`; working tree remote berada pada PR #12 (`step-04-data-foundation`).
+- Selama pengerjaan, `main` maju ke `547d86d0744c626132d838c3097a0e7f11f429db` karena merge Dependabot. Perubahan progress ini dipush setelah base maju; PR wajib lulus CI ulang terhadap merge ref terbaru sebelum squash merge.
+- Tidak ada force-push atau penulisan ulang histori. Seluruh perubahan Step 04 tetap terisolasi di PR.
+- Pemeriksaan patch PR (50 file) tidak menemukan `.env`, private key, credential, token/password literal, `vendor/`, `node_modules/`, log, atau artifact build.
+
+### Scope selesai
+
+- Menambahkan shared data conventions untuk internal bigint ID, public ULID, timestamp UTC, business timezone Asia/Jakarta, half-open effective period, source reference, lifecycle, numeric/rounding guardrail, dan optimistic `lock_version`.
+- Menambahkan `TransactionBoundary`, `StateTransitionGuard`, `OptimisticLock`, dan exception taxonomy aman tanpa menetapkan workflow bisnis.
+- Menambahkan audit bisnis yang hanya dapat ditulis di dalam transaksi, menyimpan actor/role/scope snapshot, action, entity, before/after, reason, source, request/correlation ID, dan timestamp.
+- Sanitizer mengganti password/token/cookie/private key/recovery code/API key/credential dengan `[REDACTED]`, menangani nested payload, dan membatasi string panjang.
+- Immutability audit ditegakkan pada dua lapis: Eloquent menolak update/delete, dan trigger PostgreSQL/SQLite menolak bulk UPDATE/DELETE.
+- Menambahkan idempotency key/fingerprint SHA-256, encrypted replay response, konflik fingerprint yang aman, expiry, dan rollback atomik.
+- Menambahkan transactional outbox dengan event version, aggregate reference, payload hash, deduplication hash, per-consumer delivery receipt, row lock, retry/backoff terkontrol, terminal failure setelah lima attempt, scheduler dispatcher, dan unique queue job.
+- Menambahkan abstraction metadata object storage tanpa upload evidence: disk/path, file identity, checksum, classification, owner/source reference, status, metadata aman, dan concurrency token.
+- Menambahkan JSON error mapping aman untuk safe domain exception; response tidak menampilkan exception message internal atau stack trace.
+- Mendokumentasikan pemakaian fondasi oleh modul berikutnya pada `docs/architecture/DATA_CONVENTIONS.md`.
+
+### Schema yang dibuat
+
+| Tabel | Tujuan |
+|---|---|
+| `audit_logs` | Business audit append-only dengan actor, before/after, reason, source, dan correlation |
+| `idempotency_keys` | Deduplication request dan replay response terenkripsi |
+| `outbox_messages` | Event transactional, retry state, deduplication, dan delivery schedule |
+| `outbox_deliveries` | Receipt unik per message/consumer |
+| `stored_object_metadata` | Metadata object privat tanpa mengunggah isi file |
+
+Migration tidak membuat tabel organization, definisi KPI, target, actual, approval, score, rating, atau compensation; keputusan bisnis Step 00 yang masih terbuka tetap tidak dikunci.
+
+### Contoh kontrak yang tervalidasi
+
+- Audit `object.registered` menyimpan scope actor dan status objek, tetapi `access_token` serta `password` menjadi `[REDACTED]`.
+- Event outbox `TestEvent` versi 1 diproses sekali per consumer; retry menyimpan hanya kode aman `consumer_failure`, bukan pesan exception mentah.
+- Retry idempotent dengan key dan fingerprint sama mengembalikan result pertama tanpa menjalankan perubahan kedua.
+- Update metadata dari `lock_version=1` ke 2 berhasil; stale writer dengan expected version 1 menerima `concurrency_conflict`/HTTP 409.
+
+### Validasi dan bukti aktual
+
+GitHub Actions run `38230761410` untuk implementation head `92d4e6c131bab967b5df6aa5e41977347030cc73` berakhir `success`; kelima job lulus:
+
+| Gate | Hasil |
+|---|---|
+| PostgreSQL migration | database kosong migrate → rollback → migrate lulus, termasuk trigger append-only |
+| Test suite PostgreSQL + Redis | 115 passed, 2 skipped, 345 assertions |
+| Transaction/audit | rollback tidak meninggalkan domain row, audit palsu, atau outbox yatim; Eloquent dan bulk SQL mutation audit ditolak |
+| Idempotency/concurrency/outbox | replay, fingerprint conflict, failed-command rollback, stale writer, deduplication, retry, dan delivery receipt lulus |
+| PHP quality | `composer validate --strict`, `composer audit`, Pint, dan Larastan level 7 lulus |
+| Frontend | `npm audit` dan production asset build lulus |
+| Docker image | build, hygiene, runtime smoke, fixable HIGH/CRITICAL scan, SBOM generation/upload lulus |
+| Docker Compose | checkout-clean bootstrap, 8 service healthy, readiness, private bucket check, queue exactly-once smoke, PostgreSQL test suite, dan persistence recreation lulus |
+
+Validasi lokal tidak dinyatakan lulus pada turn ini karena proses terminal tidak dapat dibuat. Bukti runtime di atas berasal dari runner GitHub Actions dan stack Compose efemeral.
+
+### Risiko dan batas lanjutan
+
+- External outbox consumer wajib menerapkan idempotency memakai `messageId`; transaksi database lokal tidak dapat mengembalikan side effect eksternal yang sudah terjadi.
+- Pesan yang mencapai lima kegagalan ditandai terminal; dashboard/replay operasional belum dibuat dan menjadi scope observability/operations berikutnya.
+- Upload evidence, authorization object, malware scan, signed URL, retention, dan object storage production belum diimplementasikan.
+- Retention/purge audit, idempotency, dan outbox menunggu DEC-011. Provider object storage/hosting menunggu DEC-014.
+- Fondasi ini belum mengesahkan bobot, formula, target, rating, approver, SLA, atau aturan kompensasi.
+
+### Gate berikutnya
+
+- Step 05 dapat dimulai untuk identity, role, permission, organization scope, policy, dan authorization entry check.
+- Publish KPI, scoring resmi, approval routing produksi, dan compensation tetap diblokir sampai keputusan bisnis terkait disetujui.
+
