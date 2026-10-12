@@ -139,7 +139,9 @@ cmd_seed() {
 }
 
 cmd_test() {
-    exec_app php artisan test "$@"
+    # The full suite compiles every Livewire page in one process. Give the
+    # test runner headroom without changing the 256M production PHP limit.
+    exec_app php -d memory_limit=512M artisan test "$@"
 }
 
 cmd_test_pgsql() {
@@ -150,7 +152,7 @@ cmd_test_pgsql() {
         -e CACHE_STORE=redis \
         -e REDIS_DB=13 \
         -e REDIS_CACHE_DB=14 \
-        app php artisan test "$@"
+        app php -d memory_limit=512M artisan test "$@"
 }
 
 cmd_lint() {
