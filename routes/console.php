@@ -9,3 +9,9 @@ Schedule::command('ops:heartbeat scheduler')->everyMinute();
 Schedule::command('ops:outbox-dispatch')
     ->everyMinute()
     ->withoutOverlapping(2);
+
+// Authorization already ignores expired delegations; this only writes the
+// expiry audit entry (Step 05).
+Schedule::command('identity:expire-delegations')
+    ->hourly()
+    ->withoutOverlapping(10);

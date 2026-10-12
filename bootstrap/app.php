@@ -1,6 +1,8 @@
 <?php
 
 use App\Http\Controllers\HealthController;
+use App\Modules\IdentityAccess\Http\Middleware\EnsureAccountIsActive;
+use App\Modules\IdentityAccess\Http\Middleware\RequireMultiFactor;
 use App\Modules\Shared\Application\Errors\ExceptionMapper;
 use App\Modules\Shared\Domain\Exceptions\SafeDomainException;
 use Illuminate\Foundation\Application;
@@ -20,7 +22,13 @@ return Application::configure(basePath: dirname(__DIR__))
         },
     )
     ->withMiddleware(function (Middleware $middleware): void {
-        //
+        // Every web request (including Livewire updates) re-checks that the
+        // signed-in account is still active (PRD §5.1, ADR-0009).
+        $middleware->web(append: [EnsureAccountIsActive::class]);
+
+        $middleware->alias([
+            'mfa' => RequireMultiFactor::class,
+        ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {
         $exceptions->shouldRenderJsonWhen(

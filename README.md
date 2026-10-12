@@ -5,8 +5,10 @@ Repository untuk pengembangan Sistem Manajemen KPI PT Berlian Artha Label.
 ## Status saat ini
 
 - Step 02 (bootstrap aplikasi): skeleton Laravel 13 + Livewire starter kit, application shell, UI primitives, halaman error, `/health`, dan smoke test.
-- **Business module belum diimplementasikan.** Tidak ada tabel, template, bobot, formula, target, approver, atau data KPI. Menu KPI, Approval, Reports, dan Administration hanya placeholder tanpa data.
+- **Modul KPI belum diimplementasikan.** Tidak ada template, bobot, formula, target, approver, atau data KPI. Menu KPI, Approval, dan Reports masih placeholder tanpa data.
 - Step 03 (infrastruktur lokal dan CI): Dockerfile multi-stage, Docker Compose (nginx, php-fpm, worker, scheduler, PostgreSQL 18, Redis, S3-compatible SeaweedFS, Mailpit), script developer, dan GitHub Actions. Detail: `docs/operations/`.
+- Step 04 (fondasi data): audit append-only, transactional outbox, idempotency, optimistic locking, metadata object storage.
+- Step 05 (identity, organisasi, otorisasi): login lokal di balik adapter, struktur 3 group/department dan 21 team bertanggal efektif, penugasan pegawai, role terpisah dari scope, delegasi bertanggal, policy server-side, dan halaman Administration. Detail: `docs/architecture/IDENTITY_ACCESS.md`. SSO belum ada (DEC-013).
 
 Artefak perencanaan:
 
@@ -84,20 +86,23 @@ psql -U postgres -c "CREATE DATABASE kpi_berlianartha OWNER kpi_app;"
 php artisan migrate
 ```
 
-Step 02 hanya membawa migration bawaan starter kit (users, sessions, cache, jobs, passkeys, two-factor). Tabel domain KPI belum dibuat.
+Migration saat ini mencakup tabel starter kit, fondasi data Step 04, serta organisasi dan identity/access Step 05. Tabel domain KPI belum dibuat.
 
 **Fallback lokal tanpa Redis/PostgreSQL** (bukan keputusan project, hanya untuk mencoba UI): di `.env` set `CACHE_STORE=database` dan `QUEUE_CONNECTION=database`; bila PostgreSQL belum tersedia, set sementara `DB_CONNECTION=sqlite` dan `DB_DATABASE=<path absolut>/database/database.sqlite` (file `*.sqlite` diabaikan Git).
 
 ### Akun lokal
 
-Registrasi publik dinonaktifkan. Seeder tidak membuat akun atau password. Buat akun development secara manual:
+Registrasi publik dinonaktifkan. `php artisan db:seed` (atau `bash scripts/dev.sh seed`) membuat struktur referensi 21 team. Hanya pada `APP_ENV=local`, perintah ini juga membuat 13 akun fiktif `[DEV]` (`dev.*@kpi.example.test`) untuk setiap role, misalnya:
 
-```bash
-php artisan tinker
->>> App\Models\User::factory()->create(['name' => 'Developer', 'email' => 'dev@example.test', 'password' => '<password-lokal>']);
-```
+- `dev.sysadmin`
+- `dev.hr`
+- `dev.management`
+- `dev.auditor`
+- `dev.head.produksi`
+- `dev.tl.woven`
+- `dev.staff.woven`
 
-Provisioning akun, role, dan organization scope resmi adalah scope Step 05.
+Password diambil dari `DEV_SEED_PASSWORD` di `.env`. Bila kosong, password acak dicetak sekali di output seeder. Akun nyata dibuat oleh System Admin melalui **Administration → Akun**, dan pengguna membuat password sendiri lewat tautan email. Detail: `docs/architecture/IDENTITY_ACCESS.md`.
 
 ## Perintah harian
 

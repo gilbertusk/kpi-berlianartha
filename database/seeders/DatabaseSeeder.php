@@ -2,20 +2,25 @@
 
 namespace Database\Seeders;
 
-use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 use Illuminate\Database\Seeder;
 
 class DatabaseSeeder extends Seeder
 {
-    use WithoutModelEvents;
-
     /**
      * Seed the application's database.
+     *
+     * Only the PRD §4 reference structure is seeded everywhere. No approver,
+     * weight, target, formula, or real person is seeded until the related
+     * decisions are approved (docs/product/DECISION_REGISTER.md). Fictitious
+     * [DEV] accounts are added in the local environment only. Model events
+     * stay enabled: public ULIDs are assigned on creating.
      */
     public function run(): void
     {
-        // Intentionally empty: no hard-coded accounts, passwords, approvers,
-        // weights, or business seed data until the related decisions are
-        // approved (docs/product/DECISION_REGISTER.md). Local users: README.md.
+        $this->call(OrganizationReferenceSeeder::class);
+
+        if (app()->environment('local')) {
+            $this->call(DevelopmentIdentitySeeder::class);
+        }
     }
 }

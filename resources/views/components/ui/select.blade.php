@@ -1,0 +1,50 @@
+@props([
+    'name',
+    'label',
+    'id' => null,
+    'options' => [],
+    'placeholder' => null,
+    'hint' => null,
+    'required' => false,
+])
+
+{{-- $options: value => label. Values are strings so Livewire binding stays exact. --}}
+@php
+    $id ??= $name;
+    $hasError = $errors->has($name);
+    $describedBy = collect([
+        $hint ? $id.'-hint' : null,
+        $hasError ? $id.'-error' : null,
+    ])->filter()->implode(' ');
+@endphp
+
+<div class="grid gap-1.5">
+    <x-ui.label :for="$id" :required="$required">{{ $label }}</x-ui.label>
+
+    <select
+        id="{{ $id }}"
+        name="{{ $name }}"
+        @required($required)
+        @if ($describedBy !== '') aria-describedby="{{ $describedBy }}" @endif
+        @if ($hasError) aria-invalid="true" @endif
+        {{ $attributes->class([
+            'block w-full rounded-md border bg-white px-3 py-2 text-sm text-zinc-900 shadow-xs dark:bg-zinc-900 dark:text-zinc-100',
+            'border-zinc-500 dark:border-zinc-400' => ! $hasError,
+            'border-danger-600 dark:border-danger-400' => $hasError,
+        ]) }}
+    >
+        @if ($placeholder !== null)
+            <option value="">{{ $placeholder }}</option>
+        @endif
+
+        @foreach ($options as $value => $optionLabel)
+            <option value="{{ $value }}">{{ $optionLabel }}</option>
+        @endforeach
+    </select>
+
+    @if ($hint)
+        <p id="{{ $id }}-hint" class="text-sm text-zinc-600 dark:text-zinc-400">{{ $hint }}</p>
+    @endif
+
+    <x-ui.field-error :for="$name" :id="$id.'-error'" />
+</div>

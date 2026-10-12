@@ -117,7 +117,7 @@ Menjalankan:
 |---|---|
 | `bash scripts/dev.sh up` / `down` / `ps` / `logs [service]` | Siklus hidup lingkungan |
 | `bash scripts/dev.sh migrate` | Migration |
-| `bash scripts/dev.sh seed` | Seeder development (hanya `APP_ENV=local`; saat ini kosong) |
+| `bash scripts/dev.sh seed` | Seeder: struktur referensi 21 team, ditambah akun fiktif `[DEV]` (hanya `APP_ENV=local`; password dari `DEV_SEED_PASSWORD` atau dicetak sekali) |
 | `bash scripts/dev.sh test` | Test di container dengan SQLite in-memory |
 | `bash scripts/dev.sh test-pgsql` | Test terhadap PostgreSQL `kpi_test` + Redis (DB Redis 13/14) |
 | `bash scripts/dev.sh lint` / `analyse` | Pint check / Larastan |

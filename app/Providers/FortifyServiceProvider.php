@@ -4,6 +4,8 @@ namespace App\Providers;
 
 use App\Actions\Fortify\CreateNewUser;
 use App\Actions\Fortify\ResetUserPassword;
+use App\Models\User;
+use App\Modules\IdentityAccess\Application\Authentication\CredentialAuthenticator;
 use Illuminate\Cache\RateLimiting\Limit;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\RateLimiter;
@@ -38,6 +40,13 @@ class FortifyServiceProvider extends ServiceProvider
     {
         Fortify::resetUserPasswordsUsing(ResetUserPassword::class);
         Fortify::createUsersUsing(CreateNewUser::class);
+
+        // Credential checks go through the authentication adapter so inactive
+        // accounts are rejected with the same generic error (ADR-0009).
+        Fortify::authenticateUsing(fn (Request $request): ?User => $this->app->make(CredentialAuthenticator::class)->authenticate(
+            (string) $request->input(Fortify::username()),
+            (string) $request->input('password'),
+        ));
     }
 
     /**

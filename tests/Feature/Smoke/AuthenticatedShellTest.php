@@ -14,18 +14,24 @@ it('shows the dashboard placeholder to an authenticated user', function (): void
         ->assertSee('<main id="main-content"', escape: false);
 });
 
-it('renders the main navigation placeholders', function (): void {
+it('renders the main navigation and hides Administration from accounts without an admin capability', function (): void {
     $this->actingAs(User::factory()->create());
 
     $response = $this->get(route('dashboard'))->assertOk();
 
     foreach (config('navigation.main') as $item) {
-        $response->assertSee($item['label'])
-            ->assertSee(route($item['route']), escape: false);
+        if ($item['ability'] === null) {
+            $response->assertSee($item['label'])
+                ->assertSee(route($item['route']), escape: false);
+        } else {
+            $response->assertDontSee(route($item['route']), escape: false);
+        }
     }
 
     expect(array_column(config('navigation.main'), 'label'))
-        ->toBe(['Dashboard', 'KPI', 'Approval', 'Reports', 'Administration']);
+        ->toBe(['Dashboard', 'KPI', 'Approval', 'Reports', 'Administration'])
+        ->and(collect(config('navigation.main'))->firstWhere('label', 'Administration')['ability'])
+        ->toBe('administration.view');
 });
 
 it('shows a no-data placeholder for modules that are not implemented yet', function (string $routeName, string $title): void {
@@ -39,7 +45,6 @@ it('shows a no-data placeholder for modules that are not implemented yet', funct
     ['kpi.index', 'KPI'],
     ['approvals.index', 'Approval'],
     ['reports.index', 'Reports'],
-    ['administration.index', 'Administration'],
 ]);
 
 it('requires a verified email before opening the dashboard', function (): void {

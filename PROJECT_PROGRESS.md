@@ -413,3 +413,293 @@ Validasi lokal tidak dinyatakan lulus pada turn ini karena proses terminal tidak
 - Step 05 dapat dimulai untuk identity, role, permission, organization scope, policy, dan authorization entry check.
 - Publish KPI, scoring resmi, approval routing produksi, dan compensation tetap diblokir sampai keputusan bisnis terkait disetujui.
 
+
+## 2026-10-12 — Step 05 Autentikasi, Organisasi, dan Otorisasi
+
+**Status:** PARTIAL. Seluruh acceptance criteria lulus secara lokal (SQLite in-memory, Pint, Larastan, build, dan smoke runtime). Dua hal belum terbukti:
+
+- Suite PostgreSQL + Redis belum dijalankan karena Docker Engine lokal tidak dapat berjalan pada sesi ini. Bukti CI dicatat pada addendum setelah push.
+- SSO belum diimplementasikan. Ini sesuai prompt karena DEC-013 masih OPEN; yang tersedia adalah login lokal di balik adapter.
+
+### Git preflight
+
+- `git pull --ff-only origin main`: fast-forward 26 commit (Step 04 dan merge Dependabot) ke `224a19e8eed28de138573d3a2057130b1023e8dc`. Working tree bersih sebelum mulai.
+- Baseline sebelum perubahan: 117 test (115 passed, 2 skipped) pada PHP 8.4.25.
+
+### Scope selesai
+
+#### Authentication
+
+- Fortify memakai adapter `CredentialAuthenticator`; implementasinya `LocalPasswordAuthenticator`.
+  - Pesan gagal login bersifat generik.
+  - Waktu proses untuk akun yang tidak dikenal disamakan.
+  - Akun nonaktif ditolak.
+  - `IDENTITY_PROVIDER` selain `local` gagal secara eksplisit.
+- MFA bersifat opsional dan dikendalikan switch `IDENTITY_MFA_REQUIRED` (default `false`, DEC-013). Switch ini juga berlaku pada update Livewire.
+- `EnsureAccountIsActive` berjalan pada semua request web. Session akun nonaktif diakhiri sebelum dan sesudah request, sehingga login lewat passkey/2FA juga tertutup.
+
+#### Lifecycle akun
+
+- Akun dibuat oleh System Admin tanpa password yang diketahui admin. Pengguna membuat password lewat tautan reset, dan reset sekaligus memverifikasi email.
+- Akun dapat dinonaktifkan dan diaktifkan kembali. Saat dinonaktifkan, `remember_token` diganti dan session database dihapus. System Admin aktif terakhir tidak dapat dinonaktifkan.
+- Self-service hapus akun dihapus agar nama tetap muncul pada histori.
+- Audit login mencakup login berhasil, gagal, lockout, logout, reset selesai, dan session diakhiri. Email yang dicoba dan password tidak disimpan.
+
+#### Organisasi
+
+- Hierarki Company → Group/Department → Team bertanggal efektif. Nama dan induk unit disimpan sebagai versi.
+- Data pegawai dan penugasan home/temporary bertanggal efektif.
+- Perubahan atas data yang sudah ada hanya boleh berlaku mulai hari ini atau sesudahnya. Penugasan yang sudah berakhir tidak dapat diubah.
+- Hanya ada satu company. Setiap perubahan memakai optimistic lock dan dicatat di audit.
+
+#### Role dan scope
+
+- Tujuh role minimum. Role terpisah dari scope: company, department, team, data sendiri, atau sistem.
+- Periode role tidak boleh dimulai sebelum hari ini.
+- Pencabutan memakai `revoked_at`, sehingga akses berhenti seketika tanpa mengubah histori.
+- Plafon capability per role dikunci oleh invariant:
+  - Auditor hanya read-only;
+  - System Admin dan Auditor tidak pernah memegang `kpi.value.modify` atau `approval.decide`.
+
+#### Delegasi
+
+- Setiap delegasi mencatat pemberi, penerima, role, scope, alasan, tanggal mulai, tanggal akhir (wajib), akun yang mengizinkan, dan audit.
+- Delegasi ditolak bila tanggalnya mundur, melebihi scope atau periode role sumber, atau diberikan kepada diri sendiri.
+- Delegasi hanya memberi hak baca dan approval.
+- Delegasi gugur bila role sumber dicabut atau akun pemberi dinonaktifkan.
+- Kedaluwarsa terjadi otomatis. Perintah `identity:expire-delegations` (berjalan per jam) menulis audit satu kali per delegasi.
+- Tidak ada self-approval, termasuk persetujuan oleh penerima atas record milik pemberi.
+
+#### Segregation of duties
+
+- Tidak ada yang dapat mengubah hak akses sendiri.
+- Aturan dua orang: admin yang membuat sebuah akun tidak dapat memberi role bisnis kepada akun tersebut.
+- Access review menandai tiga kondisi:
+  - System Admin yang juga memegang role bisnis;
+  - Auditor yang juga memegang role operasional;
+  - akun nonaktif yang masih memiliki role.
+
+#### Authorization
+
+- Semua keputusan akses melalui satu titik, yaitu `AccessControl`.
+- Policy Laravel untuk `OrganizationUnit`, `Employee`, `User` (akun), `RoleAssignment`, dan `Delegation`, ditambah gate `administration.view` dan `access-review.view`.
+- Tidak ada `Gate::before` atau bypass.
+- Setiap halaman memeriksa authorization saat dimuat, dan setiap aksi Livewire memeriksa ulang terhadap objek target.
+
+#### UI `/administration`
+
+- Halaman yang tersedia:
+  - struktur organisasi (per tanggal, dengan riwayat versi);
+  - pegawai dan penugasan;
+  - detail pegawai;
+  - akun;
+  - role dan scope;
+  - delegasi;
+  - access review dengan audit trail.
+- Semua halaman memiliki filter dan pagination, dan setiap perubahan wajib disertai alasan.
+- Menu Administration hanya muncul untuk akun yang memiliki capability terkait.
+
+#### Seeder
+
+- `OrganizationReferenceSeeder` membuat 1 company, 3 department, dan 21 team. Seed production wajib memakai `ORGANIZATION_REFERENCE_EFFECTIVE_FROM`.
+- `DevelopmentIdentitySeeder` hanya berjalan pada `APP_ENV=local` dan menolak berjalan di production.
+  - Membuat 13 akun fiktif `[DEV]` dengan domain `kpi.example.test`, NIK `DEV-xxxx`, dan satu contoh delegasi.
+  - Password diambil dari `DEV_SEED_PASSWORD`, atau dibuat acak dan dicetak satu kali.
+
+### File dan migration
+
+- Migration:
+  - `2026_10_12_000200_create_organization_tables.php`
+    - membuat `organization_units`, `organization_unit_versions`, `employees`, dan `employee_assignments`;
+    - menambahkan CHECK periode di PostgreSQL.
+  - `2026_10_12_000300_create_identity_access_tables.php`
+    - menambahkan kolom `users.public_id`, `status`, `deactivated_at`, `deactivation_reason`, `last_login_at`, `lock_version`, dan `provisioned_by_user_id`;
+    - membuat `role_assignments` dan `delegations`;
+    - menambahkan CHECK periode dan CHECK delegasi-bukan-diri-sendiri di PostgreSQL.
+- Modul baru: `app/Modules/Organization/**` dan `app/Modules/IdentityAccess/**`.
+- Tambahan di Shared: `BusinessDate`, `BusinessRuleViolation`, `Actor`, `GuardsInput`.
+- Provider dan config: `OrganizationServiceProvider`, `IdentityAccessServiceProvider`, `config/identity.php`, `config/organization.php`, `bootstrap/app.php`, `routes/web.php`, `routes/console.php`, `config/navigation.php`.
+- UI: `resources/views/pages/administration/*` (8 halaman Livewire dan partial), serta primitives `x-ui.select`, `x-ui.textarea`, dan `x-ui.panel`.
+- Dihapus: `pages/settings/⚡delete-user-*.blade.php` dan `app/Livewire/Actions/Logout.php` (dead code).
+- Dokumentasi:
+  - `docs/architecture/IDENTITY_ACCESS.md` baru;
+  - README, `APPLICATION_STRUCTURE.md`, `LOCAL_ENVIRONMENT.md`, dan `.env.example` diperbarui.
+
+### Role–scope matrix aktual
+
+| Capability | Mgmt | Head | TL | Employee | HR | Auditor | SysAdmin |
+|---|:---:|:---:|:---:|:---:|:---:|:---:|:---:|
+| organization.view / manage | A / — | A / — | A / — | — / — | A / A | A / — | A / — |
+| employee.view / manage | A / — | A / — | A / — | diri sendiri / — | A / A | A / — | — / — |
+| account.view / manage | — | — | — | — | — | A / — | A / A |
+| role.view / manage | A / — | — | — | — | A / — | A / — | A / A |
+| delegation.view / manage | A / — | — | — | — | A / A | A / — | A / — |
+| access_review.view | A | — | — | — | A | A | A |
+| kpi.value.modify (plafon Step 06+) | — | plafon | plafon | plafon | plafon | — | — |
+| approval.decide (plafon Step 06+) | plafon | plafon | plafon | — | plafon | — | — |
+
+Scope tiap role:
+
+| Role | Scope |
+|---|---|
+| Management | company |
+| Head | department atau satu team |
+| TL | team |
+| Employee | data sendiri |
+| HR | company atau department |
+| Auditor | company, department, atau team |
+| SysAdmin | sistem |
+
+Kondisi "C" pada ROLE_APPROVAL_MATRIX ditegakkan oleh modul Step 06–10.
+
+### Validasi (PHP 8.4.25, lokal)
+
+| # | Command | Exit | Hasil |
+|---|---|---:|---|
+| 1 | `composer validate --strict` | 0 | valid |
+| 2 | `composer audit` / `npm audit --audit-level=high` | 0 / 0 | 0 advisory / 0 vulnerabilities |
+| 3 | `vendor/bin/pint --test` | 0 | passed |
+| 4 | `vendor/bin/phpstan analyse` (level 7) | 0 | 0 error |
+| 5 | `php artisan test` | 0 | 256 test: 254 passed, 2 skipped (registrasi dorman), 889 assertions |
+| 6 | Subset Step 05 (`tests/Feature/IdentityAccess`, `tests/Feature/Organization`, `tests/Unit/IdentityAccess`) | 0 | 141 passed, 553 assertions |
+| 7 | `npm run build` | 0 | built |
+| 8 | `php artisan route:list` | 0 | 68 route (8 route `/administration`) |
+| 9 | Migrate → rollback → migrate (SQLite file berisi data seed) | 0 | lulus; `users.public_id` di-backfill untuk baris lama |
+| 10 | `migrate:fresh --seed` (`APP_ENV=local`) + `identity:expire-delegations` | 0 | 25 unit, 13 akun `[DEV]`, 1 delegasi; 0 delegasi kedaluwarsa |
+| 11 | Smoke runtime `php artisan serve` (SQLite, session database), login nyata per role | — | status halaman sesuai policy (tabel di bawah); log server tanpa exception |
+| 12 | Suite PostgreSQL + Redis (`scripts/dev.sh test-pgsql`) | — | **Belum dijalankan**: Docker Engine lokal tidak tersedia; menunggu CI |
+
+Smoke runtime (status HTTP setelah login):
+
+| Akun | dashboard | administration | organization | employees | accounts | roles | delegations | access-review |
+|---|---|---|---|---|---|---|---|---|
+| dev.sysadmin | 200 | 200 | 200 | 403 | 200 | 200 | 200 | 200 |
+| dev.hr | 200 | 200 | 200 | 200 | 403 | 200 | 200 | 200 |
+| dev.auditor | 200 | 200 | 200 | 200 | 200 | 200 | 200 | 200 |
+| dev.head.produksi | 200 | 200 | 200 | 200 | 403 | 403 | 200 | 403 |
+| dev.tl.woven | 200 | 200 | 200 | 200 | 403 | 403 | 200 | 403 |
+| dev.staff.woven | 200 | 403 | 403 | 403 | 403 | 403 | 403 | 403 |
+
+Direktori pegawai untuk TL Woven hanya memuat NIK `DEV-0301` dan `DEV-0302`. NIK dari Sales, AR, dan HR tidak muncul.
+
+### Bukti negative authorization test
+
+**Role dan capability (`AuthorizationScopeTest`)**
+
+- Setiap role diuji terhadap 13 capability, baik allow maupun deny.
+- Scope diuji untuk tujuh role pada lima posisi target: diri sendiri, team yang sama, team lain dalam department yang sama, department lain, dan produksi.
+- HR dan Auditor ber-scope department diuji tetap di dalam department-nya.
+- Manager untuk satu team tidak dapat melihat team saudara.
+
+**Status assignment dan akun**
+
+- Assignment yang kedaluwarsa atau masih terjadwal ditolak, tetapi histori tetap dapat direkonstruksi.
+- Pencabutan berlaku seketika.
+- Akun nonaktif ditolak untuk semua capability.
+- Grant pada unit yang sudah ditutup tidak mencakup apa pun.
+- TL kehilangan akses tepat sejak tanggal pegawai pindah team.
+
+**Self-approval**
+
+- Ditolak secara langsung.
+- Ditolak lewat delegasi, baik oleh penerima atas recordnya sendiri maupun oleh penerima atas record milik pemberi.
+
+**Plafon KPI**
+
+- SysAdmin dan Auditor ditolak untuk `kpi.value.modify` dan `approval.decide` di semua unit.
+- Auditor ditolak untuk semua capability non-view.
+
+**Direct URL**
+
+- Matriks 7 halaman × 8 akun.
+- Record pegawai diuji untuk diri sendiri, rekan satu team, dan department lain.
+
+**Forged Livewire action (semua menghasilkan 403)**
+
+- Auditor dan Management mencoba memberi role.
+- SysAdmin dan TL mencoba membuat unit.
+- Auditor mencoba mencabut role, mengirim reset, dan menonaktifkan akun.
+- SysAdmin mencoba menonaktifkan akun sendiri dan memberi role ke diri sendiri.
+- TL mencoba membuka form pindah team dan mendelegasikan role milik orang lain.
+- HR ber-scope department mencoba memindahkan pegawai ke department lain.
+
+**Delegasi ditolak dengan rule key stabil bila:**
+
+- diberikan kepada pemilik role atau kepada pemberi izin;
+- berada di luar scope;
+- tanggalnya mundur;
+- tanggal akhirnya tidak valid;
+- melebihi periode role sumber;
+- role-nya tidak dapat didelegasikan;
+- akun penerima nonaktif;
+- duplikat.
+
+**Role assignment ditolak bila:**
+
+- diberikan kepada diri sendiri;
+- tipe unit scope tidak sesuai;
+- role Employee diberikan tanpa data pegawai;
+- tanggalnya mundur;
+- tumpang tindih dengan assignment lain;
+- akun penerima nonaktif;
+- mencabut role sendiri;
+- role bisnis diberikan oleh admin yang membuat akun tersebut.
+
+**Mutation check manual**
+
+- Bila pemeriksaan scope di `Grant` dilonggarkan, 6 test authorization gagal.
+- Bila `authorize()` pada aksi grant di halaman role dihapus, 2 test forged action gagal.
+- Kedua mutasi sudah dikembalikan.
+
+### Code review
+
+Agent code-reviewer tidak menemukan temuan Critical. Semua temuan berikut sudah diperbaiki dan diberi test.
+
+**HIGH**
+
+- Pindah team dan pengakhiran penugasan dengan tanggal mundur dapat menulis ulang histori. Sekarang ditolak dengan `retroactive_change`.
+
+**MEDIUM**
+
+- Rename, re-parent, dan penutupan unit dengan tanggal mundur.
+- Penerima delegasi dapat menyetujui record milik pemberi.
+- "Akun boneka": admin membuat akun lalu memberinya role bisnis sendiri. Kini dicegah dengan aturan dua orang.
+- Audit tautan reset tetap tercatat walaupun pengiriman di-throttle atau gagal.
+
+**LOW**
+
+- Role grant dengan tanggal mundur.
+- Race pada unique constraint menghasilkan error 500; kini menjadi pesan domain yang aman. Unit induk juga dikunci saat membuat unit baru.
+- System Admin terakhir dapat dinonaktifkan.
+- Company kedua dapat dibuat.
+- MFA tidak berlaku pada update Livewire.
+- Access review untuk reviewer ber-scope department menampilkan grant di luar scope-nya.
+
+### Keputusan dan asumsi
+
+- Plafon capability diturunkan dari ROLE_APPROVAL_MATRIX (status PROPOSED). Kondisi "C" belum diimplementasikan karena menjadi tanggung jawab Step 06–10.
+- Pembagian tugas: System Admin mengelola role assignment; HR Performance mengelola struktur, pegawai, dan delegasi. Approver aktual per team tidak di-seed (DEC-002 OPEN).
+- Perubahan atas data yang sudah ada tidak boleh dimundurkan, untuk melindungi histori. Koreksi histori menunggu proses koreksi resmi. Pengecualian: pegawai baru dan unit baru boleh memakai tanggal mulai lampau.
+- Aturan dua orang membuat pemberian role bisnis ke akun baru membutuhkan minimal dua System Admin. Konsekuensi operasional ini perlu dikonfirmasi IT/Security.
+- Kombinasi role yang melanggar SoD tidak diblokir karena belum ada keputusan bisnis; kombinasi tersebut hanya ditandai di access review.
+- Tanggal berlaku struktur referensi di non-production memakai placeholder tanggal PRD v0.1 (2026-10-12). HR wajib mengonfirmasi tanggal untuk production.
+- Belum dimodelkan:
+  - shift (DEC-015);
+  - coaching notes (DEC-011);
+  - retention audit dan session (DEC-010).
+- Docker Desktop lokal sempat terjalankan tanpa sengaja saat pengecekan versi. Engine tidak siap dalam 5 menit, sehingga validasi PostgreSQL diserahkan ke CI.
+
+### Blocker bisnis
+
+- DEC-013: SSO dan kebijakan MFA.
+- DEC-002: Team Leader, Manager/Head, dan approver pengganti untuk 21 team.
+- DEC-010: retention data.
+- DEC-011: akses coaching notes.
+- DEC-015: shift.
+- DEC-016: system of record pegawai.
+- Sign-off matriks role/scope dan delegasi oleh HR Performance, Management, IT/Security, dan Internal Audit.
+
+### Gate berikutnya
+
+- Setelah CI (PostgreSQL + Redis) lulus untuk commit Step 05, status dapat dinaikkan menjadi PASS melalui addendum.
+- Step 06 (kamus KPI dan template berversi) boleh dimulai setelah itu. Publish KPI tetap diblokir oleh DEC-003, DEC-005, dan DEC-006.

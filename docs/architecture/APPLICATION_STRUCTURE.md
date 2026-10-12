@@ -1,6 +1,6 @@
 # Application Structure
 
-**Status:** Baseline Step 02 — 12 Oktober 2026
+**Status:** Baseline Step 02 — 12 Oktober 2026; diperbarui Step 05
 **Referensi:** ADR-0001 (modular monolith), ADR-0002 (Laravel/Livewire), `DOMAIN_BOUNDARIES.md`
 
 ## 1. Skeleton
@@ -10,9 +10,13 @@ Aplikasi dibuat dari official Laravel Livewire starter kit (Laravel 13, Livewire
 | Lokasi | Isi saat ini |
 |---|---|
 | `app/Http/Controllers/HealthController.php` | Liveness probe publik minimum (`GET /health`) |
-| `app/Actions/Fortify`, `app/Providers/FortifyServiceProvider.php` | Authentication lokal dari starter kit. Registrasi publik nonaktif melalui feature flag Fortify; kode registrasi upstream dibiarkan dorman sampai provisioning akun diputuskan (Step 05, DEC-013) |
+| `app/Actions/Fortify`, `app/Providers/FortifyServiceProvider.php` | Authentication lokal dari starter kit. Kredensial diperiksa lewat adapter `CredentialAuthenticator` (Step 05). Registrasi publik nonaktif; akun dibuat oleh System Admin (DEC-013) |
+| `app/Modules/Shared` | Fondasi data Step 04 (audit, outbox, idempotency, optimistic lock, storage metadata) serta cast `BusinessDate`, `BusinessRuleViolation`, `Actor`, dan `GuardsInput` |
+| `app/Modules/Organization` | Hierarki company → department → team bertanggal efektif, pegawai, penugasan, `OrganizationDirectory` (kontrak baca publik), dan policy |
+| `app/Modules/IdentityAccess` | Role/capability, `AccessControl`, role assignment, delegasi, lifecycle akun, audit login, middleware session/MFA, dan base page Livewire administrasi. Detail: `IDENTITY_ACCESS.md` |
+| `resources/views/pages/administration/` | Halaman Livewire Administration (organisasi, pegawai, akun, role, delegasi, access review) |
 | `app/Support/Operations/Heartbeat.php`, `app/Console/Commands/Operations/*`, `app/Jobs/Operations/QueueSmokeJob.php` | Tooling operasional platform (Step 03): heartbeat worker/scheduler, `ops:readiness`, `ops:queue-smoke`. Bukan modul bisnis |
-| `config/navigation.php` | Definisi menu utama + hook `ability` untuk otorisasi Step 05 |
+| `config/navigation.php` | Definisi menu utama. Menu Administration memakai ability `administration.view` |
 | `resources/views/components/ui/` | UI primitives aplikasi |
 | `resources/views/layouts/` | Application shell (sidebar) dan auth layout |
 | `resources/views/modules/placeholder.blade.php` | Halaman placeholder menu yang belum diimplementasikan |

@@ -4,15 +4,27 @@ use Illuminate\Support\Facades\Route;
 
 Route::view('/', 'welcome')->name('home');
 
-Route::middleware(['auth', 'verified'])->group(function () {
+Route::middleware(['auth', 'verified', 'mfa'])->group(function () {
     Route::view('dashboard', 'dashboard')->name('dashboard');
 
     // Navigation placeholders only: no data and no actions. Module features
-    // and role/organization-scope authorization arrive from Step 05 onward.
+    // and their role/organization-scope policies arrive in later steps.
     Route::view('kpi', 'modules.placeholder', ['title' => 'KPI'])->name('kpi.index');
     Route::view('approvals', 'modules.placeholder', ['title' => 'Approval'])->name('approvals.index');
     Route::view('reports', 'modules.placeholder', ['title' => 'Reports'])->name('reports.index');
-    Route::view('administration', 'modules.placeholder', ['title' => 'Administration'])->name('administration.index');
+
+    // Step 05 — identity, organization, and access administration. Every page
+    // authorizes on mount and every Livewire action authorizes again.
+    Route::prefix('administration')->name('administration.')->group(function () {
+        Route::livewire('/', 'pages::administration.index')->name('index');
+        Route::livewire('organization', 'pages::administration.organization')->name('organization');
+        Route::livewire('employees', 'pages::administration.employees')->name('employees');
+        Route::livewire('employees/{employee}', 'pages::administration.employee-show')->name('employees.show');
+        Route::livewire('accounts', 'pages::administration.accounts')->name('accounts');
+        Route::livewire('roles', 'pages::administration.roles')->name('roles');
+        Route::livewire('delegations', 'pages::administration.delegations')->name('delegations');
+        Route::livewire('access-review', 'pages::administration.access-review')->name('access-review');
+    });
 });
 
 require __DIR__.'/settings.php';
