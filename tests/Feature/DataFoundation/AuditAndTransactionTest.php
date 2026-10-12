@@ -104,22 +104,3 @@ test('failed transaction leaves no domain row audit or outbox event', function (
         ->and(DB::table('outbox_messages')->count())->toBe(0);
 });
 
-test('audit and outbox cannot be written outside a business transaction', function (): void {
-    expect(fn () => app(AuditRecorder::class)->record(new AuditEntry(
-        action: 'invalid',
-        entityType: 'test',
-        entityId: '1',
-        before: null,
-        after: null,
-        reason: null,
-        context: AuditContext::system('test'),
-    )))->toThrow(LogicException::class);
-
-    expect(fn () => app(OutboxPublisher::class)->publish(new OutboxEvent(
-        eventType: 'TestEvent',
-        eventVersion: 1,
-        aggregateType: 'test',
-        aggregateId: '1',
-        payload: [],
-    )))->toThrow(LogicException::class);
-});

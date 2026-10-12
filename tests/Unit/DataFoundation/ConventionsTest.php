@@ -31,7 +31,7 @@ test('effective periods are half open and reject overlap correctly', function ()
 });
 
 test('state transition guard owns no workflow and rejects an unknown edge', function (): void {
-    $guard = new StateTransitionGuard();
+    $guard = new StateTransitionGuard;
     $transitions = ['draft' => ['submitted'], 'submitted' => ['approved', 'rejected']];
 
     $guard->assertAllowed('draft', 'submitted', $transitions);

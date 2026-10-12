@@ -24,7 +24,7 @@ test('outbox payload is sanitized and successful delivery is processed once', fu
         ),
     ));
 
-    $consumer = new RecordingOutboxConsumer();
+    $consumer = new RecordingOutboxConsumer;
     $processor = new OutboxProcessor(new OutboxConsumerRegistry([$consumer]));
 
     $processor->process($message->public_id);

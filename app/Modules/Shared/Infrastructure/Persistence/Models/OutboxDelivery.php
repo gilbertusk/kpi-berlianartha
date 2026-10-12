@@ -4,14 +4,15 @@ declare(strict_types=1);
 
 namespace App\Modules\Shared\Infrastructure\Persistence\Models;
 
+use Carbon\CarbonImmutable;
 use Illuminate\Database\Eloquent\Model;
 
 /**
  * @property int $id
  * @property int $outbox_message_id
  * @property string $consumer_name
- * @property \Carbon\CarbonImmutable|null $processed_at
- * @property \Carbon\CarbonImmutable|null $created_at
+ * @property CarbonImmutable|null $processed_at
+ * @property CarbonImmutable|null $created_at
  */
 final class OutboxDelivery extends Model
 {

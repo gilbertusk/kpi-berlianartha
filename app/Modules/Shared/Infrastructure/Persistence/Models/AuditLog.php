@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Modules\Shared\Infrastructure\Persistence\Models;
 
+use Carbon\CarbonImmutable;
 use App\Modules\Shared\Infrastructure\Persistence\Concerns\HasPublicUlid;
 use Illuminate\Database\Eloquent\Model;
 use LogicException;
@@ -14,8 +15,8 @@ use LogicException;
  * @property array<string, mixed>|null $actor_scope
  * @property array<string, mixed>|null $before_values
  * @property array<string, mixed>|null $after_values
- * @property \Carbon\CarbonImmutable $occurred_at
- * @property \Carbon\CarbonImmutable $created_at
+ * @property CarbonImmutable $occurred_at
+ * @property CarbonImmutable $created_at
  */
 final class AuditLog extends Model
 {

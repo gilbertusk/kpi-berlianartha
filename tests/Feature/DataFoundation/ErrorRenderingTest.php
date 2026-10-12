@@ -17,5 +17,6 @@ test('safe domain errors render stable JSON without an internal exception messag
         ->assertJsonPath('error.message', 'Data telah berubah. Muat ulang halaman sebelum mencoba kembali.')
         ->assertJsonPath('error.context.expected_version', 2)
         ->assertJsonMissing(['exception'])
+        ->assertDontSee('secret-internal-id')
         ->assertDontSee('Stack trace');
 });

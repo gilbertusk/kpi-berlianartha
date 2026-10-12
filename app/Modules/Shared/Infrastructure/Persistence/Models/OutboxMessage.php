@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Modules\Shared\Infrastructure\Persistence\Models;
 
+use Carbon\CarbonImmutable;
 use App\Modules\Shared\Application\Outbox\OutboxEnvelope;
 use App\Modules\Shared\Infrastructure\Persistence\Concerns\HasPublicUlid;
 use Illuminate\Database\Eloquent\Model;
@@ -19,10 +20,10 @@ use Illuminate\Database\Eloquent\Model;
  * @property array<string, mixed> $headers
  * @property string $payload_hash
  * @property int $attempts
- * @property \Carbon\CarbonImmutable $occurred_at
- * @property \Carbon\CarbonImmutable $available_at
- * @property \Carbon\CarbonImmutable|null $processed_at
- * @property \Carbon\CarbonImmutable|null $failed_at
+ * @property CarbonImmutable $occurred_at
+ * @property CarbonImmutable $available_at
+ * @property CarbonImmutable|null $processed_at
+ * @property CarbonImmutable|null $failed_at
  */
 final class OutboxMessage extends Model
 {

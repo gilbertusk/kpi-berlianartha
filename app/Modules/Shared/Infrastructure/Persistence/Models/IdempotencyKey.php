@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Modules\Shared\Infrastructure\Persistence\Models;
 
+use Carbon\CarbonImmutable;
 use Illuminate\Database\Eloquent\Model;
 
 /**
@@ -13,8 +14,8 @@ use Illuminate\Database\Eloquent\Model;
  * @property string $request_fingerprint
  * @property string $status
  * @property array<string, mixed>|null $response_payload
- * @property \Carbon\CarbonImmutable|null $expires_at
- * @property \Carbon\CarbonImmutable|null $completed_at
+ * @property CarbonImmutable|null $expires_at
+ * @property CarbonImmutable|null $completed_at
  */
 final class IdempotencyKey extends Model
 {

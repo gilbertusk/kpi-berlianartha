@@ -8,7 +8,7 @@ use App\Modules\Shared\Domain\ErrorCode;
 use App\Modules\Shared\Domain\Exceptions\ConcurrencyConflict;
 
 test('error mapper exposes only the safe concurrency presentation', function (): void {
-    $presentation = (new ExceptionMapper())->map(
+    $presentation = (new ExceptionMapper)->map(
         new ConcurrencyConflict('object', 'internal-42', 3),
     );
 
@@ -32,7 +32,7 @@ test('unexpected exception details are never presented to the user', function ()
 });
 
 test('audit sanitizer redacts nested secrets and truncates oversized strings', function (): void {
-    $sanitized = (new AuditPayloadSanitizer())->sanitize([
+    $sanitized = (new AuditPayloadSanitizer)->sanitize([
         'email' => 'employee@example.test',
         'password' => 'secret-value',
         'nested' => [
