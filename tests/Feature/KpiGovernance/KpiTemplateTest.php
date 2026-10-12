@@ -59,16 +59,16 @@ test('items of a published template are immutable, even through direct SQL', fun
     expect(AccessFixtures::violatedRule(fn () => $this->templates->updateItem($this->kpi->authorActor(), $item->id, $published->lock_version, '50', null, true, null)))
         ->toBe('version_not_editable');
 
-    expect(fn () => DB::table('kpi_template_items')->where('id', $item->id)->update(['weight' => '50.0000']))->toThrow(QueryException::class)
-        ->and(fn () => DB::table('kpi_template_items')->where('id', $item->id)->delete())->toThrow(QueryException::class)
-        ->and(fn () => DB::table('kpi_template_items')->insert([
+    expect(fn () => DB::transaction(fn () => DB::table('kpi_template_items')->where('id', $item->id)->update(['weight' => '50.0000'])))->toThrow(QueryException::class)
+        ->and(fn () => DB::transaction(fn () => DB::table('kpi_template_items')->where('id', $item->id)->delete()))->toThrow(QueryException::class)
+        ->and(fn () => DB::transaction(fn () => DB::table('kpi_template_items')->insert([
             'public_id' => '01KTESTITEM000000000000000',
             'kpi_template_version_id' => $published->id,
             'kpi_definition_version_id' => $kpi->id,
             'weight' => '10.0000',
             'sort_order' => 9,
             'is_mandatory' => true,
-        ]))->toThrow(QueryException::class);
+        ])))->toThrow(QueryException::class);
 
     expect($item->fresh()?->weight)->toBe('100.0000');
 });

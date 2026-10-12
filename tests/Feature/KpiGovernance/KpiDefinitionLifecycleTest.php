@@ -54,13 +54,13 @@ test('a published version cannot be edited by the service or by direct SQL', fun
     expect(AccessFixtures::violatedRule(fn () => $this->service->updateDraft($this->kpi->authorActor(), $published->id, $published->lock_version, ['name' => 'Diubah'])))
         ->toBe('version_not_editable');
 
-    expect(fn () => DB::table('kpi_definition_versions')->where('id', $published->id)->update(['name' => 'Diubah langsung']))
+    expect(fn () => DB::transaction(fn () => DB::table('kpi_definition_versions')->where('id', $published->id)->update(['name' => 'Diubah langsung'])))
         ->toThrow(QueryException::class);
 
-    expect(fn () => DB::table('kpi_definition_versions')->where('id', $published->id)->update(['status' => 'draft']))
+    expect(fn () => DB::transaction(fn () => DB::table('kpi_definition_versions')->where('id', $published->id)->update(['status' => 'draft'])))
         ->toThrow(QueryException::class);
 
-    expect(fn () => DB::table('kpi_definition_versions')->where('id', $published->id)->delete())
+    expect(fn () => DB::transaction(fn () => DB::table('kpi_definition_versions')->where('id', $published->id)->delete()))
         ->toThrow(QueryException::class);
 
     expect($published->fresh()?->name)->toBe('KPI PROD-IMMUTABLE')
@@ -71,7 +71,7 @@ test('content under review is frozen as well', function (): void {
     $draft = $this->kpi->draftDefinition('PROD-REVIEW');
     $this->service->submitForReview($this->kpi->authorActor(), $draft->id, $draft->lock_version);
 
-    expect(fn () => DB::table('kpi_definition_versions')->where('id', $draft->id)->update(['target_rule' => 'Diubah saat review']))
+    expect(fn () => DB::transaction(fn () => DB::table('kpi_definition_versions')->where('id', $draft->id)->update(['target_rule' => 'Diubah saat review'])))
         ->toThrow(QueryException::class);
 });
 
