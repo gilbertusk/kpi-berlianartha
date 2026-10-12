@@ -5,6 +5,14 @@
 /bootstrap/cache/*.php
 /storage/*.key
 /storage/logs/*.log
+/storage/pail/
+/public/storage
+/public/fonts-manifest.dev.json
+/database/*.sqlite
+/database/*.sqlite-journal
+.phpactor.json
+Homestead.json
+Homestead.yaml
 
 # Environment and secrets
 .env
@@ -32,6 +40,9 @@ pnpm-debug.log*
 # Editors and operating systems
 /.idea/
 /.vscode/
+/.fleet/
+/.nova/
+/.zed/
 .DS_Store
 Thumbs.db
 Desktop.ini

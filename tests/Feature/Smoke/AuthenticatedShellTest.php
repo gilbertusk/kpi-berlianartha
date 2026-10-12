@@ -1,0 +1,49 @@
+<?php
+
+declare(strict_types=1);
+
+use App\Models\User;
+
+it('shows the dashboard placeholder to an authenticated user', function (): void {
+    $this->actingAs(User::factory()->create());
+
+    $this->get(route('dashboard'))
+        ->assertOk()
+        ->assertSee('Data KPI belum dikonfigurasi')
+        ->assertSee('Lewati ke konten utama')
+        ->assertSee('<main id="main-content"', escape: false);
+});
+
+it('renders the main navigation placeholders', function (): void {
+    $this->actingAs(User::factory()->create());
+
+    $response = $this->get(route('dashboard'))->assertOk();
+
+    foreach (config('navigation.main') as $item) {
+        $response->assertSee($item['label'])
+            ->assertSee(route($item['route']), escape: false);
+    }
+
+    expect(array_column(config('navigation.main'), 'label'))
+        ->toBe(['Dashboard', 'KPI', 'Approval', 'Reports', 'Administration']);
+});
+
+it('shows a no-data placeholder for modules that are not implemented yet', function (string $routeName, string $title): void {
+    $this->actingAs(User::factory()->create());
+
+    $this->get(route($routeName))
+        ->assertOk()
+        ->assertSeeInOrder(['<main id="main-content"', '<h1', $title, '</h1>'], escape: false)
+        ->assertSee('Modul belum tersedia');
+})->with([
+    ['kpi.index', 'KPI'],
+    ['approvals.index', 'Approval'],
+    ['reports.index', 'Reports'],
+    ['administration.index', 'Administration'],
+]);
+
+it('requires a verified email before opening the dashboard', function (): void {
+    $this->actingAs(User::factory()->unverified()->create());
+
+    $this->get(route('dashboard'))->assertRedirect(route('verification.notice'));
+});
