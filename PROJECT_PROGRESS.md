@@ -208,3 +208,118 @@ Verifikasi tambahan:
 
 - Step 03 (infrastruktur lokal dan CI) boleh dimulai: Docker Compose, runtime PostgreSQL/Redis/object storage/mail, dan GitHub Actions dengan gate nyata.
 - Business modules tetap menunggu Step 04+ dan keputusan pada decision register.
+
+## 2026-10-12 — Step 03 Infrastruktur Lokal dan CI
+
+**Status:** PARTIAL — seluruh validasi lokal (Docker build, Compose dari checkout bersih, test PostgreSQL/Redis, smoke, persistensi, scan) lulus; bukti run GitHub Actions untuk commit ini baru tersedia setelah push dan dicatat pada addendum di bawah.
+
+### Git preflight
+
+- `git pull --ff-only origin main`: already up to date. SHA awal Step 03: `3cb179db0b753f8110e275ef10ff5f0e161f7a34` (= `origin/main`).
+- Working tree bersih sebelum mulai.
+
+### Scope selesai
+
+- `Dockerfile` multi-stage dengan target berikut:
+  - `development`: PHP-FPM + Composer, untuk Compose dengan bind mount.
+  - `production`: image immutable non-root. Image yang sama menjalankan web (`php-fpm`), worker (`queue:work`), dan scheduler (`schedule:work`).
+  - `http`: nginx berisi `public/` dari build yang sama.
+- Base image: `php:8.4.25-fpm-trixie` dengan ekstensi bcmath, intl, pcntl, pdo_pgsql, pgsql, redis, dan zip, plus `apt-get upgrade` untuk patch keamanan OS. Production memakai Composer `--no-dev` dengan classmap authoritative, Vite build di stage Node 24.15.0, opcache tanpa revalidate, dan `php artisan optimize` saat start (`APP_OPTIMIZE`). Migration tidak berjalan otomatis.
+- `compose.yaml` development dengan service:
+  - `app` (php-fpm);
+  - `worker` dan `scheduler`;
+  - `nginx` (`127.0.0.1:8088`);
+  - PostgreSQL 18.6 dan Redis 8.2.10 (keduanya tidak dipublish ke host);
+  - SeaweedFS 4.48 S3-compatible (`127.0.0.1:8333`, bucket privat dibuat otomatis);
+  - Mailpit v1.31.3 (`127.0.0.1:8025`);
+  - `assets` (one-shot Vite build).
+- Compose memakai named volume (`postgres-data`, `redis-data`, `seaweedfs-data`, `vendor`, `node-modules`, `view-cache`) dan healthcheck yang bermakna: FastCGI ping, `/health` via nginx, `pg_isready`, `redis-cli ping`, S3 `/healthz`, `mailpit readyz`, serta heartbeat worker/scheduler.
+- Tooling operasional (CLI, tidak publik):
+  - `ops:readiness`: database, cache, dan round-trip object storage, tanpa mencetak credential atau pesan exception;
+  - `ops:queue-smoke`: job percobaan harus diproses tepat satu kali;
+  - `ops:heartbeat`: heartbeat worker lewat event `Looping`, heartbeat scheduler dijadwalkan tiap menit.
+- `scripts/dev.sh` dan `scripts/dev.ps1` menyediakan perintah: bootstrap, up/down/ps/logs, migrate, seed, test, test-pgsql, lint, analyse, build, queue-check, readiness, smoke, dan reset-db.
+  - `bootstrap` membuat secret lokal acak hanya bila kosong.
+  - `reset-db` hanya untuk `APP_ENV=local` + PostgreSQL Compose, dengan konfirmasi nama database.
+- Guard test: `TestCase::createApplication()` menolak database selain SQLite `:memory:` atau `*_test`, sehingga `RefreshDatabase` tidak dapat menghapus database development.
+- GitHub Actions `.github/workflows/ci.yml`. Semua action dipin ke SHA dan `permissions: contents: read`. Job:
+  - `php-quality`;
+  - `tests` (PostgreSQL 18 + Redis, migrate/rollback rehearsal, readiness, queue smoke);
+  - `frontend`;
+  - `docker-image` (hygiene, runtime smoke, Trivy fixable CRITICAL/HIGH, SBOM CycloneDX);
+  - `compose-smoke` (bootstrap dari checkout bersih, test-pgsql, persistensi).
+- `.github/dependabot.yml` untuk composer, npm, github-actions, docker, dan docker-compose.
+- Dokumentasi:
+  - `docs/operations/LOCAL_ENVIRONMENT.md` (Windows dev, Linux deployment, port, volume, troubleshooting, bukti sehat);
+  - `MIGRATION_POLICY.md`;
+  - `DEPENDENCY_POLICY.md`;
+  - `CI_PIPELINE.md`;
+  - README dan `APPLICATION_STRUCTURE.md` diperbarui.
+
+### Dependency baru
+
+- `league/flysystem-aws-s3-v3` ^3.0 (beserta `aws/aws-sdk-php`): driver disk S3 untuk object storage privat (ADR-0004) dan bukti readiness storage. Service AWS SDK yang tidak dipakai dibuang lewat `Aws\Script\Composer\Composer::removeUnusedServices` (`extra.aws/aws-sdk-php = ["S3"]`), sehingga vendor AWS turun dari 76 MB ke 5 MB.
+- Image pihak ketiga (development/CI): `chrislusf/seaweedfs:4.48`, `axllent/mailpit:v1.31.3`, `aquasec/trivy:0.74.0`, `mlocati/php-extension-installer:2.11.34`. MinIO tidak dipakai karena distribusi image komunitasnya tidak lagi diterbitkan berkala.
+
+### Command validasi dan hasil aktual
+
+| # | Command | Exit | Hasil |
+|---|---|---:|---|
+| 1 | `docker build --target production` | 0 | Image ±886 MB (Docker Desktop, tidak dikompresi; base `php:8.4.25-fpm-trixie` ±710 MB), ±198 MB terkompresi (gzip) |
+| 2 | `docker build --target http` | 0 | ±107 MB, ±28 MB terkompresi |
+| 3 | Hygiene image production | 0 | uid 33 (www-data); tanpa `.env`, `tests`, `node_modules`, Pest/Larastan/Pint, `docs`, `prompts`, `.git`; `app/` tidak writable |
+| 4 | Trivy 0.74.0 (fixable HIGH/CRITICAL) | 0 | app: 0 (sebelum `apt-get upgrade` ada 64 HIGH); http: 0 (sebelum `apk upgrade` ada 3 HIGH) |
+| 5 | SBOM CycloneDX | 0 | 285 komponen (image app) |
+| 6 | `bash scripts/dev.sh bootstrap` (repo kerja) | 0 | 8 service healthy, migration PostgreSQL OK, smoke OK |
+| 7 | `bootstrap` dari checkout bersih (`git checkout-index`, project `kpi-clean`) | 0 | Composer install dan Vite build di container, 8 service healthy, migration dan smoke OK, `/login` 200 dan CSS 200 |
+| 8 | `smoke` | 0 | `/health` → `{"status":"ok"}`; readiness database/cache/storage OK; bucket anonim HTTP 403; queue smoke "diproses tepat 1 kali"; heartbeat worker dan scheduler sehat |
+| 9 | `test` (container, SQLite) | 0 | 96 passed, 3 skipped, 268 assertions |
+| 10 | `test-pgsql` (container, PostgreSQL `kpi_test` + Redis) | 0 | 96 passed, 3 skipped, 268 assertions |
+| 11 | `lint` / `analyse` (container) | 0 / 0 | Pint passed; Larastan 0 error |
+| 12 | Persistensi | 0 | User, object S3, dan key Redis masih ada setelah `docker compose down` + `up` (tanpa `--volumes`); marker dibersihkan |
+| 13 | `reset-db` | 1 / 0 | Konfirmasi salah ditolak (exit 1); `KPI_CONFIRM_RESET=kpi_berlianartha` menjalankan `migrate:fresh` |
+| 14 | Runtime image production (web + http + worker di jaringan Compose) | 0 | `/health` 200, `/login` 200 (0,17 dtk), asset 200, `/.env` 403, `*.php` lain 404; readiness OK; queue smoke tepat 1 kali; config/routes/views/events CACHED; debug OFF |
+| 15 | Host: `composer validate --strict`, `composer audit`, `npm audit --audit-level=high`, Pint, Larastan, `php artisan test`, `npm run build` | 0 semua | test 96 passed, 3 skipped |
+| 16 | `actionlint` 1.7.7 | 0 | workflow valid (1 warning shellcheck diperbaiki) |
+| 17 | Inspeksi log container | — | Tidak ada error di app/worker/scheduler/nginx/postgres. Peringatan yang bersifat informatif: Mailpit API tanpa auth (port hanya 127.0.0.1); SeaweedFS election leader saat start |
+| 18 | GitHub Actions run untuk commit Step 03 | — | Belum tersedia saat commit dibuat (lihat addendum) |
+
+Temuan yang diperbaiki selama validasi:
+
+- **Port 8080 bentrok di mesin pengembang**, sehingga default diubah ke 8088 dan dapat diatur lewat `APP_PORT`.
+- **Bind mount Windows sangat lambat:** `/login` timeout 60 detik dan `php artisan` butuh ±12 detik. `vendor/` dan compiled views dipindah ke named volume; `/login` turun ke ±0,3 detik.
+- **Heartbeat tidak pernah dianggap segar di Redis**, karena Redis mengembalikan angka sebagai string. Diperbaiki, dan tertangkap oleh run `test-pgsql`.
+- **Test bergantung state Redis bersama.** Test heartbeat sekarang memakai cache bersih dan token UUID acak.
+- **Curl `-o /dev/null` gagal di Git Bash** bila `MSYS_NO_PATHCONV=1`. Diganti dengan cara lain.
+- **`schedule:list` di CI butuh cache.** Langkah itu sekarang memakai `CACHE_STORE=array`; masalah ini ditemukan saat verifikasi lokal.
+
+Code review (agent code-reviewer) tidak menemukan temuan Critical/High. Yang diperbaiki:
+
+- baris `FROM` literal, agar Dependabot dapat memperbarui base image;
+- listener heartbeat tidak lagi dapat menghentikan worker;
+- header keamanan nginx pada `/build/`;
+- service `assets` berjalan non-root, dengan mount minimal dan `node_modules` di tmpfs;
+- healthcheck PostgreSQL memakai `pg_isready -h 127.0.0.1`;
+- batas heartbeat worker menjadi 120 detik;
+- `cancel-in-progress` tidak berlaku untuk `main`;
+- nama artifact SBOM unik per attempt;
+- dokumentasi: port 9000, password PostgreSQL setelah `.env` dibuat ulang, dan output readiness.
+
+Setelah perbaikan di atas, seluruh validasi lokal yang terdampak dijalankan ulang dan lulus: build dev/production/http, assets, smoke, test SQLite dan PostgreSQL, Pint, Larastan, actionlint, Trivy, dan runtime image production.
+
+### Keputusan/asumsi
+
+- Worker memakai `queue:work`. Laravel Horizon ditunda karena dashboard-nya membutuhkan authorization (Step 05) dan observability (Step 18).
+- SeaweedFS hanya pilihan development/CI; provider object storage production tetap DEC-014.
+- Kredensial lokal dibuat acak oleh script dan disimpan hanya di `.env` yang di-ignore. CI memakai service efemeral tanpa secret repository.
+- Image menerapkan `apt-get upgrade`/`apk upgrade`; artifact diidentifikasi lewat digest (`DEPENDENCY_POLICY.md`).
+- Tidak ada tabel, seed, atau logic bisnis KPI yang ditambahkan.
+
+### Blocker / belum dibuktikan
+
+- Deployment Linux/production, TLS, secret manager, backup/restore, dan HA belum dijalankan; hanya didokumentasikan (Step 18, DEC-014).
+- Image production belum dipush ke registry (provider belum diputuskan).
+
+### Gate berikutnya
+
+- Step 04 (fondasi data, audit, dan transaksi) dapat dimulai di atas lingkungan Compose dan CI ini.

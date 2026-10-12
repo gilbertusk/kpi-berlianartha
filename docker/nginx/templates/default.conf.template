@@ -1,0 +1,46 @@
+# Rendered by the official nginx image (envsubst) into /etc/nginx/conf.d/default.conf.
+# Only ${PHP_FPM_UPSTREAM} is substituted; nginx runtime variables stay untouched.
+server {
+    listen 80 default_server;
+    server_name _;
+    root /var/www/html/public;
+    index index.php;
+    charset utf-8;
+
+    server_tokens off;
+    client_max_body_size 12m;
+
+    add_header X-Content-Type-Options "nosniff" always;
+    add_header X-Frame-Options "SAMEORIGIN" always;
+    add_header Referrer-Policy "strict-origin-when-cross-origin" always;
+
+    location / {
+        try_files $uri $uri/ /index.php?$query_string;
+    }
+
+    location = /favicon.ico { access_log off; log_not_found off; }
+    location = /robots.txt  { access_log off; log_not_found off; }
+
+    # add_header in a location replaces inherited headers, so repeat them here.
+    location /build/ {
+        access_log off;
+        add_header Cache-Control "public, max-age=31536000, immutable" always;
+        add_header X-Content-Type-Options "nosniff" always;
+        add_header X-Frame-Options "SAMEORIGIN" always;
+        add_header Referrer-Policy "strict-origin-when-cross-origin" always;
+        try_files $uri =404;
+    }
+
+    location = /index.php {
+        fastcgi_pass ${PHP_FPM_UPSTREAM};
+        fastcgi_param SCRIPT_FILENAME $realpath_root$fastcgi_script_name;
+        fastcgi_param DOCUMENT_ROOT $realpath_root;
+        include fastcgi_params;
+        fastcgi_hide_header X-Powered-By;
+        fastcgi_read_timeout 60s;
+    }
+
+    # Never execute or serve any other PHP file, dotfile, or source artifact.
+    location ~ \.php$ { return 404; }
+    location ~ /\.(?!well-known).* { deny all; }
+}

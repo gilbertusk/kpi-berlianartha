@@ -2,11 +2,31 @@
 
 namespace Tests;
 
+use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Testing\TestCase as BaseTestCase;
 use Laravel\Fortify\Features;
+use Tests\Support\TestDatabaseGuard;
 
 abstract class TestCase extends BaseTestCase
 {
+    /**
+     * Creates the application and refuses non-test databases before any
+     * RefreshDatabase migration can run.
+     */
+    public function createApplication(): Application
+    {
+        $app = parent::createApplication();
+
+        $connection = (string) $app['config']->get('database.default');
+
+        TestDatabaseGuard::assertSafe(
+            (string) $app['config']->get("database.connections.{$connection}.driver"),
+            $app['config']->get("database.connections.{$connection}.database"),
+        );
+
+        return $app;
+    }
+
     protected function setUp(): void
     {
         parent::setUp();

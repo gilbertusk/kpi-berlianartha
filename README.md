@@ -6,13 +6,14 @@ Repository untuk pengembangan Sistem Manajemen KPI PT Berlian Artha Label.
 
 - Step 02 (bootstrap aplikasi): skeleton Laravel 13 + Livewire starter kit, application shell, UI primitives, halaman error, `/health`, dan smoke test.
 - **Business module belum diimplementasikan.** Tidak ada tabel, template, bobot, formula, target, approver, atau data KPI. Menu KPI, Approval, Reports, dan Administration hanya placeholder tanpa data.
-- Docker Compose, CI GitHub Actions, dan verifikasi runtime PostgreSQL/Redis/object storage adalah scope **Step 03** dan belum dibuktikan.
+- Step 03 (infrastruktur lokal dan CI): Dockerfile multi-stage, Docker Compose (nginx, php-fpm, worker, scheduler, PostgreSQL 18, Redis, S3-compatible SeaweedFS, Mailpit), script developer, dan GitHub Actions. Detail: `docs/operations/`.
 
 Artefak perencanaan:
 
 - PRD: `output/PRD_Sistem_KPI_PT_Berlian_Artha_Label.docx` (sumber: `scripts/build_prd.py`)
 - Decision register dan matrix: `docs/product/`
 - Arsitektur dan ADR: `docs/architecture/` (struktur kode: `docs/architecture/APPLICATION_STRUCTURE.md`)
+- Operasional: `docs/operations/` (lingkungan lokal, CI, migration policy, dependency policy)
 - Paket prompt implementasi: `prompts/ai-development/README.md`
 - Riwayat step: `PROJECT_PROGRESS.md`
 
@@ -21,12 +22,26 @@ Artefak perencanaan:
 - Laravel 13 dan PHP 8.4
 - Blade, Livewire 4 (starter kit resmi + Flux UI), Alpine.js, Tailwind CSS 4, dan Vite
 - PostgreSQL 18 (source of truth)
-- Redis untuk cache/queue (Horizon menyusul pada step terkait)
+- Redis untuk cache/queue (worker `queue:work`; Horizon dievaluasi setelah authorization tersedia)
 - S3-compatible private object storage untuk evidence/export
 - Pest (unit/feature), Playwright (disiapkan pada step testing)
-- Docker, Docker Compose, Nginx, PHP-FPM, dan GitHub Actions (Step 03)
+- Docker, Docker Compose, Nginx, PHP-FPM, dan GitHub Actions
 
-## Prasyarat development
+## Cara cepat: Docker Compose (direkomendasikan)
+
+Prasyarat: Docker (Docker Desktop di Windows) dan Git (Git Bash di Windows).
+
+```bash
+git clone https://github.com/gilbertusk/kpi-berlianartha.git
+cd kpi-berlianartha
+bash scripts/dev.sh bootstrap     # Windows PowerShell: .\scripts\dev.ps1 bootstrap
+```
+
+`bootstrap` membuat `.env` dengan secret lokal acak (hanya bila kosong), membangun image, menjalankan seluruh service sampai healthy, menjalankan migration, lalu smoke test. Aplikasi tersedia di <http://127.0.0.1:8088>, Mailpit di <http://127.0.0.1:8025>. Setelah itu cukup `docker compose up -d --wait`.
+
+Perintah lain: `bash scripts/dev.sh help`. Port, volume, deployment Linux, dan troubleshooting: `docs/operations/LOCAL_ENVIRONMENT.md`.
+
+## Prasyarat development tanpa Docker
 
 | Tool | Versi minimum | Catatan |
 |---|---|---|
@@ -34,11 +49,11 @@ Artefak perencanaan:
 | Composer | 2.x | |
 | Node.js | 22 LTS atau lebih baru | npm 10+ |
 | PostgreSQL | 18 | Target database |
-| Redis | 7+ | Target cache/queue; butuh ekstensi `phpredis` (disediakan image Docker Step 03) |
+| Redis | 7+ | Target cache/queue; butuh ekstensi `phpredis` (sudah tersedia di image Docker) |
 
 Pastikan `php --version` menampilkan 8.4 sebelum menjalankan perintah apa pun. Di Windows, letakkan direktori PHP 8.4 di urutan pertama `PATH` bila ada instalasi PHP lain (mis. XAMPP).
 
-## Instalasi dari checkout bersih
+## Instalasi tanpa Docker dari checkout bersih
 
 ```bash
 git clone https://github.com/gilbertusk/kpi-berlianartha.git
@@ -99,11 +114,17 @@ Provisioning akun, role, dan organization scope resmi adalah scope Step 05.
 | Audit dependency | `composer audit` dan `npm audit` |
 | Daftar route | `php artisan route:list` |
 
-Test memakai SQLite in-memory, cache `array`, dan queue `sync` (lihat `phpunit.xml`) sehingga dapat berjalan tanpa layanan eksternal. Integrasi dengan PostgreSQL/Redis diuji pada CI Step 03.
+Test memakai SQLite in-memory, cache `array`, dan queue `sync` (lihat `phpunit.xml`) sehingga dapat berjalan tanpa layanan eksternal. Suite yang sama dijalankan terhadap PostgreSQL + Redis dengan `bash scripts/dev.sh test-pgsql` dan di CI. Test menolak database selain SQLite `:memory:` atau `*_test`.
 
 ## Endpoint health
 
-`GET /health` mengembalikan `{"status":"ok"}` dengan `Cache-Control: no-store`, tanpa session/cookie dan tanpa informasi environment, versi, konfigurasi, atau dependency. Pemeriksaan database/Redis/storage yang mendalam adalah scope Step 03/18 dan tidak boleh dibuat publik.
+`GET /health` mengembalikan `{"status":"ok"}` dengan `Cache-Control: no-store`, tanpa session/cookie dan tanpa informasi environment, versi, konfigurasi, atau dependency.
+
+Pemeriksaan dependency hanya tersedia lewat CLI (tidak publik):
+
+- `php artisan ops:readiness --disk=s3` — database, cache, dan round-trip object storage;
+- `php artisan ops:queue-smoke` — job percobaan diproses tepat satu kali oleh worker;
+- `php artisan ops:heartbeat worker|scheduler --check` — heartbeat process (dipakai healthcheck container).
 
 ## Alur implementasi
 

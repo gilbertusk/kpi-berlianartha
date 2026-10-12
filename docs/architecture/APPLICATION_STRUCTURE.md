@@ -11,6 +11,7 @@ Aplikasi dibuat dari official Laravel Livewire starter kit (Laravel 13, Livewire
 |---|---|
 | `app/Http/Controllers/HealthController.php` | Liveness probe publik minimum (`GET /health`) |
 | `app/Actions/Fortify`, `app/Providers/FortifyServiceProvider.php` | Authentication lokal dari starter kit. Registrasi publik nonaktif melalui feature flag Fortify; kode registrasi upstream dibiarkan dorman sampai provisioning akun diputuskan (Step 05, DEC-013) |
+| `app/Support/Operations/Heartbeat.php`, `app/Console/Commands/Operations/*`, `app/Jobs/Operations/QueueSmokeJob.php` | Tooling operasional platform (Step 03): heartbeat worker/scheduler, `ops:readiness`, `ops:queue-smoke`. Bukan modul bisnis |
 | `config/navigation.php` | Definisi menu utama + hook `ability` untuk otorisasi Step 05 |
 | `resources/views/components/ui/` | UI primitives aplikasi |
 | `resources/views/layouts/` | Application shell (sidebar) dan auth layout |
@@ -64,4 +65,4 @@ Step 02 **sengaja tidak** membuat folder/class kosong untuk modul tersebut. Fold
 
 - Bahasa UI belum diputuskan: halaman Step 02 berbahasa Indonesia, sedangkan halaman auth/settings starter kit masih bahasa Inggris dan `APP_LOCALE=en` (atribut `lang="en"`). Keputusan bahasa dan file `lang/` diperlukan sebelum UAT (WCAG 3.1.1).
 - Test bawaan starter kit (`tests/Feature/Auth`, `tests/Feature/Settings`) masih bergaya kelas PHPUnit; test baru memakai sintaks Pest. Konversi otomatis `pest --drift` gagal di Windows.
-- Driver S3 (`league/flysystem-aws-s3-v3`) dan `phpredis` belum dipasang; ditambahkan bersama runtime Docker/object storage (Step 03/08).
+- Driver S3 (`league/flysystem-aws-s3-v3`) dan `phpredis` tersedia sejak Step 03 (phpredis di image Docker); disk khusus evidence/export dan aturan upload diputuskan pada Step 08.

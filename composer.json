@@ -14,6 +14,7 @@
         "laravel/fortify": "^1.37.2",
         "laravel/framework": "^13.17",
         "laravel/tinker": "^3.0",
+        "league/flysystem-aws-s3-v3": "^3.0",
         "livewire/blaze": "^1.0",
         "livewire/flux": "^2.13.1",
         "livewire/livewire": "^4.1"
@@ -74,6 +75,9 @@
             "@types:check",
             "@php artisan test"
         ],
+        "pre-autoload-dump": [
+            "Aws\\Script\\Composer\\Composer::removeUnusedServices"
+        ],
         "post-autoload-dump": [
             "Illuminate\\Foundation\\ComposerScripts::postAutoloadDump",
             "@php artisan package:discover --ansi"
@@ -99,7 +103,10 @@
             "installer": {
                 "post-create-project": []
             }
-        }
+        },
+        "aws/aws-sdk-php": [
+            "S3"
+        ]
     },
     "config": {
         "optimize-autoloader": true,

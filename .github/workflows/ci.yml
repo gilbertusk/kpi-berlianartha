@@ -1,0 +1,305 @@
+name: ci
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+# Least privilege: no job needs to write to the repository.
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: ${{ github.ref != 'refs/heads/main' }}
+
+env:
+  PHP_VERSION: "8.4"
+  PHP_EXTENSIONS: bcmath, intl, pcntl, pdo_pgsql, pgsql, redis, zip
+  NODE_VERSION: "24"
+  TRIVY_IMAGE: aquasec/trivy:0.74.0
+
+jobs:
+  php-quality:
+    name: PHP quality (validate, audit, format, static analysis)
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Setup PHP
+        uses: shivammathur/setup-php@f3e473d116dcccaddc5834248c87452386958240 # 2.37.2
+        with:
+          php-version: ${{ env.PHP_VERSION }}
+          extensions: ${{ env.PHP_EXTENSIONS }}
+          tools: composer:v2
+          coverage: none
+
+      - name: Composer cache directory
+        id: composer-cache
+        run: echo "dir=$(composer config cache-files-dir)" >> "$GITHUB_OUTPUT"
+
+      - name: Cache Composer downloads
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: ${{ steps.composer-cache.outputs.dir }}
+          key: composer-${{ runner.os }}-${{ hashFiles('composer.lock') }}
+          restore-keys: composer-${{ runner.os }}-
+
+      - name: Validate composer.json and composer.lock
+        run: composer validate --strict
+
+      - name: Install dependencies
+        run: composer install --no-interaction --prefer-dist --no-progress
+
+      - name: Composer security audit
+        run: composer audit
+
+      - name: Pint (format check)
+        run: vendor/bin/pint --test
+
+      - name: Larastan (static analysis)
+        run: vendor/bin/phpstan analyse --no-progress --memory-limit=1G
+
+  tests:
+    name: Tests (PostgreSQL 18 + Redis)
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    services:
+      postgres:
+        image: postgres:18.6-alpine
+        env:
+          POSTGRES_DB: kpi_test
+          POSTGRES_USER: kpi_ci
+          # Ephemeral CI-only service reachable from this job only.
+          POSTGRES_HOST_AUTH_METHOD: trust
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U kpi_ci -d kpi_test"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+      redis:
+        image: redis:8.2.10-alpine
+        ports:
+          - 6379:6379
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+    env:
+      DB_CONNECTION: pgsql
+      DB_HOST: 127.0.0.1
+      DB_PORT: "5432"
+      DB_DATABASE: kpi_test
+      DB_USERNAME: kpi_ci
+      DB_PASSWORD: ""
+      REDIS_HOST: 127.0.0.1
+      REDIS_PORT: "6379"
+      REDIS_CLIENT: phpredis
+      CACHE_STORE: redis
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Setup PHP
+        uses: shivammathur/setup-php@f3e473d116dcccaddc5834248c87452386958240 # 2.37.2
+        with:
+          php-version: ${{ env.PHP_VERSION }}
+          extensions: ${{ env.PHP_EXTENSIONS }}
+          tools: composer:v2
+          coverage: none
+
+      - name: Composer cache directory
+        id: composer-cache
+        run: echo "dir=$(composer config cache-files-dir)" >> "$GITHUB_OUTPUT"
+
+      - name: Cache Composer downloads
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: ${{ steps.composer-cache.outputs.dir }}
+          key: composer-${{ runner.os }}-${{ hashFiles('composer.lock') }}
+          restore-keys: composer-${{ runner.os }}-
+
+      - name: Install dependencies
+        run: composer install --no-interaction --prefer-dist --no-progress
+
+      - name: Prepare environment
+        run: |
+          cp .env.example .env
+          php artisan key:generate --no-interaction
+
+      - name: Migrate empty database and rehearse rollback
+        run: |
+          php artisan migrate --force --no-interaction
+          php artisan migrate:rollback --force --no-interaction
+          php artisan migrate --force --no-interaction
+
+      - name: Test suite (PostgreSQL + Redis cache)
+        run: php artisan test
+
+      - name: Readiness and queue smoke against real PostgreSQL/Redis
+        env:
+          QUEUE_CONNECTION: redis
+        run: |
+          php artisan ops:readiness --disk=local
+          php artisan queue:work redis --sleep=1 --tries=1 --max-time=120 > queue-worker.log 2>&1 &
+          worker_pid=$!
+          status=0
+          php artisan ops:queue-smoke --timeout=30 || status=$?
+          kill "$worker_pid" || true
+          cat queue-worker.log
+          exit "$status"
+
+  frontend:
+    name: Frontend (npm audit + production build)
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Setup PHP
+        uses: shivammathur/setup-php@f3e473d116dcccaddc5834248c87452386958240 # 2.37.2
+        with:
+          php-version: ${{ env.PHP_VERSION }}
+          extensions: ${{ env.PHP_EXTENSIONS }}
+          tools: composer:v2
+          coverage: none
+
+      - name: Install Composer dependencies (Flux CSS is imported by Vite)
+        run: composer install --no-dev --no-interaction --prefer-dist --no-progress
+
+      - name: Setup Node
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: npm
+
+      - name: Install npm dependencies
+        run: npm ci --no-fund
+
+      - name: npm security audit
+        run: npm audit --audit-level=high
+
+      - name: Production asset build
+        run: |
+          npm run build
+          test -f public/build/manifest.json
+
+  docker-image:
+    name: Docker image (build, hygiene, runtime smoke, scan, SBOM)
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Build production and http images
+        run: |
+          docker build --target production --tag kpi-app:ci .
+          docker build --target http --tag kpi-http:ci .
+          docker image ls --format '{{.Repository}}:{{.Tag}} {{.Size}}' | grep -E '^kpi-(app|http):ci'
+
+      - name: Image hygiene (no secrets, tests, or dev dependencies)
+        run: |
+          docker run --rm --entrypoint sh kpi-app:ci -c '
+            set -e
+            test "$(id -u)" = "33"
+            for path in .env tests phpunit.xml node_modules vendor/pestphp vendor/larastan vendor/laravel/pint docs prompts .git; do
+              if [ -e "$path" ]; then echo "unexpected: $path"; exit 1; fi
+            done
+            test -f public/build/manifest.json
+            if touch app/write-test 2>/dev/null; then echo "application code is writable"; exit 1; fi
+          '
+
+      - name: Runtime smoke (web + nginx)
+        run: |
+          docker network create kpi-ci
+          docker run -d --name web --network kpi-ci \
+            -e APP_KEY="base64:$(openssl rand -base64 32)" \
+            -e DB_CONNECTION=sqlite -e DB_DATABASE=:memory: \
+            -e CACHE_STORE=array -e SESSION_DRIVER=array -e QUEUE_CONNECTION=sync \
+            kpi-app:ci
+          docker run -d --name http --network kpi-ci -e PHP_FPM_UPSTREAM=web:9000 -p 127.0.0.1:8080:80 kpi-http:ci
+          for _ in $(seq 1 30); do
+            docker exec web fpm-healthcheck && break
+            sleep 2
+          done
+          test "$(curl -fsS http://127.0.0.1:8080/health)" = '{"status":"ok"}'
+          curl -fsS -o /dev/null http://127.0.0.1:8080/login
+          curl -fsS -o /dev/null http://127.0.0.1:8080/build/manifest.json
+          test "$(curl -s -o /dev/null -w '%{http_code}' http://127.0.0.1:8080/.env)" = "403"
+          docker run --rm -e APP_KEY="base64:$(openssl rand -base64 32)" -e CACHE_STORE=array kpi-app:ci php artisan schedule:list | grep -q "ops:heartbeat scheduler"
+
+      - name: Container logs
+        if: always()
+        run: |
+          docker logs web || true
+          docker logs http || true
+
+      - name: Vulnerability scan (fail on fixable CRITICAL/HIGH)
+        run: |
+          for image in kpi-app:ci kpi-http:ci; do
+            docker run --rm -v /var/run/docker.sock:/var/run/docker.sock "$TRIVY_IMAGE" image \
+              --scanners vuln --severity CRITICAL,HIGH --ignore-unfixed --exit-code 1 --no-progress "$image"
+          done
+
+      - name: Generate SBOM (CycloneDX)
+        run: |
+          mkdir -p sbom
+          docker run --rm -v /var/run/docker.sock:/var/run/docker.sock "$TRIVY_IMAGE" image \
+            --format cyclonedx --no-progress kpi-app:ci > sbom/kpi-app.cdx.json
+          docker run --rm -v /var/run/docker.sock:/var/run/docker.sock "$TRIVY_IMAGE" image \
+            --format cyclonedx --no-progress kpi-http:ci > sbom/kpi-http.cdx.json
+
+      - name: Upload SBOM
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: sbom-${{ github.sha }}-${{ github.run_attempt }}
+          path: sbom/
+          retention-days: 30
+
+  compose-smoke:
+    name: Docker Compose environment (bootstrap, health, queue, PostgreSQL tests)
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Bootstrap (generated .env, build, up --wait, migrate, smoke)
+        run: bash scripts/dev.sh bootstrap
+
+      - name: Test suite inside the stack (PostgreSQL kpi_test + Redis)
+        run: bash scripts/dev.sh test-pgsql
+
+      - name: Persistence across container recreation
+        run: |
+          docker compose exec -T app php artisan tinker --execute='App\Models\User::factory()->create(["email" => "ci-persist@example.test"]);'
+          docker compose down
+          docker compose up -d --wait
+          count="$(docker compose exec -T app php artisan tinker --execute='echo App\Models\User::where("email", "ci-persist@example.test")->count();' | tail -n 1 | tr -d '\r')"
+          test "$count" = "1"
+
+      - name: Service logs
+        if: always()
+        run: docker compose logs --no-color --tail=200
+
+      - name: Tear down
+        if: always()
+        run: docker compose down --volumes --remove-orphans

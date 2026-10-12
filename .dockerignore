@@ -1,0 +1,65 @@
+# Keep the build context small and free of secrets, local state, and
+# development-only material. docker/ must stay included (copied by Dockerfile).
+.git
+.github
+.gitattributes
+.editorconfig
+.idea
+.vscode
+.fleet
+.nova
+.zed
+.claude
+
+# Environment and secrets
+.env
+.env.*
+!.env.example
+auth.json
+
+# Dependencies and build output (rebuilt inside the image)
+vendor
+node_modules
+public/build
+public/hot
+public/storage
+
+# Runtime state
+storage/logs/*
+!storage/logs/.gitignore
+storage/framework/cache/data/*
+!storage/framework/cache/data/.gitignore
+storage/framework/sessions/*
+!storage/framework/sessions/.gitignore
+storage/framework/testing/*
+!storage/framework/testing/.gitignore
+storage/framework/views/*
+!storage/framework/views/.gitignore
+storage/app/private/*
+!storage/app/private/.gitignore
+storage/app/public/*
+!storage/app/public/.gitignore
+storage/pail
+bootstrap/cache/*.php
+database/*.sqlite*
+
+# Tests, tooling, and documentation (not part of the runtime)
+tests
+phpunit.xml
+phpstan.neon
+pint.json
+coverage
+playwright-report
+test-results
+.phpunit.cache
+.phpunit.result.cache
+docs
+prompts
+output
+scripts
+tmp
+*.md
+compose.yaml
+compose.*.yaml
+Dockerfile
+.dockerignore
