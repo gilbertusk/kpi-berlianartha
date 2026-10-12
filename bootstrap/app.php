@@ -1,9 +1,12 @@
 <?php
 
 use App\Http\Controllers\HealthController;
+use App\Modules\Shared\Application\Errors\ExceptionMapper;
+use App\Modules\Shared\Domain\Exceptions\SafeDomainException;
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 
@@ -23,4 +26,20 @@ return Application::configure(basePath: dirname(__DIR__))
         $exceptions->shouldRenderJsonWhen(
             fn (Request $request) => $request->is('api/*') || $request->expectsJson(),
         );
+
+        $exceptions->render(function (SafeDomainException $exception, Request $request): ?JsonResponse {
+            if (! ($request->is('api/*') || $request->expectsJson())) {
+                return null;
+            }
+
+            $error = app(ExceptionMapper::class)->map($exception);
+
+            return response()->json([
+                'error' => [
+                    'code' => $error->code->value,
+                    'message' => $error->message,
+                    'context' => $error->context,
+                ],
+            ], $error->httpStatus);
+        });
     })->create();
