@@ -803,3 +803,29 @@ Temuan sebelum commit sudah diperbaiki dan diuji:
 
 - Commit dan push Step 06 ke `origin/main`, lalu tunggu seluruh GitHub Actions lulus dan catat addendum PASS.
 - Setelah CI Step 06 lulus, Step 07 dapat dimulai. Penggunaan KPI/template sebagai konfigurasi resmi tetap diblokir sampai DEC-003/004/005/006 memiliki sign-off yang diperlukan.
+
+### Addendum 2026-10-12 — bukti GitHub Actions Step 06
+
+**Status Step 06 diperbarui:** PASS untuk scope implementasi.
+
+- **Commit tervalidasi:** `e053044aac5bca1ce8f42a2511444b546b40096d` pada `origin/main`.
+- **CI:** GitHub Actions run [`38275002475`](https://github.com/gilbertusk/kpi-berlianartha/actions/runs/38275002475) berakhir dengan conclusion `success`.
+- **Kandidat PRD:** 252 tetap `DRAFT`; KPI kandidat dan template resmi yang dipublish otomatis tetap **0**.
+- **Batas runtime:** headroom test 512 MB dikonfigurasi khusus PHPUnit; batas PHP production tetap 256 MB.
+
+Kelima job CI lulus:
+
+| Job | Hasil | Bukti |
+|---|---|---|
+| PHP quality | success | Composer validate/audit, Pint, dan Larastan lulus |
+| Tests (PostgreSQL 18 + Redis) | success | Empty-database migrate → rollback → migrate, suite PostgreSQL/Redis, readiness, dan queue smoke lulus |
+| Frontend | success | `npm audit` dan production asset build lulus |
+| Docker image | success | Build, image hygiene, runtime smoke, scan fixable CRITICAL/HIGH, dan SBOM lulus |
+| Docker Compose | success | Bootstrap checkout bersih, suite dalam stack, persistensi setelah container recreation, serta teardown lulus |
+
+CI juga menemukan dua masalah portabilitas/infrastruktur yang telah diperbaiki sebelum status PASS:
+
+- assertion trigger PostgreSQL sekarang diisolasi dalam nested transaction/savepoint agar expected exception tidak mengaborsi transaksi test induk (`596c0c1`);
+- batas memori PHPUnit diterapkan pada proses Pest/PHPUnit yang sebenarnya, bukan hanya proses induk Artisan (`646dfba` dan `e053044`).
+
+DEC-003, DEC-004, DEC-005, dan DEC-006 tetap terbuka. Karena itu Step 06 secara teknis selesai, tetapi penggunaan KPI/template sebagai konfigurasi bisnis resmi tetap menunggu keputusan dan sign-off. Gate berikutnya adalah Step 07.
