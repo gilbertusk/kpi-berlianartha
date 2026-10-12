@@ -22,7 +22,7 @@ test('error mapper exposes only the safe concurrency presentation', function ():
 });
 
 test('unexpected exception details are never presented to the user', function (): void {
-    $presentation = (new ExceptionMapper())->map(
+    $presentation = (new ExceptionMapper)->map(
         new RuntimeException('database password=do-not-leak'),
     );
 

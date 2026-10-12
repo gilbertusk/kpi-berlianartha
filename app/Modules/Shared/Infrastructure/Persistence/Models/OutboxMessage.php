@@ -4,9 +4,9 @@ declare(strict_types=1);
 
 namespace App\Modules\Shared\Infrastructure\Persistence\Models;
 
-use Carbon\CarbonImmutable;
 use App\Modules\Shared\Application\Outbox\OutboxEnvelope;
 use App\Modules\Shared\Infrastructure\Persistence\Concerns\HasPublicUlid;
+use Carbon\CarbonImmutable;
 use Illuminate\Database\Eloquent\Model;
 
 /**

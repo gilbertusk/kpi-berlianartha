@@ -103,4 +103,3 @@ test('failed transaction leaves no domain row audit or outbox event', function (
         ->and(AuditLog::query()->count())->toBe(0)
         ->and(DB::table('outbox_messages')->count())->toBe(0);
 });
-
