@@ -80,7 +80,7 @@ RUN composer dump-autoload --no-dev --optimize --classmap-authoritative --no-int
 # -----------------------------------------------------------------------------
 # assets: Vite production build
 # -----------------------------------------------------------------------------
-FROM node:24.15.0-trixie-slim AS assets
+FROM node:26.11.1-trixie-slim AS assets
 
 WORKDIR /app
 
