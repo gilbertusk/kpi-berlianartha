@@ -703,3 +703,23 @@ Agent code-reviewer tidak menemukan temuan Critical. Semua temuan berikut sudah 
 
 - Setelah CI (PostgreSQL + Redis) lulus untuk commit Step 05, status dapat dinaikkan menjadi PASS melalui addendum.
 - Step 06 (kamus KPI dan template berversi) boleh dimulai setelah itu. Publish KPI tetap diblokir oleh DEC-003, DEC-005, dan DEC-006.
+
+### Addendum 2026-10-12 — bukti GitHub Actions Step 05
+
+**Status Step 05 diperbarui:** PASS untuk scope implementasi.
+
+- **Bukti:** seluruh gate lokal dan CI untuk commit `850834ed54c6189fb2c5c362820886bb1b18626a` lulus.
+- **SSO:** tetap belum tersedia (DEC-013).
+- **Blocker bisnis:** daftar di atas masih berlaku.
+
+GitHub Actions run `38255706324` (`ci`, push ke `main`) berakhir dengan conclusion `success`. Kelima job lulus:
+
+| Job | Hasil | Bukti dari log |
+|---|---|---|
+| PHP quality | success | `composer audit` tanpa advisory; Pint PASS (171 file); Larastan `[OK] No errors` |
+| Tests (PostgreSQL 18 + Redis) | success | Migration `000200`/`000300` lulus migrate → rollback → migrate, termasuk CHECK constraint PostgreSQL dan backfill `users.public_id`. Hasil test: 254 passed, 2 skipped (889 assertions). Readiness OK. Queue smoke: "Job smoke diproses tepat 1 kali" |
+| Frontend | success | `npm audit` 0 vulnerabilities; build Vite berhasil |
+| Docker image | success | Build, hygiene, runtime smoke, dan scan Trivy untuk fixable CRITICAL/HIGH lulus; SBOM terunggah |
+| Docker Compose | success | Bootstrap dari checkout bersih lulus. `test-pgsql` di dalam stack (PostgreSQL `kpi_test` + Redis): 254 passed, 2 skipped (889 assertions) |
+
+Gate berikutnya: Step 06 (kamus KPI dan template berversi). Publish KPI tetap diblokir oleh DEC-003, DEC-005, dan DEC-006.
