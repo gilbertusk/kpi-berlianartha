@@ -323,3 +323,19 @@ Setelah perbaikan di atas, seluruh validasi lokal yang terdampak dijalankan ulan
 ### Gate berikutnya
 
 - Step 04 (fondasi data, audit, dan transaksi) dapat dimulai di atas lingkungan Compose dan CI ini.
+
+### Addendum 2026-10-12 — bukti GitHub Actions Step 03
+
+**Status Step 03 diperbarui:** PASS. Seluruh gate lokal dan CI untuk commit `25eb2c1dd358a67bf320032f86b08f9440aca781` lulus.
+
+GitHub Actions run `38223018889` (`ci`, push ke `main`) berakhir dengan conclusion `success`. Kelima job lulus:
+
+| Job | Hasil | Bukti dari log |
+|---|---|---|
+| PHP quality | success | `composer audit` tidak menemukan advisory; Pint PASS (62 file); Larastan `[OK] No errors` |
+| Tests (PostgreSQL 18 + Redis) | success | migrate → rollback → migrate; 96 passed, 3 skipped (268 assertions); readiness database OK; "Job smoke diproses tepat 1 kali" |
+| Frontend | success | `npm audit` 0 vulnerabilities; Vite build berhasil |
+| Docker image | success | `kpi-app:ci` 609 MB dan `kpi-http:ci` 71,6 MB (ukuran di runner); hygiene dan runtime smoke lulus; Trivy 0 vulnerability fixable CRITICAL/HIGH (debian 13.7 dan composer-vendor); artifact SBOM `sbom-25eb2c1…-1` terunggah |
+| Docker Compose | success | Bootstrap dari checkout bersih; `/health` ok; readiness OK; bucket anonim HTTP 403; queue smoke tepat 1 kali; heartbeat worker dan scheduler sehat; `test-pgsql` 96 passed; uji persistensi lulus |
+
+Gate berikutnya tetap: Step 04 (fondasi data, audit, dan transaksi).
