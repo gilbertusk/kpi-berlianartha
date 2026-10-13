@@ -29,7 +29,7 @@ test('HR drafts, submits for review, and a second HR account publishes', functio
     expect($published->status)->toBe(LifecycleStatus::Published)
         ->and($published->published_by_user_id)->toBe($this->kpi->reviewer->id)
         ->and($published->submitted_by_user_id)->toBe($this->kpi->author->id)
-        ->and(AuditLog::query()->where('entity_type', 'kpi_definition')->pluck('action')->all())
+        ->and(AuditLog::query()->where('entity_type', 'kpi_definition')->orderBy('id')->pluck('action')->all())
         ->toBe(['kpi_definition.created', 'kpi_definition.submitted', 'kpi_definition.published']);
 });
 
