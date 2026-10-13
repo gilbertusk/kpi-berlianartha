@@ -26,7 +26,7 @@ Modul `app/Modules/PeriodAssignment` memiliki periode penilaian dan snapshot pen
 DRAFT ──open──▶ OPEN ──startProgress──▶ IN_PROGRESS ──▶ REVIEW ──▶ FINALIZED ──▶ LOCKED
 ```
 
-- Tidak ada transisi mundur. Membuka kembali periode adalah proses koreksi terkontrol (Step 10).
+- Tidak ada transisi mundur. REVIEW, FINALIZED, dan LOCKED dicapai lewat `PeriodService::advance()` dengan precheck (`WORKFLOW.md` §1). Periode tidak dibuka kembali; perubahan setelah REVIEW hanya lewat koreksi aktual yang disetujui.
 - **DRAFT → OPEN** menyimpan snapshot penugasan dan daftar target dalam satu transaksi dengan perubahan status. Periode ditolak dibuka bila tidak ada satu pun subjek yang tercakup template.
 - **OPEN → IN_PROGRESS** hanya bila semua target wajib sudah final.
 - **REVIEW, FINALIZED, LOCKED** sudah ada di lifecycle dan trigger, tetapi belum memiliki use case. Ketiganya membutuhkan precheck kelengkapan, kalibrasi, dan approval dari Step 08–10.
@@ -194,6 +194,6 @@ Dengan cara ini modul periode tidak perlu mengenal modul yang bergantung padanya
 - Transisi REVIEW, FINALIZED, dan LOCKED belum dapat dijalankan.
 - Persetujuan massal menyetujui versi yang berstatus menunggu saat tombol ditekan. Bila target dikembalikan, diubah, lalu diajukan lagi di antara waktu penyetuju melihat dan menekan tombol, nilai barulah yang disetujui. Penyetuju tetap bukan penulis nilai tersebut.
 - Submit dan approve tidak memeriksa cut-off; hanya penulisan nilai yang memeriksanya.
-- Koreksi snapshot dan pembukaan kembali periode menunggu Step 10.
+- Koreksi snapshot assignment dan pembukaan kembali periode tidak dibangun pada Step 10 karena aturannya belum disetujui (DEC-002); Step 10 menyediakan koreksi nilai aktual saja.
 - Target level di atas scope periode (misalnya KPI company pada periode satu team) dicatat per periode.
 - Bila dua template dalam satu periode merujuk versi berbeda dari KPI yang sama untuk subjek yang sama, terbentuk dua slot dan import menolak baris tersebut sebagai ambigu.

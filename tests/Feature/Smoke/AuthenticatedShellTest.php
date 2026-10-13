@@ -34,6 +34,8 @@ it('renders the main navigation and hides Administration from accounts without a
         ->toBe('periods.view')
         ->and(collect(config('navigation.main'))->firstWhere('label', 'Scorecard')['ability'])
         ->toBe('scorecards.view')
+        ->and(collect(config('navigation.main'))->firstWhere('label', 'Approval')['ability'])
+        ->toBe('approvals.view')
         ->and(collect(config('navigation.main'))->firstWhere('label', 'Administration')['ability'])
         ->toBe('administration.view');
 });
@@ -46,7 +48,6 @@ it('shows a no-data placeholder for modules that are not implemented yet', funct
         ->assertSeeInOrder(['<main id="main-content"', '<h1', $title, '</h1>'], escape: false)
         ->assertSee('Modul belum tersedia');
 })->with([
-    ['approvals.index', 'Approval'],
     ['reports.index', 'Reports'],
 ]);
 

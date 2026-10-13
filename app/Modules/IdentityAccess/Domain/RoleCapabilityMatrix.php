@@ -32,6 +32,7 @@ final class RoleCapabilityMatrix
                 Capability::ActualView,
                 Capability::ScorecardView,
                 Capability::ApprovalDecide,
+                Capability::CorrectionApprove,
             ],
             Role::DepartmentHead->value => [
                 Capability::OrganizationView,
@@ -92,6 +93,8 @@ final class RoleCapabilityMatrix
                 Capability::ScorecardCalculate,
                 Capability::KpiValueModify,
                 Capability::ApprovalDecide,
+                Capability::ApprovalRouteManage,
+                Capability::CorrectionRequest,
             ],
             Role::Auditor->value => [
                 Capability::OrganizationView,

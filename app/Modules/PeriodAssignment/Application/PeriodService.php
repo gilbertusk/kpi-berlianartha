@@ -33,9 +33,8 @@ use Illuminate\Database\UniqueConstraintViolationException;
  * approver snapshot in the same transaction as the status change
  * (DOMAIN_BOUNDARIES.md §4), so a period is never open without its snapshot.
  *
- * REVIEW, FINALIZED, and LOCKED are part of the lifecycle but have no use
- * case yet: they need the completeness, calibration, and approval prechecks
- * of Step 08–10.
+ * REVIEW, FINALIZED, and LOCKED are reached through {@see advance()}, gated by
+ * the prechecks of the modules that depend on the period (Step 08–10).
  */
 final readonly class PeriodService
 {
@@ -239,6 +238,51 @@ final readonly class PeriodService
             ]);
 
             $this->record($actor, $period, 'assessment_period.progress_started', ['status' => PeriodStatus::Open->value], ['status' => PeriodStatus::InProgress->value], null);
+
+            return $period->load('deadlines');
+        });
+    }
+
+    /**
+     * IN_PROGRESS → REVIEW → FINALIZED → LOCKED. Each step is allowed only
+     * when no dependent module reports a blocker (actuals verified, scores
+     * complete, approvals done, corrections settled). Nothing moves backwards;
+     * a locked period changes only through approved corrections.
+     */
+    public function advance(Actor $actor, int $periodId, int $expectedVersion, PeriodStatus $to): AssessmentPeriod
+    {
+        if (! in_array($to, [PeriodStatus::Review, PeriodStatus::Finalized, PeriodStatus::Locked], true)) {
+            throw new BusinessRuleViolation('transition_not_available', 'Transisi periode ini tidak tersedia.');
+        }
+
+        return $this->transactions->run(function () use ($actor, $periodId, $expectedVersion, $to): AssessmentPeriod {
+            $period = AssessmentPeriod::query()->with('deadlines')->lockForUpdate()->findOrFail($periodId);
+            $from = $period->status;
+            $this->transitions->assertAllowed($from->value, $to->value, PeriodStatus::transitions());
+
+            $blockers = $this->blockersFor($period, $to);
+
+            if ($blockers !== []) {
+                throw new BusinessRuleViolation('period_not_ready', 'Periode belum dapat dilanjutkan: '.implode(' ', $blockers));
+            }
+
+            $period = $this->lock->update($period, $expectedVersion, ['status' => $to->value]);
+            $this->record($actor, $period, 'assessment_period.status_changed', ['status' => $from->value], ['status' => $to->value], null);
+
+            foreach ($this->participants as $participant) {
+                $participant->periodAdvanced($period, $from, $actor);
+            }
+
+            if ($to === PeriodStatus::Locked) {
+                $this->outbox->publish(new OutboxEvent(
+                    eventType: 'PeriodLocked',
+                    eventVersion: 1,
+                    aggregateType: 'assessment_period',
+                    aggregateId: $period->public_id,
+                    payload: ['code' => $period->code, 'period_type' => $period->period_type->value, 'starts_on' => $period->starts_on, 'ends_on' => $period->ends_on],
+                    deduplicationKey: "period-locked:{$period->public_id}",
+                ));
+            }
 
             return $period->load('deadlines');
         });

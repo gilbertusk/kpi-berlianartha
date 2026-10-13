@@ -13,7 +13,6 @@ Route::middleware(['auth', 'verified', 'mfa'])->group(function () {
 
     // Navigation placeholders only: no data and no actions. Module features
     // and their role/organization-scope policies arrive in later steps.
-    Route::view('approvals', 'modules.placeholder', ['title' => 'Approval'])->name('approvals.index');
     Route::view('reports', 'modules.placeholder', ['title' => 'Reports'])->name('reports.index');
 
     // Step 06 — KPI dictionary and versioned scorecard templates.
@@ -42,6 +41,15 @@ Route::middleware(['auth', 'verified', 'mfa'])->group(function () {
         Route::get('import/{batch}/errors.csv', ActualImportErrorsController::class)->name('import.errors');
     });
     Route::get('evidence/{evidence}/{viewer}', EvidenceDownloadController::class)->middleware('signed')->name('evidence.download');
+
+    // Step 10 — approval inbox, period workflow, calibration, bypass, and corrections.
+    Route::livewire('approvals', 'pages::approvals.index')->name('approvals.index');
+    Route::prefix('approvals')->name('approvals.')->group(function () {
+        Route::livewire('corrections', 'pages::approvals.corrections')->name('corrections');
+        Route::livewire('bypasses', 'pages::approvals.bypasses')->name('bypasses');
+        Route::livewire('periods/{period}', 'pages::approvals.period')->name('period');
+        Route::livewire('reviews/{review}', 'pages::approvals.review')->name('review');
+    });
 
     // Step 09 — scorecards, reconciliation, and calculation snapshots.
     Route::livewire('scorecards', 'pages::scorecards.index')->name('scorecards.index');

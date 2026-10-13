@@ -10,6 +10,7 @@ use App\Modules\IdentityAccess\Domain\Capability;
 use App\Modules\PeriodAssignment\Infrastructure\Persistence\Models\AssessmentPeriod;
 use App\Modules\Scoring\Application\ScorecardPolicyCatalog;
 use App\Modules\Scoring\Application\ScorePeriodAccess;
+use App\Modules\Scoring\Application\ScoringReadiness;
 use App\Modules\Scoring\Domain\Strategy\CalculatorRegistry;
 use App\Modules\Scoring\Infrastructure\ConfiguredScorecardPolicies;
 use Illuminate\Support\Facades\Gate;
@@ -21,6 +22,7 @@ final class ScoringServiceProvider extends ServiceProvider
     {
         $this->app->singleton(CalculatorRegistry::class);
         $this->app->singleton(ScorecardPolicyCatalog::class, ConfiguredScorecardPolicies::class);
+        $this->app->tag([ScoringReadiness::class], PeriodAssignmentServiceProvider::LIFECYCLE_PARTICIPANTS);
     }
 
     public function boot(): void

@@ -75,14 +75,27 @@ final readonly class ScoringService
     }
 
     /**
+     * Recalculates every scorecard of a period after an approved correction.
+     * This is the only way scores change once a period is in review, final,
+     * or locked; the caller is the correction workflow, which has recorded
+     * the approval. Unchanged scorecards keep their calculation.
+     *
+     * @return array{created: int, unchanged: int, complete: int, incomplete: int}
+     */
+    public function recalculateForCorrection(Actor $actor, int $periodId, string $reason): array
+    {
+        return $this->run($actor, $periodId, ScoreAccess::everything(), self::requireText($reason, 'reason', 'Alasan perhitungan wajib diisi.'), null, true);
+    }
+
+    /**
      * @param  list<int>|null  $assignmentIds
      * @return array{created: int, unchanged: int, complete: int, incomplete: int}
      */
-    private function run(Actor $actor, int $periodId, ScoreAccess $access, string $reason, ?array $assignmentIds): array
+    private function run(Actor $actor, int $periodId, ScoreAccess $access, string $reason, ?array $assignmentIds, bool $correction = false): array
     {
-        return $this->transactions->run(function () use ($actor, $periodId, $access, $reason, $assignmentIds): array {
+        return $this->transactions->run(function () use ($actor, $periodId, $access, $reason, $assignmentIds, $correction): array {
             $period = AssessmentPeriod::query()->sharedLock()->findOrFail($periodId);
-            self::assertScorable($period);
+            self::assertScorable($period, $correction);
             $policy = $this->policyFor($period);
             $this->assertPolicyUnchanged($policy);
 
@@ -144,8 +157,16 @@ final readonly class ScoringService
         return $policy;
     }
 
-    private static function assertScorable(AssessmentPeriod $period): void
+    private static function assertScorable(AssessmentPeriod $period, bool $correction = false): void
     {
+        if ($correction) {
+            if (! in_array($period->status, [PeriodStatus::Review, PeriodStatus::Finalized, PeriodStatus::Locked], true)) {
+                throw new BusinessRuleViolation('period_not_scorable', 'Koreksi hanya berlaku pada periode Review, Finalized, atau Locked.');
+            }
+
+            return;
+        }
+
         if (in_array($period->status, [PeriodStatus::Finalized, PeriodStatus::Locked], true)) {
             throw new BusinessRuleViolation('scorecard_final', 'Periode sudah final. Skor hanya dapat berubah melalui proses koreksi yang disetujui.');
         }

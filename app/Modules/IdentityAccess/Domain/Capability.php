@@ -53,6 +53,14 @@ enum Capability: string
     case ScorecardCalculate = 'scorecard.calculate';
 
     /**
+     * Approval routing and corrections (Step 10). Who may request and who may
+     * approve a correction is a conservative default until DEC-002 is signed.
+     */
+    case ApprovalRouteManage = 'approval_route.manage';
+    case CorrectionRequest = 'correction.request';
+    case CorrectionApprove = 'correction.approve';
+
+    /**
      * Reserved for the KPI modules (Step 06–10). Step 05 only fixes the role
      * ceiling from ROLE_APPROVAL_MATRIX.md; ownership, workflow state, and
      * "C" conditions are enforced by the owning module's policies.
@@ -80,6 +88,8 @@ enum Capability: string
             self::ActualEnter,
             self::ActualVerify,
             self::ScorecardCalculate,
+            self::CorrectionRequest,
+            self::CorrectionApprove,
         ], true);
     }
 
@@ -96,6 +106,7 @@ enum Capability: string
             self::KpiTemplateManage,
             self::KpiTemplatePublish,
             self::PeriodManage,
+            self::ApprovalRouteManage,
         ], true);
     }
 

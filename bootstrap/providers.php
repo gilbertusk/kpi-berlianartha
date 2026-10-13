@@ -10,6 +10,7 @@ use App\Providers\PeriodAssignmentServiceProvider;
 use App\Providers\ScoringServiceProvider;
 use App\Providers\SharedServiceProvider;
 use App\Providers\TargetServiceProvider;
+use App\Providers\WorkflowServiceProvider;
 
 return [
     AppServiceProvider::class,
@@ -21,5 +22,6 @@ return [
     TargetServiceProvider::class,
     ActualEvidenceServiceProvider::class,
     ScoringServiceProvider::class,
+    WorkflowServiceProvider::class,
     FortifyServiceProvider::class,
 ];

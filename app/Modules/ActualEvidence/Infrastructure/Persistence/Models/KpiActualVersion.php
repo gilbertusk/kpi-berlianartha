@@ -56,6 +56,9 @@ final class KpiActualVersion extends Model
 
     public const SOURCE_IMPORT = 'import';
 
+    /** A value written by an approved correction of a verified actual. */
+    public const SOURCE_CORRECTION = 'correction';
+
     protected $guarded = [];
 
     /**

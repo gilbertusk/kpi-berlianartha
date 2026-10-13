@@ -30,6 +30,8 @@ use Illuminate\Support\Collection;
  */
 final class TargetSlotBuilder implements PeriodLifecycleParticipant
 {
+    public function periodAdvanced(AssessmentPeriod $period, PeriodStatus $from, Actor $actor): void {}
+
     public function periodOpened(AssessmentPeriod $period, Actor $actor): void
     {
         /** @var array<int, Collection<int, KpiTemplateItem>> $itemsByTemplate */

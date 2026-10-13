@@ -6,6 +6,7 @@ namespace App\Providers;
 
 use App\Models\User;
 use App\Modules\ActualEvidence\Application\ActualPeriodAccess;
+use App\Modules\ActualEvidence\Application\ActualReadiness;
 use App\Modules\ActualEvidence\Application\EvidenceService;
 use App\Modules\ActualEvidence\Application\MalwareScanner;
 use App\Modules\ActualEvidence\Domain\EvidenceRules;
@@ -46,6 +47,7 @@ final class ActualEvidenceServiceProvider extends ServiceProvider
             return new UnavailableScanner;
         });
 
+        $this->app->tag([ActualReadiness::class], PeriodAssignmentServiceProvider::LIFECYCLE_PARTICIPANTS);
         $this->app->when(EvidenceService::class)->needs('$disk')->giveConfig('evidence.disk');
         $this->app->when(EvidenceService::class)->needs('$linkTtlSeconds')->giveConfig('evidence.link_ttl_seconds');
     }

@@ -47,7 +47,7 @@ DRAFT ──submit──▶ SUBMITTED ──verify──▶ VERIFIED
 - **Terlambat.** Setelah deadline pengisian aktual lewat (zona waktu periode), entri dan pengajuan wajib disertai alasan dan ditandai `is_late`. Tanda itu tidak hilang bila deadline digeser.
 - **Bukti wajib.** Aktual untuk KPI berbukti wajib tidak dapat diajukan tanpa file bukti, dan tidak dapat diverifikasi bila buktinya tidak dapat dibuka.
 - **Verifikator independen.** Verifikator bukan akun yang mengisi, terakhir mengubah, atau mengajukan entri, dan bukan pegawai pemilik aktual.
-- **Verified final.** Versi verified menolak semua `UPDATE` dan `DELETE` di level database. Perubahan setelah itu adalah workflow koreksi Step 10. Status Reviewed, Calibrated, dan seterusnya (PRD §6.3) juga bagian Step 10.
+- **Verified final.** Versi verified menolak semua `UPDATE` dan `DELETE` di level database. Perubahan setelah itu hanya lewat koreksi yang disetujui (`ActualService::applyCorrection`, `WORKFLOW.md`): versi baru dibuat dan versi lama tetap utuh. Status Reviewed, Calibrated, dan seterusnya (PRD §6.3) adalah state review scorecard pada Step 10.
 - Halaman entri mengirim versi draft yang dilihat pengguna, sehingga simpan dari halaman basi ditolak. Nilai yang diketik untuk entri yang sementara itu sudah diajukan dilaporkan sebagai error, tidak diam-diam dilewati.
 - **Ajukan milik sendiri.** Tombol ajukan hanya mengajukan draft yang terakhir diisi akun tersebut, sehingga draft orang lain yang belum selesai tidak ikut terkunci.
 - Penolakan memeriksa scope dan independensi di service, bukan hanya di halaman.
@@ -132,7 +132,7 @@ Sel angka XLSX dibaca apa adanya dari sheet; sel teks adalah cara paling aman me
 
 - Antivirus belum terintegrasi (lihat §2).
 - Jumlah rentang observasi yang seharusnya ada per target tidak dihitung, karena kalender kerja belum diputuskan (DEC-015). Kelengkapan dihitung per target.
-- Review Manager, kalibrasi, approval final, dan koreksi aktual verified menunggu Step 10.
+- Review Manager, kalibrasi, approval final, dan koreksi aktual verified dibangun pada Step 10 (`WORKFLOW.md`).
 - Upload memakai unggahan sementara Livewire lalu dipindahkan server ke disk evidence; belum ada upload langsung dari browser ke object storage.
 - Binary bukti yang dilepas dan binary dari upload yang gagal di tengah jalan belum memiliki job pembersihan; retention menunggu DEC-010.
 - Pemeriksaan independensi verifikator melihat pembuat, pengubah terakhir, dan pengaju; pengubah di tengah yang kemudian ditimpa tidak terdeteksi.

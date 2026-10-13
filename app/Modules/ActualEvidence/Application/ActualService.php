@@ -26,6 +26,7 @@ use App\Modules\Shared\Application\Validation\GuardsInput;
 use App\Modules\Shared\Domain\Exceptions\BusinessRuleViolation;
 use App\Modules\Shared\Domain\StateTransitionGuard;
 use App\Modules\Target\Infrastructure\Persistence\Models\PeriodTarget;
+use Brick\Math\BigDecimal;
 use Carbon\CarbonImmutable;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Collection;
@@ -312,6 +313,94 @@ final readonly class ActualService
             $this->record($actor, $version->actual, 'actual.rejected', ['status' => ActualStatus::Submitted->value], [
                 'status' => ActualStatus::Rejected->value,
                 'version' => $version->version_number,
+            ], $reason);
+
+            return $version;
+        });
+    }
+
+    /**
+     * Applies an approved correction to a verified actual: the verified
+     * version stays as it is, and a new verified version carries the
+     * corrected value, linked to the one it replaces. Called only by the
+     * correction workflow, which has recorded the request and its approval.
+     *
+     * @param  string|null  $value  null = not applicable (the note carries the reason)
+     */
+    public function applyCorrection(int $requestedByUserId, Actor $approver, int $actualId, ?string $value, ?string $note, string $reason): KpiActualVersion
+    {
+        $reason = self::requireText($reason, 'reason', 'Alasan koreksi wajib diisi.');
+        $note = self::optionalText($note, 1000);
+
+        return $this->transactions->run(function () use ($requestedByUserId, $approver, $actualId, $value, $note, $reason): KpiActualVersion {
+            $actual = KpiActual::query()->with('target.definitionVersion')->lockForUpdate()->findOrFail($actualId);
+            $period = AssessmentPeriod::query()->sharedLock()->findOrFail($actual->target->assessment_period_id);
+
+            if (! in_array($period->status, [PeriodStatus::Review, PeriodStatus::Finalized, PeriodStatus::Locked], true)) {
+                throw new BusinessRuleViolation('correction_not_applicable', 'Koreksi berlaku untuk aktual pada periode Review, Finalized, atau Locked. Pada periode In progress aktual diperbaiki lewat alur biasa.');
+            }
+
+            $current = KpiActualVersion::query()->where('kpi_actual_id', $actual->id)->orderByDesc('version_number')->lockForUpdate()->firstOrFail();
+
+            if ($current->status !== ActualStatus::Verified) {
+                throw new BusinessRuleViolation('correction_not_applicable', 'Hanya aktual terverifikasi yang dapat dikoreksi.');
+            }
+
+            if ($value === null || trim($value) === '') {
+                if ($note === null) {
+                    throw new BusinessRuleViolation('note_required', 'Koreksi menjadi N/A wajib disertai catatan alasan.');
+                }
+
+                $kind = EntryKind::NotApplicable;
+                $parsed = null;
+            } else {
+                try {
+                    $parsed = $actual->target->valueRules()->named('aktual')->parse($value, (string) $actual->target->definitionVersion->unit);
+                } catch (InvalidArgumentException $exception) {
+                    throw new BusinessRuleViolation('invalid_value', $exception->getMessage());
+                }
+
+                $kind = EntryKind::Value;
+            }
+
+            if ($current->entry_kind === $kind && ($parsed === null ? $current->actual_value === null : $current->actual_value !== null && BigDecimal::of($current->actual_value)->isEqualTo($parsed))) {
+                throw new BusinessRuleViolation('no_change', 'Nilai koreksi sama dengan nilai yang berlaku.');
+            }
+
+            $now = CarbonImmutable::now();
+            $version = KpiActualVersion::query()->create([
+                'kpi_actual_id' => $actual->id,
+                'version_number' => $current->version_number + 1,
+                'status' => ActualStatus::Draft,
+                'entry_kind' => $kind->value,
+                'actual_value' => $parsed,
+                'unit' => $current->unit,
+                'source' => KpiActualVersion::SOURCE_CORRECTION,
+                'note' => $note,
+                'is_late' => $current->is_late,
+                'late_reason' => $current->late_reason,
+                'previous_version_id' => $current->id,
+                'created_by_user_id' => $requestedByUserId,
+                'updated_by_user_id' => $requestedByUserId,
+            ]);
+
+            $version = $this->lock->update($version, $version->lock_version, [
+                'status' => ActualStatus::Submitted->value,
+                'submitted_by_user_id' => $requestedByUserId,
+                'submitted_at' => $now,
+            ]);
+            $version = $this->lock->update($version, $version->lock_version, [
+                'status' => ActualStatus::Verified->value,
+                'verified_by_user_id' => $approver->userId,
+                'verified_at' => $now,
+            ]);
+
+            $this->record($approver, $actual, 'actual.corrected', [
+                'version' => $current->version_number,
+                'value' => $current->displayValue(),
+            ], [
+                'version' => $version->version_number,
+                'value' => $version->displayValue(),
             ], $reason);
 
             return $version;

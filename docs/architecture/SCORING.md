@@ -103,7 +103,7 @@ Mengubah perilaku strategi berarti versi strategi baru; mengubah perilaku mesin 
 
 - **Immutable.** Trigger database menolak `UPDATE` dan `DELETE` pada kedua tabel.
 - **Idempotent.** Fingerprint dihitung dari versi mesin, aturan policy, dan input kanonis. Subjek yang fingerprint-nya tidak berubah mempertahankan perhitungan terakhirnya. Subjek yang berubah mendapat perhitungan baru dengan nomor urut berikutnya dan alasan; tidak ada yang ditimpa.
-- **Kapan boleh.** Hanya saat periode IN_PROGRESS atau REVIEW. Periode FINALIZED atau LOCKED hanya berubah lewat workflow koreksi Step 10.
+- **Kapan boleh.** Hanya saat periode IN_PROGRESS atau REVIEW. Periode FINALIZED atau LOCKED hanya dihitung ulang oleh koreksi yang disetujui (`ScoringService::recalculateForCorrection`, lihat `WORKFLOW.md`).
 - **Alasan wajib** untuk setiap perhitungan.
 - **Reproduksi.** Snapshot memuat seluruh input dan aturan, sehingga scorecard periode lama tetap dapat dibaca dan direproduksi setelah versi KPI atau policy baru dipublish.
 
@@ -149,4 +149,4 @@ Tidak ada roll-up otomatis dari pegawai ke team, department, atau company. PRD d
 - Toleransi dan penanganan outlier tidak diimplementasikan karena tidak ada aturan yang disetujui; nilai di luar rentang valid definisi tidak dinilai.
 - Flag wajib pada item template (`is_mandatory`) dicatat di snapshot tetapi belum memengaruhi perhitungan: apakah KPI wajib boleh menjadi N/A adalah pertanyaan aturan yang belum diputuskan.
 - Halaman scorecard memuat ulang input seluruh periode untuk memeriksa apakah perhitungan sudah basi; cukup untuk skala saat ini dan diukur pada Step 19.
-- Kalibrasi, approval final, dan penguncian skor adalah Step 10.
+- Kalibrasi, approval final, dan penguncian periode dibangun pada Step 10 (`WORKFLOW.md`); kalibrasi tidak pernah mengubah snapshot perhitungan.

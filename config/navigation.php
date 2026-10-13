@@ -19,7 +19,7 @@ return [
         ['label' => 'Periode & Target', 'route' => 'periods.index', 'icon' => 'calendar-days', 'ability' => 'periods.view'],
         ['label' => 'Aktual', 'route' => 'actuals.index', 'icon' => 'pencil-square', 'ability' => 'actuals.view'],
         ['label' => 'Scorecard', 'route' => 'scorecards.index', 'icon' => 'presentation-chart-line', 'ability' => 'scorecards.view'],
-        ['label' => 'Approval', 'route' => 'approvals.index', 'icon' => 'check-badge', 'ability' => null],
+        ['label' => 'Approval', 'route' => 'approvals.index', 'icon' => 'check-badge', 'ability' => 'approvals.view'],
         ['label' => 'Reports', 'route' => 'reports.index', 'icon' => 'document-chart-bar', 'ability' => null],
         ['label' => 'Administration', 'route' => 'administration.index', 'icon' => 'cog-6-tooth', 'ability' => 'administration.view'],
     ],

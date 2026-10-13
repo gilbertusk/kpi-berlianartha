@@ -1232,3 +1232,98 @@ Dicatat tetapi tidak dikerjakan: input seluruh periode dimuat ulang untuk satu s
 - **CI:** GitHub Actions run [`38364086796`](https://github.com/gilbertusk/kpi-berlianartha/actions/runs/38364086796) berakhir dengan conclusion `success`; kelima job lulus, termasuk dua job yang menjalankan suite pada PostgreSQL 18 + Redis. Ini menutup gate PostgreSQL yang tidak dapat dijalankan secara lokal.
 
 DEC-003, DEC-004, dan DEC-006 tetap terbuka. Belum ada skor resmi, rating resmi, atau golden example bertanda tangan. Gate berikutnya adalah Step 10.
+
+## 2026-10-13 — Step 10 Approval, Kalibrasi, Period Lock, dan Koreksi
+
+**Status:** PARTIAL — mekanisme workflow, halaman, dan test selesai dan lulus secara lokal (SQLite). **Pemakaian bisnis BLOCKED:** DEC-004 (policy scorecard) masih OPEN sehingga tidak ada scorecard resmi yang dapat masuk review, dan DEC-002 (rantai approver, approver pengganti, kewenangan koreksi) serta DEC-009 (SLA) masih OPEN. Bukti PostgreSQL dan GitHub Actions menyusul lewat addendum.
+
+### Git preflight
+
+- HEAD awal `7436248` sama dengan `origin/main`; working tree bersih; fast-forward tidak diperlukan.
+
+### Scope selesai
+
+- **Siklus periode.** `PeriodService::advance()` untuk IN_PROGRESS → REVIEW → FINALIZED → LOCKED, hanya maju, dengan precheck yang dijalankan ulang di dalam transaksi. Precheck baru: aktual terverifikasi semua (`ActualReadiness`), perhitungan lengkap semua (`ScoringReadiness`), approval final semua, tidak ada koreksi menunggu, tidak ada event workflow gagal di outbox (`WorkflowLifecycle`). Event `PeriodLocked`.
+- **Modul `Workflow`.** State review scorecard (in_review, reviewed, calibrated, final_approved, returned) dengan putaran; riwayat keputusan dan kalibrasi append-only; trigger PostgreSQL dan SQLite untuk transisi, identitas, dan immutability.
+- **Kewenangan per tahap** (`ApprovalAuthority`): role tahap + scope unit + approver snapshot atau delegasi aktif dari approver snapshot; bukan pegawai yang dinilai; satu orang satu tahap per putaran, termasuk lewat delegasi.
+- **Inbox dan persetujuan massal** (review dan approval final, maksimal 200, hasil per scorecard), pengembalian beralasan, pengajuan ulang oleh HR sebagai putaran baru (juga untuk scorecard yang dihitung ulang setelah masuk review).
+- **Kalibrasi** yang menyimpan skor hitung dan skor kalibrasi berdampingan; rating dari policy yang tersimpan pada perhitungan; snapshot perhitungan tidak disentuh.
+- **Bypass tahap review** per team: hanya bila snapshot menunjukkan gap dan ada catatan bypass bertanda sign-off yang berlaku; dicatat sebagai keputusan `bypassed`.
+- **Koreksi aktual terverifikasi** pada periode REVIEW/FINALIZED/LOCKED: permintaan dan persetujuan oleh dua orang berbeda; versi aktual baru, hitung ulang, dan pengalihan review dalam satu transaksi; versi dan perhitungan lama tetap ada.
+- **Halaman:** inbox approval, board periode dengan checklist lock, halaman scorecard (rantai approver, perbandingan kalibrasi, aksi, riwayat), antrean koreksi, pencatatan bypass. Menu Approval kini hanya tampil untuk akun yang berperan.
+- **Outbox:** `CalibrationCompleted`, `FinalApprovalCompleted`, `PeriodLocked`, `CorrectionRequested`, `CorrectionApproved`, `FinalScoreCorrected`.
+- **Capability baru:** `approval_route.manage` (HR), `correction.request` (HR), `correction.approve` (Management).
+- **Dokumentasi:** `docs/architecture/WORKFLOW.md`; pembaruan `IDENTITY_ACCESS.md`, `APPLICATION_STRUCTURE.md`, `SCORING.md`, `ACTUAL_EVIDENCE.md`, `PERIOD_TARGET.md`.
+
+### Yang sengaja tidak dibangun
+
+- **Reopen periode.** Tidak ada aturan yang disetujui tentang siapa dan dalam kondisi apa. Periode tidak pernah mundur; perubahan setelah REVIEW hanya lewat koreksi aktual.
+- **SLA, reminder, eskalasi** (DEC-009; Step 11).
+- **Koreksi target, snapshot assignment, dan unggahan bukti koreksi.** Referensi bukti koreksi berupa teks.
+- **Koreksi atas scorecard final yang skornya disesuaikan pada kalibrasi** ditolak seluruhnya sampai ada aturan tentang nasib skor kalibrasi.
+
+### Test matrix
+
+| Area | Cakupan |
+|---|---|
+| Happy path | Review → kalibrasi → approval final → Finalized → Locked, dengan role, grant, audit, dan outbox |
+| Reviewer kosong | Tahap menunggu; bypass disetujui; bypass kedaluwarsa; bypass pada team yang punya reviewer; team only; tidak surut; tidak tumpang tindih |
+| Reject/resubmit | Alasan wajib, putaran baru, riwayat utuh, hanya HR; pengajuan ulang setelah hitung ulang |
+| Delegasi | Aktif, kedaluwarsa, "atas nama", dan satu orang satu tahap lewat delegate |
+| Self-approval | Pegawai yang dinilai dengan role reviewer dan Management |
+| Klik ganda / bersamaan | Versi basi ditolak; tepat satu keputusan dan satu kalibrasi |
+| Kalibrasi | Skor hitung tetap, alasan wajib, skala desimal, rating dari policy tersimpan |
+| Koreksi | Review dan Locked, aturan dua orang, role, validasi nilai, tolak/batal, basi, membuat scorecard tidak lengkap, scorecard terkalibrasi, antrean tanpa hasil sendiri |
+| Lock gagal | Scorecard belum final, koreksi menunggu, event outbox gagal, perhitungan lebih baru |
+| Transisi tidak sah | Role salah, di luar periode Review, periode mundur, SQL langsung pada review/riwayat/koreksi |
+| Halaman | Akses per role, aksi palsu, halaman basi, persetujuan massal, board sesuai scope, bypass |
+
+### Validasi
+
+| # | Gate | Hasil |
+|---|---|---|
+| 1 | `php artisan test` (SQLite in-memory, PHP 8.4) | 799 test: 796 passed, 3 skipped, 13.114 assertions |
+| 2 | Test terhadap PostgreSQL lokal | **Tidak dijalankan**: Docker Desktop tidak aktif. Trigger dan CHECK constraint PostgreSQL pada migrasi baru belum pernah dieksekusi; buktinya menunggu GitHub Actions |
+| 3 | `vendor/bin/pint --test` | passed |
+| 4 | `vendor/bin/phpstan analyse --memory-limit=1G` | 0 error |
+| 5 | `composer validate --strict` / `composer audit --locked` | valid / tidak ada advisory |
+| 6 | `npm audit --audit-level=high` / `npm run build` | 0 vulnerability / build berhasil |
+| 7 | SQLite kosong: migrate → rollback → migrate | lulus, tidak ada migrasi pending |
+| 8 | `git diff --check` dan pemeriksaan CRLF | bersih |
+
+Test baru Step 10: 56 (dari 743 menjadi 799). Tidak ada dependency baru.
+
+### Code review
+
+Dua review independen (PHP dan keamanan). Tidak ada temuan Critical. Diperbaiki dengan test:
+
+| Tingkat | Temuan | Perbaikan |
+|---|---|---|
+| High | Koreksi pada periode final membuang skor kalibrasi secara diam-diam | Koreksi ditolak bila scorecard final itu dikalibrasi dengan penyesuaian; event `FinalScoreCorrected` untuk perubahan skor final lainnya |
+| High | Antrean koreksi dibatasi 200 baris sebelum filter kewenangan | Scope unit diterapkan di query; permintaan menunggu diurutkan lebih dulu |
+| Medium | Satu orang dapat memutuskan dua tahap lewat delegate | Approver yang diwakili ikut dihitung sudah memutuskan |
+| Medium | Aksi koreksi tidak mencatat role dan grant; riwayat menyimpan `unknown` | Service mengambil grant dari `AccessControl` dan mencatatnya di audit dan riwayat |
+| Medium | Antrean koreksi dapat menampilkan permintaan tentang hasil akun itu sendiri | Dikecualikan di query dan saat membuka |
+| Medium | Bypass dapat dicatat untuk unit bukan team lewat service | Ditegakkan di service |
+| Low | Versi basi baru ditolak setelah seluruh pekerjaan koreksi; perbandingan desimal tidak konsisten; kode mati | Diperbaiki |
+
+Ditemukan sendiri saat validasi: scorecard yang dihitung ulang setelah final disetujui tidak dapat dikembalikan, sehingga periode tertahan. HR kini dapat mengajukannya ulang dari state mana pun.
+
+Dicatat tetapi tidak dikerjakan: inbox dan board memfilter di aplikasi tanpa pagination dan memanggil pencarian bypass per baris; koreksi menghitung ulang seluruh periode; pemeriksaan state berjalan sebelum otorisasi di service (tidak terjangkau dari halaman); checklist periode menampilkan jumlah penahan seluruh periode; trigger tidak mewajibkan putaran naik saat kembali ke in_review lewat SQL langsung; CHECK constraint hanya di PostgreSQL dan belum punya test khusus; aturan klik ganda diuji berurutan, belum dengan dua koneksi PostgreSQL; beberapa method menerima lebih dari lima parameter.
+
+### Keputusan yang belum disetujui (tidak diasumsikan)
+
+- **DEC-004 OPEN.** Tanpa policy scorecard resmi tidak ada perhitungan lengkap, sehingga tidak ada periode yang dapat masuk REVIEW di konfigurasi resmi. Seluruh test memakai policy TEST-ONLY.
+- **DEC-002 OPEN.** Siapa approver tiap team, approver pengganti, dan jalur saat posisi kosong. Mapping tahap → role mengikuti "Approval flow acuan" ROLE_APPROVAL_MATRIX; orangnya adalah konfigurasi role.
+- **Default sementara yang perlu dikonfirmasi pada DEC-002:**
+  - koreksi diminta HR Performance dan disetujui Management (matrix menandainya "C" untuk Management, Manager, dan HR tanpa kondisi yang diputuskan);
+  - approver tahap dapat membaca skor scorecard individu yang ia putuskan, walaupun melihat scorecard individu orang lain belum diaktifkan untuk manager;
+  - bypass dicatat oleh satu akun HR dengan referensi sign-off berupa teks, tanpa orang kedua;
+  - approver baru yang tidak ada di snapshot periode hanya dapat bertindak lewat delegasi approver snapshot; bila approver snapshot tidak aktif lagi, tahap tertahan.
+- **DEC-009 OPEN.** SLA review, kalibrasi, approval final, dan koreksi.
+- Batas penyesuaian kalibrasi, kalibrasi massal, aturan reopen periode, dan nasib skor kalibrasi setelah koreksi final belum ada.
+
+### Gate berikutnya
+
+- Commit dan push Step 10, tunggu GitHub Actions (termasuk PostgreSQL), lalu catat addendum.
+- Step 11 (notifikasi, reminder, eskalasi) membutuhkan DEC-009.

@@ -162,3 +162,21 @@ test('scorecards: unit scorecards for five roles, own scorecard for employees, i
         ->and(Capability::IndividualScorecardView->isReadOnly())->toBeTrue()
         ->and($matrix->delegableCapabilitiesFor(Role::HrPerformance))->not->toContain(Capability::ScorecardCalculate);
 });
+
+test('corrections and approval routes follow segregation of duties', function (): void {
+    $matrix = new RoleCapabilityMatrix;
+
+    expect(Capability::CorrectionRequest->changesKpiValues())->toBeTrue()
+        ->and(Capability::CorrectionApprove->changesKpiValues())->toBeTrue()
+        ->and(Capability::ApprovalRouteManage->configuresKpis())->toBeTrue()
+        ->and(Capability::CorrectionApprove->isDelegable())->toBeFalse()
+        ->and(Capability::CorrectionRequest->isDelegable())->toBeFalse();
+
+    // Provisional default until DEC-002: HR requests, Management approves; nobody holds both.
+    foreach (Role::cases() as $role) {
+        expect($matrix->allows($role, Capability::CorrectionRequest) && $matrix->allows($role, Capability::CorrectionApprove))->toBeFalse("{$role->value} holds both correction capabilities")
+            ->and($matrix->allows($role, Capability::CorrectionRequest))->toBe($role === Role::HrPerformance)
+            ->and($matrix->allows($role, Capability::CorrectionApprove))->toBe($role === Role::Management)
+            ->and($matrix->allows($role, Capability::ApprovalRouteManage))->toBe($role === Role::HrPerformance);
+    }
+});

@@ -20,6 +20,8 @@ Aplikasi dibuat dari official Laravel Livewire starter kit (Laravel 13, Livewire
 | `app/Modules/ActualEvidence` | Aktual per rentang observasi, evidence di object storage private dengan karantina dan tautan bertanda tangan, serta staged import CSV/XLSX. Detail: `ACTUAL_EVIDENCE.md` |
 | `app/Modules/Scoring` | Mesin skor murni (aritmetika eksak, strategi berversi, policy scorecard bertanda tangan), snapshot perhitungan immutable, dan ekspor rekonsiliasi. Skor resmi diblokir sampai DEC-004. Detail: `SCORING.md` |
 | `resources/views/pages/scorecards/` | Halaman Livewire scorecard (daftar periode, rekonsiliasi, detail per KPI) |
+| `app/Modules/Workflow` | Review, kalibrasi, approval final, bypass tahap review bertanda tangan, penguncian periode, dan koreksi aktual terverifikasi. Riwayat keputusan append-only. Detail: `WORKFLOW.md` |
+| `resources/views/pages/approvals/` | Halaman Livewire approval (inbox, board periode, scorecard, antrean koreksi, bypass) |
 | `resources/views/pages/actuals/` | Halaman Livewire aktual (daftar periode, entri dan bukti, import) |
 | `resources/views/pages/kpi/` | Halaman Livewire KPI (kamus, detail/versi/perbandingan, template builder/preview) |
 | `resources/views/pages/periods/` | Halaman Livewire periode (daftar, setup dan snapshot, matriks target, import) |

@@ -16,6 +16,7 @@ use App\Modules\Scoring\Application\ScoreAccess;
 use App\Modules\Scoring\Application\ScoringService;
 use App\Modules\Shared\Application\Audit\Actor;
 use App\Modules\Target\Infrastructure\Persistence\Models\PeriodTarget;
+use Closure;
 use Illuminate\Support\Facades\Config;
 
 /**
@@ -44,7 +45,10 @@ final class ScorecardScenario
 
     public KpiDefinitionVersion $team;
 
-    public function __construct()
+    /**
+     * @param  (Closure(self): void)|null  $beforeOpen  extra setup that must exist when the period snapshot is taken
+     */
+    public function __construct(?Closure $beforeOpen = null)
     {
         AccessFixtures::seedStructure();
         Config::set('evidence.scanner', 'local-unscanned');
@@ -65,6 +69,10 @@ final class ScorecardScenario
         $this->fixtures->publishedTemplate('T-SC-WOVEN', 'PROD-WOVEN', [$this->quality->id => '60', $this->team->id => '40']);
         $this->fixtures->publishedTemplate('T-SC-WOVEN-TEAM', 'PROD-WOVEN', [$this->team->id => '100'], 'team');
         $this->fixtures->publishedTemplate('T-SC-AR', 'ACC-AR', [$dso->id => '100']);
+
+        if ($beforeOpen !== null) {
+            $beforeOpen($this);
+        }
 
         $this->period = $this->fixtures->inProgress();
     }

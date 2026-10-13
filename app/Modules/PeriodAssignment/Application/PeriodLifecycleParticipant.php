@@ -21,6 +21,12 @@ interface PeriodLifecycleParticipant
     public function periodOpened(AssessmentPeriod $period, Actor $actor): void;
 
     /**
+     * Called after the period moved from $from to its current status
+     * (REVIEW, FINALIZED, or LOCKED), before commit.
+     */
+    public function periodAdvanced(AssessmentPeriod $period, PeriodStatus $from, Actor $actor): void;
+
+    /**
      * Reasons the period may not move to the next status. Empty = no objection.
      *
      * @return list<string>
