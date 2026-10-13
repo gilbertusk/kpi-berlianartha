@@ -1327,3 +1327,12 @@ Dicatat tetapi tidak dikerjakan: inbox dan board memfilter di aplikasi tanpa pag
 
 - Commit dan push Step 10, tunggu GitHub Actions (termasuk PostgreSQL), lalu catat addendum.
 - Step 11 (notifikasi, reminder, eskalasi) membutuhkan DEC-009.
+
+### Addendum 2026-10-13 — bukti GitHub Actions Step 10
+
+**Status Step 10 diperbarui:** PASS untuk scope implementasi (mekanisme workflow, halaman, test). **Pemakaian bisnis tetap BLOCKED** sampai DEC-004 disetujui (policy scorecard resmi) dan DEC-002 serta DEC-009 diputuskan.
+
+- **Commit tervalidasi:** `4a439d69f3f83eaf3a60a6ba8912d41b88982755` pada `origin/main`.
+- **CI:** GitHub Actions run [`38370368848`](https://github.com/gilbertusk/kpi-berlianartha/actions/runs/38370368848) berakhir dengan conclusion `success`; kelima job lulus, termasuk dua job yang menjalankan suite pada PostgreSQL 18 + Redis. Ini menutup gate PostgreSQL yang tidak dapat dijalankan secara lokal: migrasi workflow beserta trigger dan CHECK constraint PostgreSQL-nya berhasil dibuat, dan seluruh test workflow lulus di atasnya.
+
+Yang tetap belum terbukti: CHECK constraint khusus PostgreSQL belum memiliki test yang sengaja melanggarnya, dan aturan klik ganda belum diuji dengan dua koneksi bersamaan. Default sementara pada entri Step 10 masih menunggu konfirmasi DEC-002. Gate berikutnya adalah Step 11.
