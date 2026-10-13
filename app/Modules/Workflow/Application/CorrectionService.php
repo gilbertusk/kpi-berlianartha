@@ -344,6 +344,17 @@ final readonly class CorrectionService
             context: $actor->audit,
         ));
 
+        if ($status === CorrectionStatus::Rejected) {
+            $this->outbox->publish(new OutboxEvent(
+                eventType: 'CorrectionRejected',
+                eventVersion: 1,
+                aggregateType: 'correction_request',
+                aggregateId: $request->public_id,
+                payload: ['period' => $request->period->public_id],
+                deduplicationKey: "correction-rejected:{$request->public_id}",
+            ));
+        }
+
         return $request;
     }
 

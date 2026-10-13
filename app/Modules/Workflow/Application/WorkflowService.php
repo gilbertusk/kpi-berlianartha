@@ -106,6 +106,10 @@ final readonly class WorkflowService
             context: $actor->audit,
         ));
 
+        if ($opened > 0) {
+            $this->stageReady($period, ApprovalStage::Review, null, 'opened');
+        }
+
         return $opened;
     }
 
@@ -134,6 +138,10 @@ final readonly class WorkflowService
             $review = $this->lock->update($review, $expectedVersion, ['state' => $to->value]);
             $this->decide($review, $stage->value, DecisionOutcome::Approved, $user, $authority, $comment, null);
             $this->record($actor, $review, $stage === ApprovalStage::Review ? 'scorecard_review.reviewed' : 'scorecard_review.final_approved', $from, $authority, $comment);
+
+            if ($to === ReviewState::Reviewed) {
+                $this->stageReady($review->period, ApprovalStage::Calibration, $review, "round-{$review->round}");
+            }
 
             if ($to === ReviewState::FinalApproved) {
                 $score = self::effectiveScore($review->load('calibrations'), $calculation);
@@ -269,6 +277,7 @@ final readonly class WorkflowService
                 ],
                 deduplicationKey: "calibration:{$review->public_id}:{$review->round}",
             ));
+            $this->stageReady($review->period, ApprovalStage::FinalApproval, $review, "round-{$review->round}");
 
             return $review;
         });
@@ -292,6 +301,15 @@ final readonly class WorkflowService
             $review = $this->lock->update($review, $expectedVersion, ['state' => ReviewState::Returned->value]);
             $this->decide($review, $stage->value, DecisionOutcome::Returned, $user, $authority, $comment, null);
             $this->record($actor, $review, 'scorecard_review.returned', $from, $authority, $comment);
+
+            $this->outbox->publish(new OutboxEvent(
+                eventType: 'ScorecardReturned',
+                eventVersion: 1,
+                aggregateType: 'scorecard_review',
+                aggregateId: $review->public_id,
+                payload: ['period' => $review->period->public_id, 'stage' => $stage->value, 'round' => $review->round],
+                deduplicationKey: "scorecard-returned:{$review->public_id}:{$review->round}",
+            ));
 
             return $review;
         });
@@ -361,6 +379,7 @@ final readonly class WorkflowService
                 reason: $comment,
                 context: $actor->audit,
             ));
+            $this->stageReady($review->period, ApprovalStage::Review, $review, "round-{$review->round}");
 
             return $review;
         });
@@ -656,6 +675,24 @@ final readonly class WorkflowService
             after: ['state' => $review->state->value, 'round' => $review->round, ...$authority->toAudit()],
             reason: $reason,
             context: $actor->audit,
+        ));
+    }
+
+    /**
+     * Announces that a stage now waits for its approvers: one scorecard, or
+     * (review null) every scorecard of the period.
+     */
+    private function stageReady(AssessmentPeriod $period, ApprovalStage $stage, ?ScorecardReview $review, string $occasion): void
+    {
+        $subject = $review === null ? $period->public_id : $review->public_id;
+
+        $this->outbox->publish(new OutboxEvent(
+            eventType: 'ApprovalStageReady',
+            eventVersion: 1,
+            aggregateType: $review === null ? 'assessment_period' : 'scorecard_review',
+            aggregateId: $subject,
+            payload: ['period' => $period->public_id, 'stage' => $stage->value, 'review' => $review?->public_id, 'occasion' => $occasion],
+            deduplicationKey: "stage-ready:{$subject}:{$stage->value}:{$occasion}",
         ));
     }
 

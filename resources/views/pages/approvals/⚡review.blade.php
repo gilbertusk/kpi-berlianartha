@@ -48,7 +48,8 @@ new #[Title('Approval scorecard')] class extends GuardedPage {
     {
         $this->authorize('viewReview', $review);
         $this->reviewId = $review->public_id;
-        $this->lock = $review->lock_version;
+        // The version shown on the page, read from the database.
+        $this->lock = $this->review->lock_version;
     }
 
     #[Computed]

@@ -61,6 +61,15 @@ enum Capability: string
     case CorrectionApprove = 'correction.approve';
 
     /**
+     * Daily team review, corrective actions, and coaching notes (Step 11).
+     * Coaching notes are restricted personal data (DEC-011): reading them
+     * needs `coaching_note.manage`, which is never delegable.
+     */
+    case TeamReviewView = 'team_review.view';
+    case TeamReviewManage = 'team_review.manage';
+    case CoachingNoteManage = 'coaching_note.manage';
+
+    /**
      * Reserved for the KPI modules (Step 06–10). Step 05 only fixes the role
      * ceiling from ROLE_APPROVAL_MATRIX.md; ownership, workflow state, and
      * "C" conditions are enforced by the owning module's policies.

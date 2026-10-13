@@ -2,6 +2,7 @@
 
 use App\Modules\ActualEvidence\Http\ActualImportErrorsController;
 use App\Modules\ActualEvidence\Http\EvidenceDownloadController;
+use App\Modules\Notification\Http\OpenNotificationController;
 use App\Modules\Scoring\Http\ScorecardExportController;
 use App\Modules\Target\Http\TargetImportTemplateController;
 use Illuminate\Support\Facades\Route;
@@ -9,7 +10,13 @@ use Illuminate\Support\Facades\Route;
 Route::view('/', 'welcome')->name('home');
 
 Route::middleware(['auth', 'verified', 'mfa'])->group(function () {
-    Route::view('dashboard', 'dashboard')->name('dashboard');
+    // Step 11 — role dashboards, notifications, team page, and daily team review.
+    Route::livewire('dashboard', 'pages::dashboard')->name('dashboard');
+    Route::livewire('notifications', 'pages::notifications.index')->name('notifications.index');
+    Route::get('notifications/{notification}/open', OpenNotificationController::class)->name('notifications.open');
+    Route::livewire('team', 'pages::team.index')->name('team.index');
+    Route::livewire('team-review', 'pages::team-review.index')->name('team-review.index');
+    Route::livewire('team-review/actions/{action}', 'pages::team-review.action')->name('team-review.action');
 
     // Navigation placeholders only: no data and no actions. Module features
     // and their role/organization-scope policies arrive in later steps.

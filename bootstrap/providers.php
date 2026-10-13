@@ -5,11 +5,13 @@ use App\Providers\AppServiceProvider;
 use App\Providers\FortifyServiceProvider;
 use App\Providers\IdentityAccessServiceProvider;
 use App\Providers\KpiGovernanceServiceProvider;
+use App\Providers\NotificationServiceProvider;
 use App\Providers\OrganizationServiceProvider;
 use App\Providers\PeriodAssignmentServiceProvider;
 use App\Providers\ScoringServiceProvider;
 use App\Providers\SharedServiceProvider;
 use App\Providers\TargetServiceProvider;
+use App\Providers\TeamReviewServiceProvider;
 use App\Providers\WorkflowServiceProvider;
 
 return [
@@ -23,5 +25,7 @@ return [
     ActualEvidenceServiceProvider::class,
     ScoringServiceProvider::class,
     WorkflowServiceProvider::class,
+    NotificationServiceProvider::class,
+    TeamReviewServiceProvider::class,
     FortifyServiceProvider::class,
 ];

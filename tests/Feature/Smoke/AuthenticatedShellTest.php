@@ -4,12 +4,13 @@ declare(strict_types=1);
 
 use App\Models\User;
 
-it('shows the dashboard placeholder to an authenticated user', function (): void {
+it('shows an honest empty dashboard to an account without any KPI data', function (): void {
     $this->actingAs(User::factory()->create());
 
     $this->get(route('dashboard'))
         ->assertOk()
-        ->assertSee('Data KPI belum dikonfigurasi')
+        ->assertSee('Belum ada periode yang dapat ditampilkan')
+        ->assertSee('Tidak ada angka contoh yang ditampilkan')
         ->assertSee('Lewati ke konten utama')
         ->assertSee('<main id="main-content"', escape: false);
 });
@@ -29,7 +30,7 @@ it('renders the main navigation and hides Administration from accounts without a
     }
 
     expect(array_column(config('navigation.main'), 'label'))
-        ->toBe(['Dashboard', 'KPI', 'Periode & Target', 'Aktual', 'Scorecard', 'Approval', 'Reports', 'Administration'])
+        ->toBe(['Dashboard', 'KPI', 'Periode & Target', 'Aktual', 'Scorecard', 'Approval', 'Team', 'Team Review', 'Notifikasi', 'Reports', 'Administration'])
         ->and(collect(config('navigation.main'))->firstWhere('label', 'Periode & Target')['ability'])
         ->toBe('periods.view')
         ->and(collect(config('navigation.main'))->firstWhere('label', 'Scorecard')['ability'])

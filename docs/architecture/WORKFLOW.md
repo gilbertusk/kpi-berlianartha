@@ -117,7 +117,7 @@ Koreksi adalah satu-satunya cara mengubah aktual terverifikasi setelah periode b
 | `CorrectionApproved` | Koreksi disetujui | `correction-approved:{permintaan}` |
 | `FinalScoreCorrected` | Koreksi mengubah skor scorecard pada periode FINALIZED atau LOCKED | `final-score-corrected:{review}:{perhitungan}` |
 
-Event ditulis dalam transaksi yang sama dengan perubahannya. Belum ada consumer; notifikasi dan eskalasi adalah Step 11.
+Event ditulis dalam transaksi yang sama dengan perubahannya. Sejak Step 11 ditambah `ApprovalStageReady`, `ScorecardReturned`, dan `CorrectionRejected`, dan consumer `workflow-notifications` mengubahnya menjadi notifikasi (`DASHBOARD_NOTIFICATION_TEAM_REVIEW.md`).
 
 ## 8. Halaman
 

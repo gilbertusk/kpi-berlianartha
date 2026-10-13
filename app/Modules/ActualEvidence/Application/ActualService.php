@@ -315,6 +315,15 @@ final readonly class ActualService
                 'version' => $version->version_number,
             ], $reason);
 
+            $this->outbox->publish(new OutboxEvent(
+                eventType: 'ActualRejected',
+                eventVersion: 1,
+                aggregateType: 'kpi_actual',
+                aggregateId: $version->actual->public_id,
+                payload: ['period_id' => $target->assessment_period_id, 'version' => $version->version_number, 'submitted_by_user_id' => $version->submitted_by_user_id],
+                deduplicationKey: "actual-rejected:{$version->public_id}:{$version->lock_version}",
+            ));
+
             return $version;
         });
     }

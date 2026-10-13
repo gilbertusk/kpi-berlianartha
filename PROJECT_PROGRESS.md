@@ -1336,3 +1336,102 @@ Dicatat tetapi tidak dikerjakan: inbox dan board memfilter di aplikasi tanpa pag
 - **CI:** GitHub Actions run [`38370368848`](https://github.com/gilbertusk/kpi-berlianartha/actions/runs/38370368848) berakhir dengan conclusion `success`; kelima job lulus, termasuk dua job yang menjalankan suite pada PostgreSQL 18 + Redis. Ini menutup gate PostgreSQL yang tidak dapat dijalankan secara lokal: migrasi workflow beserta trigger dan CHECK constraint PostgreSQL-nya berhasil dibuat, dan seluruh test workflow lulus di atasnya.
 
 Yang tetap belum terbukti: CHECK constraint khusus PostgreSQL belum memiliki test yang sengaja melanggarnya, dan aturan klik ganda belum diuji dengan dua koneksi bersamaan. Default sementara pada entri Step 10 masih menunggu konfirmasi DEC-002. Gate berikutnya adalah Step 11.
+
+## 2026-10-13 — Step 11 Dashboard, Notifikasi, dan Corrective Action
+
+**Status:** PARTIAL — dashboard per peran, notifikasi, pengingat/eskalasi, daily team review, corrective action, dan coaching notes selesai dan lulus secara lokal (SQLite). **Yang BLOCKED oleh keputusan bisnis:** tidak ada pengingat atau eskalasi yang dikirim (DEC-009 OPEN, daftar aturan kosong), channel email nonaktif dan hanya diuji dengan mailer palsu (DEC-014 OPEN), KPI merah tidak ditampilkan (ambang belum disetujui, DEC-004), dan dashboard skor resmi tetap kosong tanpa policy scorecard (DEC-004). Target performa belum pernah disetujui, sehingga kriteria "memenuhi target performa pada data representatif" **belum dapat dinyatakan lulus**. Bukti PostgreSQL dan GitHub Actions menyusul lewat addendum.
+
+### Git preflight
+
+- HEAD awal `c55c2a6` sama dengan `origin/main`; working tree bersih.
+
+### Scope selesai
+
+- **Dashboard per peran** (`dashboard`): Management, HR Performance, Department Head/Team Leader, Karyawan, Auditor (baca saja), System Admin (kesehatan teknis tanpa nilai KPI). Angka adalah hitungan record tersimpan dalam scope akun dan masing-masing menautkan ke halaman sumbernya. Tidak ada angka contoh dan tidak ada cache.
+- **Halaman team** (`team.index`): anggota, status aktual per anggota, target versus aktual team dari perhitungan terakhir, coaching notes, histori penempatan, tautan delegasi, dan tautan HRIS untuk cuti bila dikonfigurasi.
+- **Daily team review dan corrective action** (`team-review.*`): masalah, penyebab, konteks, KPI terdampak; tindakan dengan PIC, tenggat, prioritas, bukti, verifikator; status OPEN, IN_PROGRESS, WAITING, VERIFIED, CLOSED; overdue; riwayat append-only; audit; trigger PostgreSQL dan SQLite.
+- **Coaching notes** dengan akses paling sempit (penulis dan Team Leader team itu), append-only, tidak dapat didelegasikan.
+- **Notifikasi**: di aplikasi selalu; email lewat job antrean bila diaktifkan dan tidak dimatikan pengguna; preferensi per kategori; catatan percobaan pengiriman tanpa isi pesan; deep link yang hanya milik penerima dan menyerahkan otorisasi ke halaman tujuan.
+- **Consumer outbox** `workflow-notifications` dan event baru `ApprovalStageReady`, `ScorecardReturned`, `CorrectionRejected`, `ActualRejected`, `CorrectiveActionAssigned`, `CorrectiveActionCompleted`.
+- **Pengingat dan eskalasi** idempotent (`notifications:send-reminders`, tiap jam) dari aturan bertanda tangan pada konfigurasi; daftar aturan kosong.
+- **Capability baru:** `team_review.view`, `team_review.manage`, `coaching_note.manage`.
+- **Perbaikan komponen bersama:** empty state `ui.table-shell` tidak pernah muncul di halaman Livewire; kini memakai `hasActualContent()`. Halaman approval dan corrective action membaca `lock_version` dari database saat dibuka.
+- **Dokumentasi:** `docs/architecture/DASHBOARD_NOTIFICATION_TEAM_REVIEW.md`; pembaruan `IDENTITY_ACCESS.md`, `APPLICATION_STRUCTURE.md`, `WORKFLOW.md`, `.env.example`.
+
+### Yang sengaja tidak dibangun
+
+- Modul cuti (prompt: hanya tautan/integrasi HRIS bila HRIS menjadi sumber data; belum ada keputusan).
+- Ringkasan periodik, perbandingan antarshift (DEC-015), master reason code dan referensi operasional (DEC-016), roll-up atau rata-rata skor lintas unit.
+- Unggahan file bukti corrective action (bukti berupa referensi teks).
+- "Permintaan revisi data" sebagai entitas baru: memakai penolakan aktual beralasan (Step 08) dan koreksi (Step 10).
+
+### Test matrix
+
+| Area | Cakupan |
+|---|---|
+| Dashboard per role | Bagian yang tampil dan yang tidak untuk 7 role; scope lintas departemen; Management tanpa baris pegawai; pemilihan periode di luar scope; ambang KPI merah (belum ada, ada, tidak valid) |
+| Query regression | Anggaran query dashboard per role; tidak bertambah dengan 30 notifikasi |
+| Coaching notes | Penulis, Team Leader kedua, subjek, Department Head, HR, Management, Auditor, team lain; tidak tentang diri sendiri; audit tanpa isi; append-only |
+| Revisi/delegasi | Tautan halaman team; delegate tidak membuka celah (Step 10) |
+| Cross-scope | Team lain tidak dapat melihat, mencatat, menugaskan, atau memverifikasi; PIC dari luar team ditolak; aksi palsu pada halaman |
+| Notifikasi | Deduplikasi, akun nonaktif, preferensi email, retry dengan penghitung, tidak terkirim dua kali, gagal setelah retry habis, antre ulang, event workflow dan corrective action, tanpa skor di isi pesan, deep link milik penerima |
+| Scheduler | Tanpa aturan tidak mengirim; aturan tidak valid menggagalkan perintah; pengingat tenggat periode; menjalankan ulang tidak menggandakan |
+| SLA corrective action | PIC dan tenggat wajib, overdue, pengingat sebelum tenggat, eskalasi setelah tenggat, ubah tenggat beralasan dan bukan oleh PIC, bukti wajib bila dikonfigurasi, siklus status lengkap, trigger database |
+
+### Validasi
+
+| # | Gate | Hasil |
+|---|---|---|
+| 1 | `php artisan test` (SQLite in-memory, PHP 8.4) | 851 test: 848 passed, 3 skipped, 13.528 assertions |
+| 2 | Test terhadap PostgreSQL lokal | **Tidak dijalankan**: Docker Desktop tidak aktif. Trigger, CHECK constraint, dan agregat SQL baru belum pernah dieksekusi di PostgreSQL; buktinya menunggu GitHub Actions |
+| 3 | `vendor/bin/pint --test` | passed |
+| 4 | `vendor/bin/phpstan analyse --memory-limit=1G` | 0 error |
+| 5 | `composer validate --strict` / `composer audit --locked` | valid / tidak ada advisory |
+| 6 | `npm audit --audit-level=high` / `npm run build` | 0 vulnerability / build berhasil |
+| 7 | SQLite kosong: migrate → rollback → migrate | lulus, tidak ada migrasi pending |
+| 8 | `git diff --check` dan pemeriksaan CRLF | bersih |
+
+Test baru Step 11: 52 (dari 799 menjadi 851). Tidak ada dependency baru.
+
+### Bukti query dan performa
+
+Jumlah query dashboard pada data skenario dibatasi test: Management, HR, Department Head ≤ 110; Team Leader, Auditor ≤ 90; Karyawan ≤ 60; System Admin ≤ 40. Ini batas regresi, bukan hasil uji beban: tidak ada pengukuran waktu respons, tidak ada data representatif, dan tidak ada target yang disetujui (DEC-007, DEC-010). Pengukuran sebenarnya bagian Step 19.
+
+### Channel notifikasi yang benar-benar diuji
+
+- **Di aplikasi:** diuji end to end melalui outbox, consumer, penyimpanan, halaman, dan deep link.
+- **Email:** diuji hanya dengan mailer palsu dan antrean palsu/sync (antre, kirim, gagal, retry, tidak ganda, antre ulang). **Belum pernah dikirim lewat SMTP atau layanan email nyata**; channel nonaktif secara default.
+
+### Aksesibilitas
+
+Halaman baru memakai komponen UI yang sama dengan step sebelumnya (label, caption tabel, header baris, status dengan teks dan simbol, empty state, teks tautan pembeda, layout satu kolom pada layar sempit). **Tidak ada audit dengan alat bantu** (axe, pembaca layar, uji keyboard manual) yang dijalankan pada step ini.
+
+### Code review
+
+Dua review independen (PHP dan keamanan). Tidak ada temuan Critical atau High. Diperbaiki dengan test:
+
+| Tingkat | Temuan | Perbaikan |
+|---|---|---|
+| Medium | Halaman team menampilkan alasan penempatan yang dicatat HR | Kolom alasan dihapus |
+| Medium | PIC yang juga pengelola dapat memundurkan tenggatnya sendiri | Ditolak; harus pengelola lain |
+| Medium | Job email yang diantar ulang bersamaan dapat mengirim dua kali | Job tidak berjalan tumpang tindih per pengiriman |
+| Medium | Pengiriman email tertinggal bila dispatch hilang | Diantrekan ulang oleh perintah terjadwal |
+| Medium | Notifikasi tugas approval tertahan untuk scorecard kedua pada hari yang sama | Kunci per scorecard, tahap, dan putaran |
+| Medium | Penyelesaian dapat dilaporkan dua kali | Ditolak sampai diverifikasi atau dikembalikan |
+| Low | Akun nonaktif menerima notifikasi; kode KPI tanpa batas; tautan pengingat karyawan ke halaman yang tidak dapat dibuka; event penolakan koreksi tanpa periode; query hitung ganda di dashboard | Diperbaiki |
+
+Dicatat tetapi tidak dikerjakan: pengingat hanya cocok pada tanggal persis (tanpa kirim susulan bila scheduler mati sehari); perintah pengingat memuat data tanpa batching dan mencari penerima per tindakan; CHECK constraint hanya di PostgreSQL dan belum punya test khusus; belum ada uji balapan unik dengan dua koneksi; isi notifikasi memuat kode KPI dan kode subjek, yang ikut terkirim lewat email bila channel diaktifkan; pesan exception mentah dapat masuk `failed_jobs` atau log; `latestScores` memuat seluruh riwayat perhitungan; delegate belum menerima notifikasi tugas; PIC tidak diberi tahu saat penyelesaian diverifikasi atau dikembalikan.
+
+### Keputusan yang belum disetujui (tidak diasumsikan)
+
+- **DEC-009 OPEN.** Aturan pengingat, eskalasi, dan SLA corrective action. Mekanisme diuji dengan aturan TEST-ONLY.
+- **DEC-014 OPEN.** Layanan dan pengirim email.
+- **DEC-004 OPEN.** Ambang KPI merah dan policy scorecard resmi.
+- **DEC-011 PROPOSED.** Akses coaching notes. Dibangun lebih sempit dari usulan: subjek dan HR tidak dapat membaca. Perlu keputusan sebelum dipakai.
+- **DEC-015, DEC-016 OPEN.** Shift dan master data operasional.
+- **Default sementara yang perlu dikonfirmasi:** Department Head dan Team Leader mengelola review team; Team Leader saja yang menulis coaching notes; prioritas tiga tingkat tanpa konsekuensi; penerima notifikasi tiap kejadian (lihat dokumen arsitektur); karyawan melihat skor hasil perhitungan sebelum kalibrasi segera setelah scorecard lengkap (konsisten dengan halaman scorecard Step 09).
+
+### Gate berikutnya
+
+- Commit dan push Step 11, tunggu GitHub Actions (termasuk PostgreSQL), lalu catat addendum.
+- Step 12 (laporan dan ekspor).

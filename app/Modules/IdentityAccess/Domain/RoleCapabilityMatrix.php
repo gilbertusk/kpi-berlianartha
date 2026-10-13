@@ -33,6 +33,7 @@ final class RoleCapabilityMatrix
                 Capability::ScorecardView,
                 Capability::ApprovalDecide,
                 Capability::CorrectionApprove,
+                Capability::TeamReviewView,
             ],
             Role::DepartmentHead->value => [
                 Capability::OrganizationView,
@@ -45,6 +46,8 @@ final class RoleCapabilityMatrix
                 Capability::ScorecardView,
                 Capability::KpiValueModify,
                 Capability::ApprovalDecide,
+                Capability::TeamReviewView,
+                Capability::TeamReviewManage,
             ],
             Role::TeamLeader->value => [
                 Capability::OrganizationView,
@@ -58,6 +61,9 @@ final class RoleCapabilityMatrix
                 Capability::ScorecardView,
                 Capability::KpiValueModify,
                 Capability::ApprovalDecide,
+                Capability::TeamReviewView,
+                Capability::TeamReviewManage,
+                Capability::CoachingNoteManage,
             ],
             Role::Employee->value => [
                 Capability::EmployeeView,
@@ -95,6 +101,7 @@ final class RoleCapabilityMatrix
                 Capability::ApprovalDecide,
                 Capability::ApprovalRouteManage,
                 Capability::CorrectionRequest,
+                Capability::TeamReviewView,
             ],
             Role::Auditor->value => [
                 Capability::OrganizationView,
@@ -110,6 +117,7 @@ final class RoleCapabilityMatrix
                 Capability::ActualView,
                 Capability::ScorecardView,
                 Capability::IndividualScorecardView,
+                Capability::TeamReviewView,
             ],
             Role::SystemAdmin->value => [
                 Capability::OrganizationView,

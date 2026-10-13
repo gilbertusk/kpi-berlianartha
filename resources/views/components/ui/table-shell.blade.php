@@ -17,7 +17,8 @@
             </thead>
 
             <tbody class="divide-y divide-zinc-200 dark:divide-zinc-700">
-                @if ($slot->isEmpty())
+                {{-- Livewire adds comment markers around loops, so an empty loop is not an empty string. --}}
+                @if (! $slot->hasActualContent())
                     <tr>
                         <td colspan="{{ max(count($columns), 1) }}" class="p-0">{{ $empty ?? '' }}</td>
                     </tr>
