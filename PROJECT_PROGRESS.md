@@ -1123,3 +1123,13 @@ Dicatat tetapi tidak dikerjakan: tidak ada exclusion constraint PostgreSQL untuk
 
 - Commit dan push Step 08, tunggu GitHub Actions, lalu catat addendum.
 - Step 09 (scoring engine) dapat dimulai secara teknis, tetapi skor resmi tetap menunggu DEC-004 dan DEC-006.
+
+### Addendum 2026-10-13 — bukti GitHub Actions Step 08
+
+**Status Step 08 diperbarui:** PASS untuk scope implementasi. Pemakaian evidence di staging dan production tetap **BLOCKED** sampai antivirus terintegrasi.
+
+- **Commit tervalidasi:** `b4a697fed02179801882d50930c691d0695fad3a` pada `origin/main`.
+- **CI:** GitHub Actions run [`38346104488`](https://github.com/gilbertusk/kpi-berlianartha/actions/runs/38346104488) berakhir dengan conclusion `success`; kelima job lulus (PHP quality, Tests PostgreSQL 18 + Redis, Frontend, Docker image, Docker Compose).
+- Image Docker berhasil dibangun dengan dependency baru `openspout/openspout` dan lolos scan vulnerability.
+
+Antivirus, DEC-002, DEC-004, DEC-006, DEC-010, DEC-015, dan DEC-016 tetap terbuka. Gate berikutnya adalah Step 09; skor resmi tetap menunggu DEC-004 dan DEC-006.
