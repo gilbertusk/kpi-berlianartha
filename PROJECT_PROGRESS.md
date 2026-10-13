@@ -988,3 +988,13 @@ Temuan yang dicatat tetapi tidak dikerjakan di step ini:
 
 - Commit dan push Step 07 ke `origin/main`, tunggu seluruh GitHub Actions lulus, lalu catat addendum.
 - Setelah CI lulus, Step 08 (aktual, evidence, dan staged import) dapat dimulai.
+
+### Addendum 2026-10-13 — bukti GitHub Actions Step 07
+
+**Status Step 07 diperbarui:** PASS untuk scope implementasi.
+
+- **Commit tervalidasi:** `5734032e65448709316081bb0574fc7c9123e3da` pada `origin/main`.
+- **CI:** GitHub Actions run [`38342034353`](https://github.com/gilbertusk/kpi-berlianartha/actions/runs/38342034353) berakhir dengan conclusion `success`; kelima job lulus (PHP quality, Tests PostgreSQL 18 + Redis, Frontend, Docker image, Docker Compose).
+- **Run pertama gagal.** Run [`38341224670`](https://github.com/gilbertusk/kpi-berlianartha/actions/runs/38341224670) untuk commit `c8fd2bf` gagal pada job Docker Compose: 1 dari 463 test gagal, empat job lain lulus. Test yang gagal adalah test Step 06 (`KpiDefinitionLifecycleTest`) yang membaca audit log tanpa `orderBy`, sehingga urutan baris di PostgreSQL tidak dijamin. Test yang sama lulus pada job PostgreSQL lainnya dan pada run lokal. Perbaikannya menambahkan `orderBy('id')` (`5734032`); kode aplikasi tidak berubah.
+
+DEC-002, DEC-009, dan DEC-015 tetap terbuka. Jalur approval target resmi, transisi REVIEW/FINALIZED/LOCKED, dan koreksi snapshot tetap menunggu keputusan dan step berikutnya. Gate berikutnya adalah Step 08.
