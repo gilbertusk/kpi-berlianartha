@@ -41,7 +41,7 @@ final class BinaryStrategy implements ScoreStrategy
             $errors[] = 'Skor tidak tercapai tidak boleh lebih besar dari skor tercapai.';
         }
 
-        return $errors;
+        return [...$errors, ...CommonScoreRules::validateScorePrecision($parameters, [$parameters['achieved_score'] ?? null, $parameters['not_achieved_score'] ?? null])];
     }
 
     public function normalize(array $parameters): array

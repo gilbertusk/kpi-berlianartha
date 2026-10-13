@@ -95,6 +95,35 @@ final class CommonScoreRules
     }
 
     /**
+     * Score values the strategy states (floor, cap, band, yes/no, or stage
+     * scores) may not have more decimals than the KPI rounding. Otherwise
+     * rounding would move a score past a signed bound, which the scoring
+     * engine refuses (Step 09).
+     *
+     * @param  array<string, mixed>  $parameters
+     * @param  list<mixed>  $scores
+     * @return list<string>
+     */
+    public static function validateScorePrecision(array $parameters, array $scores): array
+    {
+        $scale = $parameters['rounding_scale'] ?? null;
+
+        if (! (is_int($scale) || (is_string($scale) && ctype_digit($scale)))) {
+            return []; // reported by validate()
+        }
+
+        foreach ($scores as $score) {
+            $normalized = ScaledDecimal::normalize($score);
+
+            if ($normalized !== null && strlen(explode('.', $normalized.'.')[1]) > (int) $scale) {
+                return ['Skor yang ditetapkan (batas skor, rentang, ya/tidak, atau tahap) tidak boleh memiliki desimal lebih banyak dari jumlah desimal pembulatan.'];
+            }
+        }
+
+        return [];
+    }
+
+    /**
      * @param  array<string, mixed>  $parameters
      * @param  array<string, string>  $allowed
      */

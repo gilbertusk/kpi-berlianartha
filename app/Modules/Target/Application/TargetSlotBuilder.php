@@ -101,9 +101,12 @@ final class TargetSlotBuilder implements PeriodLifecycleParticipant
     }
 
     /**
+     * The target slot one template item of a subject maps to. Scoring reads
+     * the same mapping to assemble the subject's scorecard.
+     *
      * @return array{subject_type: SubjectType, subject_key: string, employee_id: int|null, organization_unit_id: int, subject_code: string, subject_name: string, unit_code: string, unit_name: string}
      */
-    private static function slotFor(PeriodAssignment $assignment, KpiDefinitionVersion $definition): array
+    public static function slotFor(PeriodAssignment $assignment, KpiDefinitionVersion $definition): array
     {
         if ($definition->evaluation_subject === 'employee' && $assignment->subject_type === SubjectType::Employee && $assignment->employee_id !== null) {
             return [

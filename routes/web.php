@@ -2,6 +2,7 @@
 
 use App\Modules\ActualEvidence\Http\ActualImportErrorsController;
 use App\Modules\ActualEvidence\Http\EvidenceDownloadController;
+use App\Modules\Scoring\Http\ScorecardExportController;
 use App\Modules\Target\Http\TargetImportTemplateController;
 use Illuminate\Support\Facades\Route;
 
@@ -41,6 +42,14 @@ Route::middleware(['auth', 'verified', 'mfa'])->group(function () {
         Route::get('import/{batch}/errors.csv', ActualImportErrorsController::class)->name('import.errors');
     });
     Route::get('evidence/{evidence}/{viewer}', EvidenceDownloadController::class)->middleware('signed')->name('evidence.download');
+
+    // Step 09 — scorecards, reconciliation, and calculation snapshots.
+    Route::livewire('scorecards', 'pages::scorecards.index')->name('scorecards.index');
+    Route::prefix('periods/{period}/scorecards')->name('scorecards.')->group(function () {
+        Route::livewire('/', 'pages::scorecards.period')->name('period');
+        Route::get('export.csv', ScorecardExportController::class)->name('export');
+        Route::livewire('{assignment}', 'pages::scorecards.show')->name('show');
+    });
 
     // Step 05 — identity, organization, and access administration. Every page
     // authorizes on mount and every Livewire action authorizes again.

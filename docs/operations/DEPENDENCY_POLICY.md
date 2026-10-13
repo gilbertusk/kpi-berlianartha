@@ -38,6 +38,7 @@ Konfigurasi: `.github/dependabot.yml`.
 
 | Paket | Step | Alasan |
 |---|---|---|
+| `brick/math` | 09 | Aritmetika desimal dan rasional eksak untuk mesin skor (ADR-0008 melarang float). Paket ini sudah menjadi dependency Laravel; dicantumkan eksplisit karena kini dipakai langsung |
 | `openspout/openspout` | 08 | Membaca file XLSX pada import aktual secara streaming. Laravel tidak memiliki pembaca spreadsheet bawaan; paket ini ringan dan tidak membutuhkan ekstensi tambahan |
 
 ## 4. SBOM dan scanning

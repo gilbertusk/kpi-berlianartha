@@ -141,3 +141,24 @@ test('actuals are entered by employees and HR, verified by team leaders, and nev
         ->and($matrix->delegableCapabilitiesFor(Role::TeamLeader))->not->toContain(Capability::ActualVerify)
         ->and($matrix->delegableCapabilitiesFor(Role::TeamLeader))->toContain(Capability::ActualView);
 });
+
+test('scorecards: unit scorecards for five roles, own scorecard for employees, individual scorecards and calculation for HR', function (): void {
+    $matrix = new RoleCapabilityMatrix;
+
+    $holders = [
+        Capability::ScorecardView->value => [Role::Management, Role::DepartmentHead, Role::TeamLeader, Role::Employee, Role::HrPerformance, Role::Auditor],
+        // ROLE_APPROVAL_MATRIX "Melihat score pribadi" is C for Management, Manager, and Team Leader: not activated.
+        Capability::IndividualScorecardView->value => [Role::HrPerformance, Role::Auditor],
+        Capability::ScorecardCalculate->value => [Role::HrPerformance],
+    ];
+
+    foreach ($holders as $capability => $roles) {
+        foreach (Role::cases() as $role) {
+            expect($matrix->allows($role, Capability::from($capability)))->toBe(in_array($role, $roles, true), "{$role->value} / {$capability}");
+        }
+    }
+
+    expect(Capability::ScorecardCalculate->changesKpiValues())->toBeTrue()
+        ->and(Capability::IndividualScorecardView->isReadOnly())->toBeTrue()
+        ->and($matrix->delegableCapabilitiesFor(Role::HrPerformance))->not->toContain(Capability::ScorecardCalculate);
+});

@@ -1133,3 +1133,93 @@ Dicatat tetapi tidak dikerjakan: tidak ada exclusion constraint PostgreSQL untuk
 - Image Docker berhasil dibangun dengan dependency baru `openspout/openspout` dan lolos scan vulnerability.
 
 Antivirus, DEC-002, DEC-004, DEC-006, DEC-010, DEC-015, dan DEC-016 tetap terbuka. Gate berikutnya adalah Step 09; skor resmi tetap menunggu DEC-004 dan DEC-006.
+
+## 2026-10-13 — Step 09 Scoring Engine dan Scorecard
+
+**Status:** PARTIAL — mesin skor, snapshot, halaman, dan test selesai dan lulus secara lokal. **Engine bisnis BLOCKED:** DEC-004 masih OPEN, sehingga tidak ada policy scorecard yang disetujui dan setiap perhitungan skor resmi ditolak. Bukti PostgreSQL dan GitHub Actions menyusul lewat addendum.
+
+### Git preflight
+
+- HEAD awal `010ac93ffe9f83fa260d1d9ea84a88fa77174519`, sama dengan `origin/main`.
+- Sebagian besar kode step ini sudah ada di working tree dari sesi kerja sebelumnya dan belum di-commit. Sesi ini memeriksanya, menjalankan review, memperbaiki temuan, melengkapi dokumentasi, dan menjalankan gate.
+
+### Scope selesai
+
+- **Domain murni** `app/Modules/Scoring/Domain`: kalkulator per KPI dan per scorecard, satu kalkulator untuk tiap strategi allowlist Step 06, agregasi aktual, aturan pembulatan, rating band, dan policy scorecard. Tanpa query, waktu sistem, atau angka bawaan.
+- **Aritmetika eksak** dengan `brick/math`; float tidak dipakai. Urutan pembulatan: skor KPI → kontribusi → total → skor akhir → rating.
+- **Policy scorecard berversi dan bertanda tangan** di `config/scoring.php` (data terlambat, bobot KPI N/A, pembulatan kontribusi dan akhir, rating band). Daftar policy saat ini kosong.
+- **Snapshot immutable** `scorecard_calculations` dan `scorecard_calculation_lines`: input lengkap, versi definisi dan strategi, versi mesin, policy dan hash-nya, nilai antara, hasil, waktu, dan alasan.
+- **Recalculation idempotent** lewat fingerprint input; perubahan menghasilkan snapshot baru bernomor urut, tidak pernah menimpa.
+- **UI:** daftar periode, daftar rekonsiliasi, detail scorecard per KPI dengan entri sumber dan bukti, serta ekspor CSV.
+- **Akses:** `scorecard.view`, `individual_scorecard.view`, `scorecard.calculate`.
+- **Dokumentasi:** `docs/architecture/SCORING.md` dan `docs/product/SCORING_GOLDEN_EXAMPLES.md` baru; `IDENTITY_ACCESS.md`, `APPLICATION_STRUCTURE.md`, `KPI_GOVERNANCE.md`, dan `DEPENDENCY_POLICY.md` diperbarui.
+
+### Golden example (sintetis, belum ditandatangani)
+
+Aturan contoh fiktif: pembulatan KPI half up 2 desimal; kontribusi half up 4 desimal; skor akhir half up 2 desimal; band `r1` < 60, `r2` [60, 80), `r3` [80, 100), `r4` ≥ 100.
+
+| Contoh | Hitungan manual | Hasil mesin |
+|---|---|---|
+| GE-01 tiga KPI | Quality: rata-rata 98.2666… ÷ 98 × 100 → 100.27 × 50% = 50.1350. Reject: 12 ÷ 11 × 100 → 109.09 × 30% = 32.7270. Discipline: Ya → 100 × 20% = 20.0000. Total 102.8620 | Skor akhir 102.86, rating `r4` |
+| GE-02 satu KPI N/A | Bobot dibagi proporsional: 90.00 × 60 ÷ 60 = 90.00. Pembagi tetap: 90.00 × 60 ÷ 100 = 54.00 | 90.00 `r3` atau 54.00 `r1`, sesuai aturan |
+| GE-03 missing ditahan | KPI tanpa entri dengan aturan "tahan" | Scorecard belum lengkap, tanpa skor dan rating |
+| GE-04 batas rating | 79.995 → KPI 79.9950 → skor akhir 80.00 | Rating `r3`, bukan `r2` |
+
+Perbedaan dari hitungan manual: tidak ada.
+
+### Test matrix
+
+| Kelompok | Cakupan |
+|---|---|
+| Strategi | Rasio, rasio terbalik, rentang, binary, milestone; target nol dan negatif, aktual nol, parameter tidak dapat dipakai |
+| Per KPI | Missing mengikuti aturan KPI, N/A bukan nol, nol adalah nilai, entri belum terverifikasi menahan, data terlambat sesuai policy, agregasi, rentang valid, target belum final |
+| Scorecard | Rekonsiliasi, aturan bobot N/A, bobot bukan 100, urutan pembulatan, batas rating, fingerprint, determinisme |
+| Properti (acak berbenih) | Skor dalam batas, monotonik, rekonsiliasi, tidak bergantung urutan entri, missing tidak pernah nol tanpa aturan |
+| Snapshot dan service | Immutable di database, idempotent, alasan wajib, periode final ditolak, policy yang sudah dipakai tidak boleh berubah, periode lama direproduksi setelah versi baru |
+| Halaman | Akses per role, aksi palsu, blokir tanpa policy, drill-down bukti, ekspor sesuai scope |
+
+### Validasi
+
+| # | Gate | Hasil |
+|---|---|---|
+| 1 | `php artisan test` (SQLite in-memory, PHP 8.4.25) | 743 test: 740 passed, 3 skipped, 12.693 assertions |
+| 2 | Test terhadap PostgreSQL lokal | **Tidak dijalankan**: Docker Desktop tidak aktif saat validasi. Bukti PostgreSQL menunggu GitHub Actions |
+| 3 | `vendor/bin/pint --test` | passed |
+| 4 | `vendor/bin/phpstan analyse --memory-limit=1G` | 0 error |
+| 5 | `composer validate --strict` / `composer audit --locked` | valid / tidak ada advisory |
+| 6 | `npm audit --audit-level=high` / `npm run build` | 0 vulnerability / build berhasil |
+| 7 | SQLite kosong: migrate → rollback → migrate | lulus |
+| 8 | `git diff --check` dan pemeriksaan CRLF | bersih |
+
+Test baru Step 09: 206 (dari 537 menjadi 743).
+
+### Dependency
+
+`brick/math` dicantumkan eksplisit di `composer.json`. Paket ini sudah terpasang sebagai dependency Laravel; alasannya tercatat di `DEPENDENCY_POLICY.md`.
+
+### Code review
+
+Satu review independen. Tidak ada temuan Critical. Diperbaiki dengan test:
+
+| Tingkat | Temuan | Perbaikan |
+|---|---|---|
+| High | KPI tanpa target final dan tanpa entri mengikuti aturan missing, sehingga bisa menjadi nol atau N/A padahal penyebabnya target belum ada | Berstatus `target_missing` dan menahan scorecard |
+| Medium | Entri yang semuanya dibuang sebagai terlambat tampak seperti "tidak ada data" | Catatan baris menyebut `…_late_excluded` |
+| Medium | Aksi halaman detail scorecard tidak memeriksa ulang akses | Setiap aksi memeriksa ulang |
+| Medium | Dua perhitungan bersamaan dapat berakhir dengan error mentah | Dilaporkan sebagai `scorecard_concurrent_run` |
+
+Dicatat tetapi tidak dikerjakan: input seluruh periode dimuat ulang untuk satu subjek, ekspor belum di-batch, constraint status hanya ada di PostgreSQL, nilai sangat besar dapat melebihi `numeric(18,4)`, dan escape `LIKE` tanpa klausa `ESCAPE`.
+
+### Keputusan formula yang belum disetujui
+
+- **DEC-004 OPEN:** rating band, aturan data terlambat, aturan bobot KPI N/A, pembulatan kontribusi dan skor akhir, toleransi, dan penanganan outlier. Tanpa ini tidak ada skor resmi.
+- **DEC-003 PROPOSED:** bobot scorecard. Bobot yang tidak berjumlah 100 untuk sebuah subjek menahan scorecard; tidak ada normalisasi.
+- **DEC-006 OPEN:** definisi KPI resmi dan golden example bertanda tangan.
+- Apakah KPI wajib boleh menjadi N/A belum diputuskan; flag wajib dicatat tetapi belum memengaruhi hasil.
+- Aturan roll-up pegawai → team → department → company belum ada, sehingga tidak diimplementasikan. Scorecard unit dihitung dari template unit itu sendiri.
+- `ratio_of_sums` belum didukung karena aktual belum mencatat pembilang dan penyebut.
+
+### Gate berikutnya
+
+- Commit dan push Step 09, tunggu GitHub Actions (termasuk PostgreSQL), lalu catat addendum.
+- Step 10 (approval, kalibrasi, lock, koreksi) membutuhkan DEC-002 dan DEC-009; tanpa keduanya hanya mekanismenya yang dapat dibangun.

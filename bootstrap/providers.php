@@ -7,6 +7,7 @@ use App\Providers\IdentityAccessServiceProvider;
 use App\Providers\KpiGovernanceServiceProvider;
 use App\Providers\OrganizationServiceProvider;
 use App\Providers\PeriodAssignmentServiceProvider;
+use App\Providers\ScoringServiceProvider;
 use App\Providers\SharedServiceProvider;
 use App\Providers\TargetServiceProvider;
 
@@ -19,5 +20,6 @@ return [
     PeriodAssignmentServiceProvider::class,
     TargetServiceProvider::class,
     ActualEvidenceServiceProvider::class,
+    ScoringServiceProvider::class,
     FortifyServiceProvider::class,
 ];

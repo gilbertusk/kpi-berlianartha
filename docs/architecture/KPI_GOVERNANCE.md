@@ -81,7 +81,9 @@ Aturan umum yang wajib dipilih untuk setiap KPI:
 - `rounding_mode`;
 - `rounding_scale` (0–4).
 
-Sistem tidak memberi nilai default untuk aturan-aturan ini karena DEC-004 masih OPEN. Angka disimpan sebagai string desimal kanonis, dan key yang tidak dikenal dibuang. Tidak ada `eval`, expression engine, atau kode dari pengguna. Perhitungan skor diimplementasikan pada Step 09 dengan key dan versi yang sama.
+Nilai skor yang ditetapkan strategi (batas bawah dan atas, skor rentang, ya/tidak, tahap) tidak boleh memiliki desimal lebih banyak dari `rounding_scale`; publish menolaknya sejak Step 09, karena pembulatan akan menggeser skor melewati batas yang ditandatangani.
+
+Sistem tidak memberi nilai default untuk aturan-aturan ini karena DEC-004 masih OPEN. Angka disimpan sebagai string desimal kanonis, dan key yang tidak dikenal dibuang. Tidak ada `eval`, expression engine, atau kode dari pengguna. Perhitungan skor diimplementasikan pada Step 09 dengan key dan versi yang sama (`SCORING.md`).
 
 ## 6. Menambah unit, frekuensi, arah, atau strategi tanpa merusak histori
 

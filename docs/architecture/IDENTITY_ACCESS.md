@@ -96,6 +96,9 @@ Legenda: `A` diizinkan dalam scope, `—` ditolak, `R*` plafon untuk modul KPI b
 | `actual.view` (Step 08) | A | A | A | A (diri sendiri) | A | A | — |
 | `actual.enter` (Step 08) | — | — | — | A (diri sendiri) | A | — | — |
 | `actual.verify` (Step 08) | — | — | A | — | — | — | — |
+| `scorecard.view` (Step 09) | A | A | A | A (diri sendiri) | A | A | — |
+| `individual_scorecard.view` (Step 09) | — | — | — | — | A | A | — |
+| `scorecard.calculate` (Step 09) | — | — | — | — | A | — | — |
 | `kpi.value.modify` | — | R* | R* | R* | R* | — | — |
 | `approval.decide` | R* | R* | R* | — | R* | — | — |
 

@@ -68,6 +68,12 @@ test('strategies require explicit rules instead of silent defaults', function (s
     'range bands overlapping' => ['range_band', ['missing_data_rule' => 'score_zero', 'rounding_mode' => 'half_up', 'rounding_scale' => 0, 'bands' => [['min' => '0', 'max' => '95', 'score' => '50'], ['min' => '90', 'max' => '110', 'score' => '100']], 'out_of_band_score' => '0'], false],
     'binary complete' => ['binary', ['missing_data_rule' => 'mark_not_applicable', 'rounding_mode' => 'down', 'rounding_scale' => 0, 'achieved_score' => '100', 'not_achieved_score' => '0'], true],
     'milestone decreasing' => ['milestone_stage', ['missing_data_rule' => 'score_zero', 'rounding_mode' => 'half_even', 'rounding_scale' => 0, 'stages' => [['label' => 'A', 'score' => '50'], ['label' => 'B', 'score' => '40']]], false],
+    // Step 09: a stated score may not be finer than the KPI rounding, or rounding would cross it.
+    'ratio floor finer than rounding' => ['ratio_to_target', ['missing_data_rule' => 'score_zero', 'rounding_mode' => 'half_up', 'rounding_scale' => 0, 'score_floor' => '37.5', 'score_cap' => '120', 'zero_target_rule' => 'not_applicable'], false],
+    'ratio bounds at the rounding scale' => ['ratio_to_target', ['missing_data_rule' => 'score_zero', 'rounding_mode' => 'half_up', 'rounding_scale' => 1, 'score_floor' => '37.5', 'score_cap' => '120.0', 'zero_target_rule' => 'not_applicable'], true],
+    'range band score finer than rounding' => ['range_band', ['missing_data_rule' => 'score_zero', 'rounding_mode' => 'half_up', 'rounding_scale' => 0, 'bands' => [['min' => '0', 'max' => '90', 'score' => '50.5']], 'out_of_band_score' => '0'], false],
+    'binary score finer than rounding' => ['binary', ['missing_data_rule' => 'mark_not_applicable', 'rounding_mode' => 'down', 'rounding_scale' => 1, 'achieved_score' => '99.95', 'not_achieved_score' => '0'], false],
+    'milestone stage finer than rounding' => ['milestone_stage', ['missing_data_rule' => 'score_zero', 'rounding_mode' => 'half_even', 'rounding_scale' => 0, 'stages' => [['label' => 'A', 'score' => '33.3'], ['label' => 'B', 'score' => '100']]], false],
 ]);
 
 test('a definition is publishable only with owner, source, formula, target rule, approver, and sign-off', function (string $missingField): void {

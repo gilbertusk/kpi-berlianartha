@@ -49,7 +49,11 @@ final class RatioToTargetStrategy implements ScoreStrategy
 
     public function validate(array $parameters): array
     {
-        $errors = [...CommonScoreRules::validate($parameters), ...CommonScoreRules::validateCapFloor($parameters)];
+        $errors = [
+            ...CommonScoreRules::validate($parameters),
+            ...CommonScoreRules::validateCapFloor($parameters),
+            ...CommonScoreRules::validateScorePrecision($parameters, [$parameters['score_floor'] ?? null, $parameters['score_cap'] ?? null]),
+        ];
 
         $zeroTarget = CommonScoreRules::requireChoice($parameters, 'zero_target_rule', self::ZERO_TARGET_RULES, 'Aturan target nol wajib dipilih.');
 

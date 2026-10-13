@@ -60,7 +60,9 @@ final class MilestoneStageStrategy implements ScoreStrategy
             $previous = $score;
         }
 
-        return $errors;
+        $scores = array_map(fn (mixed $stage): mixed => is_array($stage) ? ($stage['score'] ?? null) : null, array_values($stages));
+
+        return [...$errors, ...CommonScoreRules::validateScorePrecision($parameters, $scores)];
     }
 
     public function normalize(array $parameters): array

@@ -70,7 +70,9 @@ final class RangeBandStrategy implements ScoreStrategy
             $errors[] = 'Skor di luar rentang wajib diisi.';
         }
 
-        return $errors;
+        $scores = array_map(fn (mixed $band): mixed => is_array($band) ? ($band['score'] ?? null) : null, array_values($bands));
+
+        return [...$errors, ...CommonScoreRules::validateScorePrecision($parameters, [...$scores, $parameters['out_of_band_score'] ?? null])];
     }
 
     public function normalize(array $parameters): array

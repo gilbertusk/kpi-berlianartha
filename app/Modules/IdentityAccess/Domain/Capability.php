@@ -43,6 +43,16 @@ enum Capability: string
     case ActualVerify = 'actual.verify';
 
     /**
+     * Scorecards (Step 09). `scorecard.view` covers unit scorecards in scope
+     * and the holder's own scorecard; another employee's scorecard needs
+     * `individual_scorecard.view` (ROLE_APPROVAL_MATRIX "Melihat score
+     * pribadi": C for managers, not activated).
+     */
+    case ScorecardView = 'scorecard.view';
+    case IndividualScorecardView = 'individual_scorecard.view';
+    case ScorecardCalculate = 'scorecard.calculate';
+
+    /**
      * Reserved for the KPI modules (Step 06–10). Step 05 only fixes the role
      * ceiling from ROLE_APPROVAL_MATRIX.md; ownership, workflow state, and
      * "C" conditions are enforced by the owning module's policies.
@@ -69,6 +79,7 @@ enum Capability: string
             self::TargetApprove,
             self::ActualEnter,
             self::ActualVerify,
+            self::ScorecardCalculate,
         ], true);
     }
 
