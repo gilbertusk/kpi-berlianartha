@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Modules\KpiGovernance\Domain;
 
+use App\Modules\KpiGovernance\Domain\Scoring\ScaledDecimal;
 use App\Modules\KpiGovernance\Domain\Scoring\ScoreStrategyRegistry;
 
 /**
@@ -27,6 +28,9 @@ final readonly class DefinitionContent
         'direction' => 'Arah KPI',
         'frequency' => 'Frekuensi',
         'aggregation' => 'Agregasi',
+        'decimal_places' => 'Jumlah desimal input',
+        'min_valid_value' => 'Nilai input minimum',
+        'max_valid_value' => 'Nilai input maksimum',
         'formula_description' => 'Formula (uraian)',
         'numerator_definition' => 'Pembilang',
         'denominator_definition' => 'Penyebut',
@@ -64,6 +68,9 @@ final readonly class DefinitionContent
 
     private const SHORT_TEXT_FIELDS = ['name' => 160, 'process_owner' => 160, 'data_owner' => 160, 'signoff_reference' => 255];
 
+    /** Input values keep at most this many decimals (numeric(…, 4), ADR-0008). */
+    public const MAX_DECIMAL_PLACES = ScaledDecimal::SCALE;
+
     /**
      * @param  array<string, mixed>  $values
      */
@@ -89,6 +96,14 @@ final readonly class DefinitionContent
 
         $strategyVersion = $values['score_strategy_version'] ?? null;
         $values['score_strategy_version'] = $strategyVersion === null ? null : (int) $strategyVersion;
+
+        // Invalid input is kept as typed so draftErrors() can report it.
+        $places = $values['decimal_places'] ?? null;
+        $values['decimal_places'] = is_int($places) || (is_string($places) && preg_match('/^\d{1,2}$/', $places) === 1) ? (int) $places : $places;
+
+        foreach (['min_valid_value', 'max_valid_value'] as $bound) {
+            $values[$bound] = ScaledDecimal::normalize($values[$bound] ?? null, true) ?? ($values[$bound] ?? null);
+        }
 
         return new self($values);
     }
@@ -144,8 +159,39 @@ final readonly class DefinitionContent
             $errors[] = 'Strategi skor tidak terdaftar.';
         }
 
+        array_push($errors, ...$this->inputRuleErrors());
+
         if ($this->values['score_parameters'] !== null && ! is_array($this->values['score_parameters'])) {
             $errors[] = 'Parameter skor harus berupa konfigurasi terstruktur.';
+        }
+
+        return $errors;
+    }
+
+    /**
+     * @return list<string>
+     */
+    private function inputRuleErrors(): array
+    {
+        $errors = [];
+        $places = $this->values['decimal_places'];
+
+        if ($places !== null && (! is_int($places) || $places < 0 || $places > self::MAX_DECIMAL_PLACES)) {
+            $errors[] = 'Jumlah desimal input harus 0 sampai '.self::MAX_DECIMAL_PLACES.'.';
+        }
+
+        $bounds = [];
+
+        foreach (['min_valid_value', 'max_valid_value'] as $bound) {
+            $bounds[$bound] = $this->values[$bound] === null ? null : ScaledDecimal::parse($this->values[$bound], true);
+
+            if ($this->values[$bound] !== null && $bounds[$bound] === null) {
+                $errors[] = self::FIELDS[$bound].' harus berupa angka desimal dengan maksimal 4 angka di belakang koma.';
+            }
+        }
+
+        if ($bounds['min_valid_value'] !== null && $bounds['max_valid_value'] !== null && $bounds['min_valid_value'] > $bounds['max_valid_value']) {
+            $errors[] = 'Nilai input minimum tidak boleh lebih besar dari maksimum.';
         }
 
         return $errors;

@@ -94,6 +94,24 @@ final class OrganizationSnapshot
     }
 
     /**
+     * The unit and its ancestors, from the top of the hierarchy down.
+     *
+     * @return list<UnitNode>
+     */
+    public function path(int $unitId): array
+    {
+        $path = [];
+        $current = $this->unit($unitId);
+
+        while ($current !== null && ! in_array($current, $path, true)) {
+            array_unshift($path, $current);
+            $current = $current->parentId === null ? null : $this->unit($current->parentId);
+        }
+
+        return $path;
+    }
+
+    /**
      * Human readable path such as "Produksi › Woven".
      */
     public function pathLabel(int $unitId): string

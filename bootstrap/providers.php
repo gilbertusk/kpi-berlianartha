@@ -5,7 +5,9 @@ use App\Providers\FortifyServiceProvider;
 use App\Providers\IdentityAccessServiceProvider;
 use App\Providers\KpiGovernanceServiceProvider;
 use App\Providers\OrganizationServiceProvider;
+use App\Providers\PeriodAssignmentServiceProvider;
 use App\Providers\SharedServiceProvider;
+use App\Providers\TargetServiceProvider;
 
 return [
     AppServiceProvider::class,
@@ -13,5 +15,7 @@ return [
     OrganizationServiceProvider::class,
     IdentityAccessServiceProvider::class,
     KpiGovernanceServiceProvider::class,
+    PeriodAssignmentServiceProvider::class,
+    TargetServiceProvider::class,
     FortifyServiceProvider::class,
 ];

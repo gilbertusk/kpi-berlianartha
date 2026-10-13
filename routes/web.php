@@ -1,5 +1,6 @@
 <?php
 
+use App\Modules\Target\Http\TargetImportTemplateController;
 use Illuminate\Support\Facades\Route;
 
 Route::view('/', 'welcome')->name('home');
@@ -19,6 +20,15 @@ Route::middleware(['auth', 'verified', 'mfa'])->group(function () {
         Route::livewire('definitions/{definition}', 'pages::kpi.definition-show')->name('definitions.show');
         Route::livewire('templates', 'pages::kpi.templates')->name('templates');
         Route::livewire('templates/{template}', 'pages::kpi.template-show')->name('templates.show');
+    });
+
+    // Step 07 — assessment periods, assignment snapshots, and targets.
+    Route::prefix('periods')->name('periods.')->group(function () {
+        Route::livewire('/', 'pages::periods.index')->name('index');
+        Route::livewire('{period}', 'pages::periods.show')->name('show');
+        Route::livewire('{period}/targets', 'pages::periods.targets')->name('targets');
+        Route::livewire('{period}/targets/import', 'pages::periods.import')->name('targets.import');
+        Route::get('{period}/targets/template.csv', TargetImportTemplateController::class)->name('targets.template');
     });
 
     // Step 05 — identity, organization, and access administration. Every page

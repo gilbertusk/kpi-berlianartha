@@ -90,13 +90,17 @@ Legenda: `A` diizinkan dalam scope, `—` ditolak, `R*` plafon untuk modul KPI b
 | `kpi_definition.view` / `kpi_template.view` (Step 06) | A | A | A | — | A | A | — |
 | `kpi_definition.manage` / `kpi_template.manage` (Step 06) | — | — | — | — | A | — | — |
 | `kpi_definition.publish` / `kpi_template.publish` (Step 06) | — | — | — | — | A | — | — |
+| `period.view` / `target.view` (Step 07) | A | A | A | — | A | A | — |
+| `period.manage` (Step 07) | — | — | — | — | A | — | — |
+| `target.manage` / `target.approve` (Step 07) | — | — | — | — | A | — | — |
 | `kpi.value.modify` | — | R* | R* | R* | R* | — | — |
 | `approval.decide` | R* | R* | R* | — | R* | — | — |
 
 Invariant berikut ditegakkan di constructor matrix dan diuji:
 
 - Auditor hanya memegang capability `*.view`.
-- System Admin dan Auditor tidak pernah memegang `kpi.value.modify` atau `approval.decide`, dan juga tidak pernah memegang capability konfigurasi KPI (`kpi_definition.manage/publish`, `kpi_template.manage/publish`). Lihat `KPI_GOVERNANCE.md`.
+- System Admin dan Auditor tidak pernah memegang capability yang mengubah nilai KPI (`kpi.value.modify`, `approval.decide`, `target.manage`, `target.approve`), dan juga tidak pernah memegang capability konfigurasi KPI (`kpi_definition.manage/publish`, `kpi_template.manage/publish`, `period.manage`). Lihat `KPI_GOVERNANCE.md` dan `PERIOD_TARGET.md`.
+- `target.manage` dan `target.approve` hanya dipegang HR Performance sampai jalur penetapan dan persetujuan target per team diputuskan (DEC-002). Keduanya tidak dapat didelegasikan.
 
 ### Aturan keputusan (`AccessControl::decide`)
 
@@ -160,7 +164,7 @@ Password diambil dari `DEV_SEED_PASSWORD`. Bila variabel itu kosong, seeder memb
 ## 7. Batasan yang diketahui
 
 - SSO, provisioning dari HRIS, dan penautan identitas eksternal belum ada (DEC-013, DEC-016).
-- Approver aktual per team belum diisi (DEC-002). Team Leader, Manager, dan pengganti dikonfigurasi sebagai role assignment setelah sign-off.
+- Approver aktual per team belum diisi (DEC-002). Team Leader, Manager, dan pengganti dikonfigurasi sebagai role assignment setelah sign-off. Sejak Step 07, `RoleHolderDirectory` menjadi kontrak baca publik untuk merekam pemegang role ke snapshot approver periode.
 - Shift belum dimodelkan (DEC-015).
 - Coaching notes dan data RESTRICTED lain belum ada (DEC-011).
 - Retention/purge audit dan session menunggu DEC-010.

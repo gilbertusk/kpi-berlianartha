@@ -100,3 +100,23 @@ test('role scope rules separate roles from organization scope', function (): voi
         ->and(Role::Management->allowedUnitTypes())->toBe([UnitType::Company])
         ->and(Role::DepartmentHead->allowedUnitTypes())->toBe([UnitType::Department, UnitType::Team]);
 });
+
+test('periods and targets are read by five roles and changed by HR Performance only', function (): void {
+    $matrix = new RoleCapabilityMatrix;
+    $readers = [Role::Management, Role::DepartmentHead, Role::TeamLeader, Role::HrPerformance, Role::Auditor];
+
+    foreach (Role::cases() as $role) {
+        expect($matrix->allows($role, Capability::PeriodView))->toBe(in_array($role, $readers, true), "{$role->value} / period.view")
+            ->and($matrix->allows($role, Capability::TargetView))->toBe(in_array($role, $readers, true), "{$role->value} / target.view");
+
+        foreach ([Capability::PeriodManage, Capability::TargetManage, Capability::TargetApprove] as $capability) {
+            expect($matrix->allows($role, $capability))->toBe($role === Role::HrPerformance, "{$role->value} / {$capability->value}");
+        }
+    }
+
+    expect(Capability::TargetManage->changesKpiValues())->toBeTrue()
+        ->and(Capability::TargetApprove->changesKpiValues())->toBeTrue()
+        ->and(Capability::PeriodManage->configuresKpis())->toBeTrue()
+        // Setting and approving targets is not transferable by delegation.
+        ->and($matrix->delegableCapabilitiesFor(Role::HrPerformance))->not->toContain(Capability::TargetManage, Capability::TargetApprove, Capability::PeriodManage);
+});

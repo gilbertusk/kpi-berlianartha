@@ -850,3 +850,141 @@ Validasi lokal (PHP 8.4.25):
 - `php artisan test`: 334 test (332 passed, 2 skipped), 1.218 assertions.
 
 Status Step 06 tetap **PASS** untuk scope implementasi. DEC-003/004/005/006 tetap terbuka. Gate berikutnya tetap Step 07.
+
+## 2026-10-13 — Step 07 Periode, Penugasan, dan Target
+
+**Status:** PARTIAL — scope implementasi dan seluruh gate lokal lulus, termasuk suite penuh pada PostgreSQL 18 + Redis di stack Docker Compose lokal. Bukti GitHub Actions untuk commit Step 07 baru tersedia setelah push dan dicatat lewat addendum. Belum ada periode resmi, dan jalur approval target resmi masih menunggu DEC-002.
+
+### Git preflight
+
+- `git fetch origin` lalu `git merge --ff-only origin/main`: `Already up to date`.
+- HEAD awal `cb465a68c38103ef6ac8ff46ef0e1c03a16e4bdc`, sama dengan `origin/main`; working tree bersih.
+
+### Scope selesai
+
+- **Modul `PeriodAssignment`.** Periode dengan tipe, rentang tanggal inklusif, zona waktu sendiri, scope unit organisasi, tanggal acuan penugasan, dan deadline per tahap. Lifecycle `DRAFT → OPEN → IN_PROGRESS → REVIEW → FINALIZED → LOCKED`.
+- **Snapshot penugasan.** Saat periode dibuka, sistem menyimpan pegawai (home team dan jabatan pada tanggal acuan), unit, jalur hierarki, versi template yang berlaku, dan approver per tahap, dalam satu transaksi dengan perubahan status.
+- **Modul `Target`.** Slot target dibuat dari snapshot pada level penilaian KPI. Versi target mengikuti `DRAFT → SUBMITTED → APPROVED`, dengan pengembalian ke draft dan revisi beralasan untuk target final.
+- **Staged import CSV.** Validasi per baris, ringkasan sebelum commit, deteksi duplikat baris dan file (SHA-256), commit atomik dan idempotent, serta unduhan file isian.
+- **Aturan input KPI.** Definisi KPI mendapat field opsional `decimal_places`, `min_valid_value`, dan `max_valid_value` (KPI_DEFINITION_TEMPLATE §D). Prompt meminta precision dan min/max diterapkan dari definisi, sedangkan schema Step 06 belum memilikinya. Ketiganya masuk content guard sehingga immutable setelah versi keluar dari draft.
+- **UI Livewire.** Daftar dan pembuatan periode; detail periode dengan pratinjau atau snapshot penugasan, tindakan lifecycle, penjadwalan ulang deadline, kelengkapan target, dan audit; matriks target; halaman import.
+- **Akses.** Capability baru `period.view`, `period.manage`, `target.view`, `target.manage`, `target.approve`, policy, dan menu "Periode & Target".
+- **Dokumentasi.** `docs/architecture/PERIOD_TARGET.md` baru; `IDENTITY_ACCESS.md`, `KPI_GOVERNANCE.md`, `APPLICATION_STRUCTURE.md`, dan `DATA_CONVENTIONS.md` diperbarui.
+
+### Lifecycle
+
+| Transisi | Status di Step 07 | Syarat |
+|---|---|---|
+| DRAFT → OPEN | Tersedia | Scope aktif pada tanggal acuan, tidak tumpang tindih dengan periode yang sudah dibuka, minimal satu subjek tercakup template |
+| OPEN → IN_PROGRESS | Tersedia | Semua target wajib sudah final |
+| IN_PROGRESS → REVIEW → FINALIZED → LOCKED | Hanya di enum dan trigger | Belum ada use case; menunggu precheck kelengkapan, kalibrasi, dan approval Step 08–10 |
+
+- Tidak ada transisi mundur. Trigger database menolak lompatan status, insert berstatus non-draft, perubahan identitas periode setelah dibuka, dan penghapusan periode non-draft.
+- Duplikat (`period_duplicate`) dan tumpang tindih (`period_overlap`) ditolak untuk tipe yang sama pada scope yang berhubungan. Pemeriksaan diulang di bawah row lock saat membuka.
+- Deadline bersifat opsional dan tidak memiliki nilai bawaan (DEC-009). Tidak ada grace period otomatis; deadline periode yang sudah dibuka hanya berubah lewat penjadwalan ulang beralasan dan teraudit.
+
+### Aturan snapshot
+
+- Subjek: semua pegawai dengan home team dalam scope pada tanggal acuan, dan semua unit dalam scope. Penugasan sementara tidak membuat scorecard kedua.
+- Template: versi yang berlaku pada tanggal acuan; template khusus jabatan didahulukan, lalu template unit. Tidak ada pewarisan dari unit induk.
+- Cakupan: `covered`, `no_template`, atau `kpi_not_in_force`. Subjek tidak tercakup tetap disimpan agar terlihat.
+- Approver: pemegang role tiap tahap (TL, Head, HR, Management) yang scope-nya mencakup unit subjek. Pegawai tidak pernah menjadi approver dirinya sendiri. Tahap tanpa approver dicatat sebagai gap, tidak diisi asumsi.
+- Baris snapshot dan slot target menolak `UPDATE` dan `DELETE` di level database.
+
+### Schema
+
+Migration baru:
+
+- `2026_10_13_000450_add_input_rules_to_kpi_definition_versions`;
+- `2026_10_13_000500_create_period_and_target_tables`: `assessment_periods`, `assessment_period_deadlines`, `period_assignments`, `period_assignment_approvers`, `period_targets`, `period_target_versions`, `target_import_batches`, `target_import_rows`.
+
+Outbox event: `PeriodOpened` v1, `TargetApproved` v1, `ImportCommitted` v1.
+
+### Bukti import
+
+| Skenario | Hasil test |
+|---|---|
+| File valid | Staging menghasilkan ringkasan (3 baris: 2 valid, 1 dilewati); target tidak berubah sampai commit; commit membuat 2 draft bersumber `import` |
+| Commit ulang | Hasil sama, tidak ada versi atau event kedua |
+| File yang sudah di-commit diunggah lagi | Ditolak (`import_already_committed`) |
+| File dengan baris salah | 7 baris error dengan pesan per baris (presisi, satuan, KPI tidak dikenal, subject_type, duplikat, kolom kosong); commit ditolak; 0 target tersimpan |
+| Satu baris salah di antara baris valid | Commit ditolak seluruhnya; 0 target tersimpan |
+| Target berubah setelah staging (baris valid maupun unchanged) | Commit ditolak (`import_stale`); 0 baris diterapkan; batch tetap staged |
+| File bukan CSV yang diharapkan | Kolom wajib hilang, bukan UTF-8, kosong, lebih dari 1 MB, atau terlalu banyak baris: ditolak sebelum staging |
+| Titik koma + BOM + kolom tambahan | Diterima |
+
+### Test boundary dan concurrency
+
+- **Asia/Jakarta.** Dengan deadline target 5 November: simpan pada `2026-11-05 16:59:59 UTC` (23:59:59 WIB) diterima tanpa alasan; pada `17:00:00 UTC` (00:00 WIB 6 November) ditolak `cutoff_reason_required` walaupun tanggal UTC masih 5 November.
+- **Perpindahan pegawai.** Pegawai dipindah setelah snapshot November: baris November identik sebelum dan sesudah; periode Desember mengikuti team, jabatan, nama, dan template baru.
+- **Pemilihan versi template.** v1 berlaku 12 Oktober dan v2 berlaku 1 Desember: periode November memakai v1, Desember memakai v2.
+- **Concurrency.** `lock_version` basi pada periode, draft target, dan batch import ditolak; periode tidak dapat dibuka dua kali dan snapshot tidak tergandakan; dua draft bertumpang tindih tidak dapat sama-sama dibuka; halaman matriks basi tidak dapat menimpa draft yang diubah atau dibuat orang lain.
+- **Authorization.** Halaman dan aksi diuji per role lewat URL langsung dan aksi Livewire palsu; HR department tidak dapat membuat periode company, menjalankan lifecycle periode company, atau mengubah target unit lain.
+
+### Validasi
+
+| # | Gate | Hasil |
+|---|---|---|
+| 1 | `php artisan test` (SQLite in-memory, PHP 8.4.25) | 463 test: 461 passed, 2 skipped (registrasi dorman), 1.874 assertions |
+| 2 | `bash scripts/dev.sh test-pgsql` (PostgreSQL 18.6 + Redis, stack Compose lokal) | 463 test: 461 passed, 2 skipped, 1.874 assertions |
+| 3 | `vendor/bin/pint --test` | passed |
+| 4 | `vendor/bin/phpstan analyse --memory-limit=1G` | 0 error |
+| 5 | `composer validate --strict` / `composer audit --locked` | valid / tidak ada advisory |
+| 6 | `npm audit --audit-level=high` / `npm run build` | 0 vulnerability / build berhasil |
+| 7 | SQLite kosong: migrate → rollback 2 migration → migrate | lulus |
+| 8 | `php artisan route:list --path=periods` | 5 route terdaftar |
+| 9 | `git diff --check` dan pemeriksaan CRLF | bersih |
+
+Test baru Step 07: 129 (dari 334 menjadi 463).
+
+### Code review
+
+Dua review independen (PHP/Laravel dan security) dijalankan sebelum commit. Tidak ada temuan Critical. Temuan yang diperbaiki, masing-masing dengan test regresi:
+
+| Tingkat | Temuan | Perbaikan |
+|---|---|---|
+| High | Batch import terlihat dan dapat dibatalkan oleh HR ber-scope lebih sempit; staging file yang sama membatalkan batch akun lain | Batch hanya untuk pengunggah atau HR pengelola seluruh periode; staging ulang hanya mengganti batch milik akun yang sama |
+| High | Optimistic lock pada matriks target tidak efektif karena versi dibaca ulang saat simpan | Halaman menyimpan versi draft yang pertama kali ditampilkan (`#[Locked]`, 0 bila belum ada); pengembalian target dan commit/batal import juga memakai versi yang dilihat |
+| Medium | Aturan dua orang hanya memeriksa pengaju | Kolom `updated_by_user_id`; penyetuju tidak boleh pembuat, pengubah terakhir, atau pengaju |
+| Medium | Baris `unchanged` tidak ikut pemeriksaan basi saat commit | Ikut diperiksa |
+| Medium | Batas baris CSV baru diperiksa setelah seluruh file diurai | Dihitung di dalam loop pembacaan |
+| Medium | Approver dibaca pada tanggal acuan walaupun role-nya sudah berakhir saat periode dibuka | Role dibaca pada tanggal acuan atau hari pembukaan, mana yang lebih akhir |
+| Medium | `open` mengunci semua periode bertipe sama dan membaca tipe sebelum lock | Hanya draft yang dikunci; periode dibaca setelah lock |
+| Medium | `whereIn` dengan satu bind per target | Subquery dan chunk |
+| Medium | Kolom pengaju/penyetuju versi approved dapat diubah lewat SQL langsung | Trigger menolak semua `UPDATE` pada versi approved |
+| Low | Staging pada periode tertutup; flag cut-off hilang saat deadline dimundurkan; template tanpa item dianggap tercakup; `decimal_places` negatif; formula dengan spasi di depan | Diperbaiki |
+
+Temuan yang dicatat tetapi tidak dikerjakan di step ini:
+
+- persetujuan massal tidak membawa token versi yang dilihat penyetuju;
+- submit dan approve tidak memeriksa cut-off;
+- draft periode yang keliru belum dapat dihapus;
+- pratinjau penugasan dihitung ulang pada setiap interaksi halaman;
+- escape `LIKE` tanpa klausa `ESCAPE` (pola yang sama sejak Step 05).
+
+### Keputusan dan asumsi
+
+- Rentang periode disimpan inklusif, berbeda dari tanggal berlaku yang setengah terbuka. Alasannya tercatat di `PERIOD_TARGET.md` §1.
+- Tipe periode hanya klasifikasi. Tanggal selalu diisi eksplisit karena kalender bisnis belum diputuskan.
+- Satu periode memiliki satu scope unit, sehingga pilot beberapa team dijalankan sebagai beberapa periode.
+- Nilai target divalidasi hanya dengan aturan yang dinyatakan definisi KPI. Tidak ada batas bawaan.
+
+### Blocker keputusan
+
+- **DEC-002 (approval chain) OPEN.** PRD mewajibkan target disetujui, tetapi penyetuju per team belum diputuskan dan seluruh hak "Menetapkan target" pada ROLE_APPROVAL_MATRIX masih bersyarat. `target.manage` dan `target.approve` karena itu hanya dipegang HR Performance dengan aturan dua orang. Ini mekanisme teknis, bukan jalur approval resmi. Hak bersyarat Manager, Team Leader, dan Employee belum diaktifkan. Jalur pengganti saat approver kosong atau diri sendiri juga belum ada; gap hanya ditampilkan.
+- **DEC-009 (SLA) OPEN.** Deadline tidak memiliki nilai bawaan dan tidak ada eskalasi.
+- **DEC-015 (kalender produksi) OPEN.** Kalender kerja dan shift belum dimodelkan.
+- **DEC-003/004/005/006 OPEN/PROPOSED.** Belum ada KPI atau template resmi, sehingga belum ada periode resmi yang dapat dibuka dengan data bisnis nyata.
+- Kebijakan pegawai yang pindah di tengah periode, pegawai baru setelah snapshot, dan grace period belum diputuskan dan tidak diimplementasikan.
+
+### Batasan
+
+- Transisi REVIEW, FINALIZED, dan LOCKED belum dapat dijalankan.
+- Snapshot tidak dapat ditambah atau dikoreksi setelah periode dibuka; itu bagian proses koreksi Step 10.
+- Employee belum dapat melihat target pribadinya; tampilan itu bagian dashboard Step 11.
+- Hanya deadline penetapan target yang ditegakkan. Deadline tahap lain disimpan untuk step berikutnya.
+
+### Gate berikutnya
+
+- Commit dan push Step 07 ke `origin/main`, tunggu seluruh GitHub Actions lulus, lalu catat addendum.
+- Setelah CI lulus, Step 08 (aktual, evidence, dan staged import) dapat dimulai.

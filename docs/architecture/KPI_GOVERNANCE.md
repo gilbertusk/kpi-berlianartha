@@ -27,6 +27,7 @@ Field mengikuti `KPI_DEFINITION_TEMPLATE.md`:
 
 - **Identitas dan kepemilikan:** nama, tujuan, deskripsi, process owner, data owner, level penilaian.
 - **Pengukuran:** satuan, tipe nilai, arah, frekuensi, agregasi.
+- **Aturan input (Step 07, opsional):** jumlah desimal input (`decimal_places`, 0–4) serta nilai input minimum dan maksimum (`min_valid_value`, `max_valid_value`, disimpan sebagai string desimal kanonis). Target divalidasi terhadap aturan ini; aktual menyusul pada Step 08. Ketiganya termasuk isi versi, sehingga dibekukan sejak versi keluar dari draft.
 - **Formula:** formula (uraian), pembilang, penyebut, strategi skor dan versinya, parameter skor.
 - **Sumber dan bukti:** sumber data, metode input, kebutuhan bukti beserta uraiannya.
 - **Aturan penilaian:** kebijakan pengecualian (missing, N/A, terlambat), aturan target.
@@ -61,7 +62,7 @@ DRAFT ──submit──▶ REVIEW ──publish──▶ PUBLISHED ──retire
   - Semua versi KPI yang dirujuk sudah published dan berlaku pada tanggal mulai template.
   - Referensi sign-off sudah diisi.
 - **Applicability item.** Aturan applicability hanya berupa daftar jabatan terstruktur `{"positions": [...]}`. Expression bebas tidak didukung.
-- **Kontrak untuk step berikutnya.** `TemplateResolver::versionOn()` dan `forScope()` adalah kontrak baca untuk Step 07. Dua periode dengan tanggal berbeda akan mendapat versi template yang berlaku masing-masing.
+- **Kontrak untuk step berikutnya.** `TemplateResolver::versionOn()` dan `forScope()` adalah kontrak baca untuk Step 07. Dua periode dengan tanggal berbeda akan mendapat versi template yang berlaku masing-masing. Pemakaiannya dijelaskan di `PERIOD_TARGET.md` §2.
 - **Bila KPI mendapat versi baru.** Template yang sudah published tetap merujuk versi KPI lama. Untuk memakai versi KPI baru, buat versi template baru.
 
 ## 5. Strategi skor (allowlist)

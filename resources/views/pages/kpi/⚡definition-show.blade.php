@@ -24,9 +24,9 @@ new #[Title('Definisi KPI')] class extends GuardedPage {
 
     private const TEXT_FIELDS = [
         'name', 'purpose', 'description', 'process_owner', 'data_owner', 'evaluation_subject', 'unit', 'value_type',
-        'direction', 'frequency', 'aggregation', 'formula_description', 'numerator_definition', 'denominator_definition',
-        'score_strategy', 'data_source', 'input_method', 'evidence_requirement', 'evidence_description',
-        'exception_policy', 'target_rule', 'approval_chain', 'signoff_reference', 'effective_from',
+        'direction', 'frequency', 'aggregation', 'decimal_places', 'min_valid_value', 'max_valid_value',
+        'formula_description', 'numerator_definition', 'denominator_definition', 'score_strategy', 'data_source',
+        'input_method', 'evidence_requirement', 'evidence_description', 'exception_policy', 'target_rule', 'approval_chain', 'signoff_reference', 'effective_from',
     ];
 
     private const PARAM_FIELDS = [

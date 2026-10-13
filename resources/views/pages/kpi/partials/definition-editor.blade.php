@@ -23,6 +23,9 @@
         <x-ui.select name="form.direction" :label="__('Arah KPI')" :placeholder="__('Pilih')" :options="Vocabulary::DIRECTIONS" wire:model="form.direction" />
         <x-ui.select name="form.frequency" :label="__('Frekuensi')" :placeholder="__('Pilih')" :options="Vocabulary::FREQUENCIES" wire:model="form.frequency" />
         <x-ui.select name="form.aggregation" :label="__('Agregasi')" :placeholder="__('Pilih')" :options="Vocabulary::AGGREGATIONS" wire:model="form.aggregation" />
+        <x-ui.select name="form.decimal_places" :label="__('Jumlah desimal input')" :placeholder="__('Mengikuti tipe nilai')" :options="['0' => '0', '1' => '1', '2' => '2', '3' => '3', '4' => '4']" :hint="__('Target dan aktual dengan desimal lebih banyak akan ditolak.')" wire:model="form.decimal_places" />
+        <x-ui.input name="form.min_valid_value" :label="__('Nilai input minimum (opsional)')" wire:model="form.min_valid_value" />
+        <x-ui.input name="form.max_valid_value" :label="__('Nilai input maksimum (opsional)')" wire:model="form.max_valid_value" />
         <div class="sm:col-span-3 grid gap-4 sm:grid-cols-3">
             <x-ui.textarea name="form.formula_description" :label="__('Formula (uraian untuk manusia)')" wire:model="form.formula_description" />
             <x-ui.textarea name="form.numerator_definition" :label="__('Pembilang')" wire:model="form.numerator_definition" />

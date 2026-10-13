@@ -31,6 +31,9 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
  * @property string|null $direction
  * @property string|null $frequency
  * @property string|null $aggregation
+ * @property int|null $decimal_places
+ * @property string|null $min_valid_value canonical decimal string
+ * @property string|null $max_valid_value canonical decimal string
  * @property string|null $formula_description
  * @property string|null $numerator_definition
  * @property string|null $denominator_definition
@@ -105,6 +108,7 @@ final class KpiDefinitionVersion extends Model
             ...$this->lifecycleCasts(),
             'score_parameters' => 'array',
             'score_strategy_version' => 'integer',
+            'decimal_places' => 'integer',
             'effective_from' => BusinessDate::class,
             'effective_until' => BusinessDate::class,
         ];

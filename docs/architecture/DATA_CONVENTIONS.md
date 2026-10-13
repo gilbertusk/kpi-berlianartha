@@ -17,6 +17,7 @@
 - BusinessTime adalah satu-satunya helper konversi boundary yang dipakai shared layer.
 - Tanggal berlaku menggunakan interval setengah terbuka: effective_from inklusif dan effective_until eksklusif. Nilai null pada effective_until berarti belum mempunyai batas akhir.
 - Tanggal operasional atau shift disimpan eksplisit oleh modul terkait jika tidak aman diturunkan dari timestamp.
+- Periode penilaian adalah pengecualian yang disengaja: `starts_on` dan `ends_on` keduanya inklusif, dan periode menyimpan zona waktunya sendiri (lihat `PERIOD_TARGET.md` §1).
 
 ## 3. Numeric dan rounding
 

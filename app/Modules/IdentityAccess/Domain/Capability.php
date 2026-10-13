@@ -30,6 +30,13 @@ enum Capability: string
     case KpiTemplateManage = 'kpi_template.manage';
     case KpiTemplatePublish = 'kpi_template.publish';
 
+    /** Assessment periods, assignment snapshots, and targets (Step 07). */
+    case PeriodView = 'period.view';
+    case PeriodManage = 'period.manage';
+    case TargetView = 'target.view';
+    case TargetManage = 'target.manage';
+    case TargetApprove = 'target.approve';
+
     /**
      * Reserved for the KPI modules (Step 06–10). Step 05 only fixes the role
      * ceiling from ROLE_APPROVAL_MATRIX.md; ownership, workflow state, and
@@ -50,12 +57,18 @@ enum Capability: string
      */
     public function changesKpiValues(): bool
     {
-        return $this === self::KpiValueModify || $this === self::ApprovalDecide;
+        return in_array($this, [
+            self::KpiValueModify,
+            self::ApprovalDecide,
+            self::TargetManage,
+            self::TargetApprove,
+        ], true);
     }
 
     /**
-     * Authoring or publishing KPI definitions and templates changes how
-     * scores are computed, so technical and audit roles may never hold it.
+     * Authoring or publishing KPI definitions and templates, and setting up
+     * assessment periods, changes how scores are computed, so technical and
+     * audit roles may never hold it.
      */
     public function configuresKpis(): bool
     {
@@ -64,6 +77,7 @@ enum Capability: string
             self::KpiDefinitionPublish,
             self::KpiTemplateManage,
             self::KpiTemplatePublish,
+            self::PeriodManage,
         ], true);
     }
 

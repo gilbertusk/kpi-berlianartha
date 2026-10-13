@@ -61,6 +61,45 @@ final class OrganizationDirectory
     }
 
     /**
+     * Every employee whose home team is one of the units on the date, ordered
+     * by employee number. Used to snapshot who belongs to a period.
+     *
+     * @param  list<int>  $unitIds
+     * @return list<HomeAssignment>
+     */
+    public function homeAssignmentsOn(array $unitIds, string $businessDate): array
+    {
+        if ($unitIds === []) {
+            return [];
+        }
+
+        $rows = DB::table('employee_assignments as a')
+            ->join('employees as e', 'e.id', '=', 'a.employee_id')
+            ->where('a.assignment_type', AssignmentType::Home->value)
+            ->whereIn('a.organization_unit_id', $unitIds)
+            ->where(fn (Builder $query) => self::activeOn($query, $businessDate, 'a.'))
+            ->orderBy('e.employee_number')
+            ->orderBy('a.id')
+            ->get(['a.id as assignment_id', 'a.organization_unit_id', 'a.position_title', 'e.id as employee_id', 'e.employee_number', 'e.full_name', 'e.user_id']);
+
+        $assignments = [];
+
+        foreach ($rows as $row) {
+            $assignments[] = new HomeAssignment(
+                assignmentId: (int) $row->assignment_id,
+                employeeId: (int) $row->employee_id,
+                employeeNumber: (string) $row->employee_number,
+                fullName: (string) $row->full_name,
+                userId: $row->user_id === null ? null : (int) $row->user_id,
+                unitId: (int) $row->organization_unit_id,
+                positionTitle: $row->position_title === null ? null : (string) $row->position_title,
+            );
+        }
+
+        return $assignments;
+    }
+
+    /**
      * Applies the half-open effective period filter to a query whose
      * table has effective_from/effective_until columns.
      *

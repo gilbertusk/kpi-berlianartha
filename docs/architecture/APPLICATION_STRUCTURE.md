@@ -1,6 +1,6 @@
 # Application Structure
 
-**Status:** Baseline Step 02 — 12 Oktober 2026; diperbarui Step 05
+**Status:** Baseline Step 02 — 12 Oktober 2026; diperbarui Step 05 dan Step 07
 **Referensi:** ADR-0001 (modular monolith), ADR-0002 (Laravel/Livewire), `DOMAIN_BOUNDARIES.md`
 
 ## 1. Skeleton
@@ -15,10 +15,13 @@ Aplikasi dibuat dari official Laravel Livewire starter kit (Laravel 13, Livewire
 | `app/Modules/Organization` | Hierarki company → department → team bertanggal efektif, pegawai, penugasan, `OrganizationDirectory` (kontrak baca publik), dan policy |
 | `app/Modules/IdentityAccess` | Role/capability, `AccessControl`, role assignment, delegasi, lifecycle akun, audit login, middleware session/MFA, dan base page Livewire `GuardedPage`. Detail: `IDENTITY_ACCESS.md` |
 | `app/Modules/KpiGovernance` | Kamus KPI dan template scorecard berversi, strategi skor allowlist, kandidat PRD, dan `TemplateResolver`. Detail: `KPI_GOVERNANCE.md` |
+| `app/Modules/PeriodAssignment` | Periode penilaian, deadline per tahap, snapshot penugasan dan approver, serta kontrak `PeriodLifecycleParticipant`. Detail: `PERIOD_TARGET.md` |
+| `app/Modules/Target` | Slot dan versi target, validasi nilai terhadap definisi KPI, staged import CSV, dan unduhan file isian. Detail: `PERIOD_TARGET.md` |
 | `resources/views/pages/kpi/` | Halaman Livewire KPI (kamus, detail/versi/perbandingan, template builder/preview) |
+| `resources/views/pages/periods/` | Halaman Livewire periode (daftar, setup dan snapshot, matriks target, import) |
 | `resources/views/pages/administration/` | Halaman Livewire Administration (organisasi, pegawai, akun, role, delegasi, access review) |
 | `app/Support/Operations/Heartbeat.php`, `app/Console/Commands/Operations/*`, `app/Jobs/Operations/QueueSmokeJob.php` | Tooling operasional platform (Step 03): heartbeat worker/scheduler, `ops:readiness`, `ops:queue-smoke`. Bukan modul bisnis |
-| `config/navigation.php` | Definisi menu utama. Menu Administration memakai ability `administration.view` |
+| `config/navigation.php` | Definisi menu utama. Menu Administration memakai ability `administration.view`; menu Periode & Target memakai `periods.view` |
 | `resources/views/components/ui/` | UI primitives aplikasi |
 | `resources/views/layouts/` | Application shell (sidebar) dan auth layout |
 | `resources/views/modules/placeholder.blade.php` | Halaman placeholder menu yang belum diimplementasikan |
