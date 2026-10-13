@@ -1435,3 +1435,12 @@ Dicatat tetapi tidak dikerjakan: pengingat hanya cocok pada tanggal persis (tanp
 
 - Commit dan push Step 11, tunggu GitHub Actions (termasuk PostgreSQL), lalu catat addendum.
 - Step 12 (laporan dan ekspor).
+
+### Addendum 2026-10-13 — bukti GitHub Actions Step 11
+
+**Status Step 11 diperbarui:** PASS untuk scope implementasi (dashboard, notifikasi, pengingat, team review, test). **Tetap BLOCKED oleh keputusan bisnis:** pengingat dan eskalasi (DEC-009), channel email (DEC-014), KPI merah dan skor resmi (DEC-004), akses coaching notes (DEC-011). Kriteria performa pada data representatif dan audit aksesibilitas dengan alat bantu **belum dibuktikan**.
+
+- **Commit tervalidasi:** `fa71c132ddf5e50ae54d0a3178b001aae024e491` pada `origin/main`.
+- **CI:** GitHub Actions run [`38382781036`](https://github.com/gilbertusk/kpi-berlianartha/actions/runs/38382781036) berakhir dengan conclusion `success`; kelima job lulus, termasuk dua job yang menjalankan suite pada PostgreSQL 18 + Redis. Ini menutup gate PostgreSQL yang tidak dapat dijalankan secara lokal: migrasi Step 11 beserta trigger dan CHECK constraint-nya berhasil dibuat dan seluruh test lulus di atasnya.
+
+Gate berikutnya adalah Step 12.
