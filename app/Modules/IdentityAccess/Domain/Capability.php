@@ -37,6 +37,11 @@ enum Capability: string
     case TargetManage = 'target.manage';
     case TargetApprove = 'target.approve';
 
+    /** Actuals and evidence (Step 08). */
+    case ActualView = 'actual.view';
+    case ActualEnter = 'actual.enter';
+    case ActualVerify = 'actual.verify';
+
     /**
      * Reserved for the KPI modules (Step 06–10). Step 05 only fixes the role
      * ceiling from ROLE_APPROVAL_MATRIX.md; ownership, workflow state, and
@@ -62,6 +67,8 @@ enum Capability: string
             self::ApprovalDecide,
             self::TargetManage,
             self::TargetApprove,
+            self::ActualEnter,
+            self::ActualVerify,
         ], true);
     }
 

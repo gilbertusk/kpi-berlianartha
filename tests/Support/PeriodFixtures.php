@@ -140,6 +140,23 @@ final class PeriodFixtures
         $service->approve($this->kpi->reviewerActor(), $period->id, self::everything(), [$target->id]);
     }
 
+    /**
+     * A period in progress: opened, every target approved with the given
+     * value, and moved to the actual-entry stage.
+     *
+     * @param  array<string, mixed>  $overrides
+     */
+    public function inProgress(array $overrides = [], string $targetValue = '100'): AssessmentPeriod
+    {
+        $period = $this->opened($overrides);
+
+        foreach (PeriodTarget::query()->where('assessment_period_id', $period->id)->with('definitionVersion')->get() as $target) {
+            $this->approvedTarget($period, $target, $targetValue);
+        }
+
+        return app(PeriodService::class)->startProgress($this->kpi->authorActor(), $period->id, $period->fresh()?->lock_version ?? 1);
+    }
+
     public function systemActor(): Actor
     {
         return Actor::system('test');

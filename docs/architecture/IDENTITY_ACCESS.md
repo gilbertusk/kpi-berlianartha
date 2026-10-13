@@ -93,6 +93,9 @@ Legenda: `A` diizinkan dalam scope, `—` ditolak, `R*` plafon untuk modul KPI b
 | `period.view` / `target.view` (Step 07) | A | A | A | — | A | A | — |
 | `period.manage` (Step 07) | — | — | — | — | A | — | — |
 | `target.manage` / `target.approve` (Step 07) | — | — | — | — | A | — | — |
+| `actual.view` (Step 08) | A | A | A | A (diri sendiri) | A | A | — |
+| `actual.enter` (Step 08) | — | — | — | A (diri sendiri) | A | — | — |
+| `actual.verify` (Step 08) | — | — | A | — | — | — | — |
 | `kpi.value.modify` | — | R* | R* | R* | R* | — | — |
 | `approval.decide` | R* | R* | R* | — | R* | — | — |
 

@@ -30,7 +30,16 @@ final readonly class TargetValueRules
         private ?int $minimum,
         private ?int $maximum,
         private ?int $stageCount,
+        private string $noun = 'target',
     ) {}
+
+    /**
+     * The same rules for another kind of value (actuals), so messages name it.
+     */
+    public function named(string $noun): self
+    {
+        return new self($this->unit, $this->valueType, $this->decimalPlaces, $this->minimum, $this->maximum, $this->stageCount, $noun);
+    }
 
     /**
      * @param  array<string, mixed>|null  $scoreParameters
@@ -63,17 +72,17 @@ final readonly class TargetValueRules
     public function parse(string $raw, string $unit): string
     {
         if ($this->unit === null) {
-            throw new InvalidArgumentException('KPI ini belum memiliki satuan, sehingga target tidak dapat diisi.');
+            throw new InvalidArgumentException("KPI ini belum memiliki satuan, sehingga {$this->noun} tidak dapat diisi.");
         }
 
         if (trim($unit) !== $this->unit) {
-            throw new InvalidArgumentException("Satuan target ({$unit}) tidak sesuai dengan satuan KPI ({$this->unit}).");
+            throw new InvalidArgumentException("Satuan {$this->noun} ({$unit}) tidak sesuai dengan satuan KPI ({$this->unit}).");
         }
 
         $raw = trim($raw);
 
         if (preg_match('/^(-?)(\d{1,12})(?:\.(\d+))?$/', $raw, $matches) !== 1) {
-            throw new InvalidArgumentException('Nilai target harus berupa angka dengan titik sebagai pemisah desimal, tanpa pemisah ribuan, dan paling banyak 12 digit sebelum desimal.');
+            throw new InvalidArgumentException("Nilai {$this->noun} harus berupa angka dengan titik sebagai pemisah desimal, tanpa pemisah ribuan, dan paling banyak 12 digit sebelum desimal.");
         }
 
         $fraction = $matches[3] ?? '';
@@ -92,15 +101,15 @@ final readonly class TargetValueRules
         }
 
         if ($this->stageCount !== null && ($scaled < self::UNIT || $scaled > $this->stageCount * self::UNIT)) {
-            throw new InvalidArgumentException("Target milestone harus berupa nomor tahap 1 sampai {$this->stageCount}.");
+            throw new InvalidArgumentException("Nilai {$this->noun} milestone harus berupa nomor tahap 1 sampai {$this->stageCount}.");
         }
 
         if ($this->minimum !== null && $scaled < $this->minimum) {
-            throw new InvalidArgumentException('Nilai target lebih kecil dari nilai input minimum KPI ('.self::format($this->minimum).').');
+            throw new InvalidArgumentException("Nilai {$this->noun} lebih kecil dari nilai input minimum KPI (".self::format($this->minimum).').');
         }
 
         if ($this->maximum !== null && $scaled > $this->maximum) {
-            throw new InvalidArgumentException('Nilai target lebih besar dari nilai input maksimum KPI ('.self::format($this->maximum).').');
+            throw new InvalidArgumentException("Nilai {$this->noun} lebih besar dari nilai input maksimum KPI (".self::format($this->maximum).').');
         }
 
         return sprintf('%s%d.%04d', $scaled < 0 ? '-' : '', intdiv(abs($scaled), self::UNIT), abs($scaled) % self::UNIT);

@@ -34,6 +34,12 @@ Konfigurasi: `.github/dependabot.yml`.
 | npm `overrides.tinypool = 2.1.2` | Menutup GHSA-5gmw-xhrv-c9v3 dan GHSA-85c8-ppgw-ccpr pada `vite-plus@0.3.0` → `oxfmt` tanpa migrasi `vp migrate` | Saat `vite-plus` dinaikkan |
 | Composer `extra.aws/aws-sdk-php = ["S3"]` + `pre-autoload-dump` | Membuang service AWS SDK yang tidak dipakai (vendor AWS 76 MB → 5 MB) | Bila layanan AWS lain dibutuhkan |
 
+### Dependency yang ditambahkan setelah baseline
+
+| Paket | Step | Alasan |
+|---|---|---|
+| `openspout/openspout` | 08 | Membaca file XLSX pada import aktual secara streaming. Laravel tidak memiliki pembaca spreadsheet bawaan; paket ini ringan dan tidak membutuhkan ekstensi tambahan |
+
 ## 4. SBOM dan scanning
 
 - Job CI `docker-image` membuat SBOM CycloneDX (`trivy image --format cyclonedx`) untuk image aplikasi dan nginx, diunggah sebagai artifact `sbom-<sha>` (retensi 30 hari).

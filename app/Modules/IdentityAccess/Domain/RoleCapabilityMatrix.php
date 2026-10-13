@@ -29,6 +29,7 @@ final class RoleCapabilityMatrix
                 Capability::KpiTemplateView,
                 Capability::PeriodView,
                 Capability::TargetView,
+                Capability::ActualView,
                 Capability::ApprovalDecide,
             ],
             Role::DepartmentHead->value => [
@@ -38,6 +39,7 @@ final class RoleCapabilityMatrix
                 Capability::KpiTemplateView,
                 Capability::PeriodView,
                 Capability::TargetView,
+                Capability::ActualView,
                 Capability::KpiValueModify,
                 Capability::ApprovalDecide,
             ],
@@ -48,11 +50,15 @@ final class RoleCapabilityMatrix
                 Capability::KpiTemplateView,
                 Capability::PeriodView,
                 Capability::TargetView,
+                Capability::ActualView,
+                Capability::ActualVerify,
                 Capability::KpiValueModify,
                 Capability::ApprovalDecide,
             ],
             Role::Employee->value => [
                 Capability::EmployeeView,
+                Capability::ActualView,
+                Capability::ActualEnter,
                 Capability::KpiValueModify,
             ],
             Role::HrPerformance->value => [
@@ -75,6 +81,8 @@ final class RoleCapabilityMatrix
                 Capability::TargetView,
                 Capability::TargetManage,
                 Capability::TargetApprove,
+                Capability::ActualView,
+                Capability::ActualEnter,
                 Capability::KpiValueModify,
                 Capability::ApprovalDecide,
             ],
@@ -89,6 +97,7 @@ final class RoleCapabilityMatrix
                 Capability::KpiTemplateView,
                 Capability::PeriodView,
                 Capability::TargetView,
+                Capability::ActualView,
             ],
             Role::SystemAdmin->value => [
                 Capability::OrganizationView,

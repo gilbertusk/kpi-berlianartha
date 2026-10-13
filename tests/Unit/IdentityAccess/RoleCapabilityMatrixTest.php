@@ -120,3 +120,24 @@ test('periods and targets are read by five roles and changed by HR Performance o
         // Setting and approving targets is not transferable by delegation.
         ->and($matrix->delegableCapabilitiesFor(Role::HrPerformance))->not->toContain(Capability::TargetManage, Capability::TargetApprove, Capability::PeriodManage);
 });
+
+test('actuals are entered by employees and HR, verified by team leaders, and never touched by technical or audit roles', function (): void {
+    $matrix = new RoleCapabilityMatrix;
+
+    $holders = [
+        Capability::ActualView->value => [Role::Management, Role::DepartmentHead, Role::TeamLeader, Role::Employee, Role::HrPerformance, Role::Auditor],
+        Capability::ActualEnter->value => [Role::Employee, Role::HrPerformance],
+        Capability::ActualVerify->value => [Role::TeamLeader],
+    ];
+
+    foreach ($holders as $capability => $roles) {
+        foreach (Role::cases() as $role) {
+            expect($matrix->allows($role, Capability::from($capability)))->toBe(in_array($role, $roles, true), "{$role->value} / {$capability}");
+        }
+    }
+
+    expect(Capability::ActualEnter->changesKpiValues())->toBeTrue()
+        ->and(Capability::ActualVerify->changesKpiValues())->toBeTrue()
+        ->and($matrix->delegableCapabilitiesFor(Role::TeamLeader))->not->toContain(Capability::ActualVerify)
+        ->and($matrix->delegableCapabilitiesFor(Role::TeamLeader))->toContain(Capability::ActualView);
+});

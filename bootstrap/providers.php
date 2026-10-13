@@ -1,5 +1,6 @@
 <?php
 
+use App\Providers\ActualEvidenceServiceProvider;
 use App\Providers\AppServiceProvider;
 use App\Providers\FortifyServiceProvider;
 use App\Providers\IdentityAccessServiceProvider;
@@ -17,5 +18,6 @@ return [
     KpiGovernanceServiceProvider::class,
     PeriodAssignmentServiceProvider::class,
     TargetServiceProvider::class,
+    ActualEvidenceServiceProvider::class,
     FortifyServiceProvider::class,
 ];

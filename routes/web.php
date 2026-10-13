@@ -1,5 +1,7 @@
 <?php
 
+use App\Modules\ActualEvidence\Http\ActualImportErrorsController;
+use App\Modules\ActualEvidence\Http\EvidenceDownloadController;
 use App\Modules\Target\Http\TargetImportTemplateController;
 use Illuminate\Support\Facades\Route;
 
@@ -30,6 +32,15 @@ Route::middleware(['auth', 'verified', 'mfa'])->group(function () {
         Route::livewire('{period}/targets/import', 'pages::periods.import')->name('targets.import');
         Route::get('{period}/targets/template.csv', TargetImportTemplateController::class)->name('targets.template');
     });
+
+    // Step 08 — actuals, evidence, and staged actual import.
+    Route::livewire('actuals', 'pages::actuals.index')->name('actuals.index');
+    Route::prefix('periods/{period}/actuals')->name('actuals.')->group(function () {
+        Route::livewire('/', 'pages::actuals.entry')->name('entry');
+        Route::livewire('import', 'pages::actuals.import')->name('import');
+        Route::get('import/{batch}/errors.csv', ActualImportErrorsController::class)->name('import.errors');
+    });
+    Route::get('evidence/{evidence}/{viewer}', EvidenceDownloadController::class)->middleware('signed')->name('evidence.download');
 
     // Step 05 — identity, organization, and access administration. Every page
     // authorizes on mount and every Livewire action authorizes again.

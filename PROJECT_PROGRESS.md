@@ -998,3 +998,128 @@ Temuan yang dicatat tetapi tidak dikerjakan di step ini:
 - **Run pertama gagal.** Run [`38341224670`](https://github.com/gilbertusk/kpi-berlianartha/actions/runs/38341224670) untuk commit `c8fd2bf` gagal pada job Docker Compose: 1 dari 463 test gagal, empat job lain lulus. Test yang gagal adalah test Step 06 (`KpiDefinitionLifecycleTest`) yang membaca audit log tanpa `orderBy`, sehingga urutan baris di PostgreSQL tidak dijamin. Test yang sama lulus pada job PostgreSQL lainnya dan pada run lokal. Perbaikannya menambahkan `orderBy('id')` (`5734032`); kode aplikasi tidak berubah.
 
 DEC-002, DEC-009, dan DEC-015 tetap terbuka. Jalur approval target resmi, transisi REVIEW/FINALIZED/LOCKED, dan koreksi snapshot tetap menunggu keputusan dan step berikutnya. Gate berikutnya adalah Step 08.
+
+## 2026-10-13 — Step 08 Aktual, Evidence, dan Import
+
+**Status:** PARTIAL — scope implementasi dan seluruh gate lokal lulus, termasuk suite penuh pada PostgreSQL 18 + Redis di stack Compose lokal. Dua hal menahan PASS: bukti GitHub Actions baru tersedia setelah push, dan **antivirus belum terintegrasi** sehingga evidence belum boleh dipakai di staging atau production.
+
+### Git preflight
+
+- HEAD awal `74fea213807ba14ba1594125ea10c9c8682c144e`, sama dengan `origin/main`; working tree bersih sebelum mulai.
+
+### Scope selesai
+
+- **Modul `ActualEvidence`.** Aktual per rentang observasi dengan nilai, satuan, sumber, record sumber, pelaku, status, catatan, dan versi.
+- **Lifecycle** `DRAFT → SUBMITTED → VERIFIED`, dengan `REJECTED → DRAFT`. Missing bukan status: itu ketiadaan entri.
+- **Evidence.** Upload ke disk private S3-compatible, validasi isi file, karantina sampai lolos pemindaian, tautan bertanda tangan berumur pendek, dan audit unduhan.
+- **Staged import CSV/XLSX.** Upload → parse → validasi → pratinjau → commit atomik → rekonsiliasi, dengan unduhan baris error.
+- **UI.** Daftar periode aktual, halaman entri (personal atau massal sesuai scope) dengan bukti dan riwayat, serta halaman import.
+- **Akses.** Capability `actual.view`, `actual.enter`, `actual.verify`, dan menu "Aktual".
+- **Dokumentasi.** `docs/architecture/ACTUAL_EVIDENCE.md` baru; `IDENTITY_ACCESS.md`, `APPLICATION_STRUCTURE.md`, dan `DEPENDENCY_POLICY.md` diperbarui.
+
+### Lifecycle aktual
+
+| Aturan | Implementasi |
+|---|---|
+| Kapan boleh diisi | Hanya saat periode IN_PROGRESS |
+| Nol, N/A, missing | Nol adalah entri bernilai `0`; N/A adalah entri tersendiri yang wajib beralasan; missing berarti tidak ada entri. Constraint PostgreSQL menjaga konsistensi jenis entri dan nilai |
+| Rentang observasi | Inklusif, di dalam periode, KPI harian per tanggal, tidak tumpang tindih per target |
+| Simpan | Satu kali simpan berlaku semua atau tidak sama sekali, dengan pesan per baris |
+| Terlambat | Setelah deadline pengisian aktual (zona waktu periode), simpan dan ajukan wajib beralasan; tanda terlambat menetap |
+| Bukti wajib | Tidak dapat diajukan tanpa bukti; tidak dapat diverifikasi bila bukti tidak dapat dibuka |
+| Verifikasi | Team Leader dalam scope; bukan pengisi, pengubah terakhir, pengaju, atau pemilik aktual |
+| Final | Versi verified menolak semua `UPDATE` dan `DELETE`. Identitas aktual (target, rentang, sumber) juga immutable |
+
+### Kontrol evidence
+
+- Jenis file ditentukan dari isi: ekstensi, MIME hasil `finfo`, dan signature byte awal harus cocok. MIME dari browser tidak dipakai. Allowlist: `pdf`, `png`, `jpg`, `jpeg`, `xlsx` (harus workbook asli tanpa macro).
+- Key objek dibuat sistem; nama file klien hanya teks tampilan yang sudah dibersihkan.
+- Batas teknis: 5 MB per file, 5 file per aktual, checksum duplikat ditolak.
+- PostgreSQL hanya menyimpan metadata dan SHA-256; binary tidak pernah masuk database.
+- Unduhan lewat route bertanda tangan 5 menit yang terikat ke akun peminta, dengan pemeriksaan ulang hak akses, `attachment`, `nosniff`, CSP sandbox, dan `no-store`.
+
+### Integrasi yang belum tersedia
+
+- **Antivirus.** Tidak ada produk yang dipilih atau diintegrasikan. Port `MalwareScanner` tersedia. Dengan `EVIDENCE_SCANNER=none` (default) semua file tetap karantina, tidak dapat dibuka, dan tidak meloloskan verifikasi KPI berbukti wajib. `local-unscanned` hanya berlaku pada environment local/testing dan melabeli file "belum dipindai", bukan "bersih". Di environment lain setting itu jatuh ke karantina. Tidak ada klaim bahwa antivirus aktif.
+- Upload langsung dari browser ke object storage belum ada; file melewati unggahan sementara Livewire lalu dipindahkan server.
+- Job pembersihan binary yatim dan kebijakan retention menunggu DEC-010.
+
+### Hasil import
+
+| Skenario | Hasil test |
+|---|---|
+| File valid (nilai, nol, N/A, baris kosong) | 5 baris: 4 valid, 1 dilewati. Commit membuat 4 draft; rekonsiliasi `1296.5000` = `1296.5000` |
+| Retry commit | Hasil sama; tidak ada versi atau event kedua |
+| File sama diunggah lagi setelah commit | Ditolak (`import_already_committed`) |
+| File dengan baris salah | 10 dari 11 baris error dengan pesan per baris (presisi, satuan, rentang, periode, record sumber ganda, N/A tanpa alasan, sumber setengah isi, KPI tidak dikenal, formula). Commit ditolak; 0 aktual tersimpan; baris error dapat diunduh dengan formula dinetralkan |
+| Aktual berubah setelah staging | Commit ditolak (`import_stale`); 0 baris diterapkan |
+| Record sumber sudah pernah diimpor | Baris ditolak sebagai duplikat |
+| XLSX dengan sel angka dan tanggal bertipe | Dibaca sama seperti CSV |
+| File bukan sheet yang diharapkan, terlalu besar, terlalu banyak baris, atau arsip yang mengembang | Ditolak sebelum staging |
+
+### Test keamanan
+
+- File berbahaya: executable berekstensi `.pdf`, skrip berekstensi `.png`, HTML berkedok PDF, ekstensi ganda, tanpa ekstensi, file kosong, ZIP non-workbook dan workbook ber-macro berekstensi `.xlsx` — semuanya ditolak tanpa menyisakan objek.
+- Nama file berbahaya (path traversal, path Windows, null byte, markup) tidak pernah masuk key objek.
+- Akses tidak sah: tautan milik akun lain, tanpa tanda tangan, dimodifikasi, kedaluwarsa, akun di luar scope, System Admin, dan tamu — semuanya ditolak tanpa tercatat sebagai unduhan.
+- Aksi Livewire palsu oleh role baca-saja, pegawai atas aktual rekan, dan Team Leader di luar team ditolak.
+- Concurrent edit: versi basi dan "tidak melihat draft" ditolak.
+
+### Validasi
+
+| # | Gate | Hasil |
+|---|---|---|
+| 1 | `php artisan test` (SQLite in-memory, PHP 8.4.25) | 537 test: 534 passed, 3 skipped, 2.315 assertions |
+| 2 | `bash scripts/dev.sh test-pgsql` (PostgreSQL 18.6 + Redis, stack Compose lokal) | 537 test: 535 passed, 2 skipped, 2.331 assertions |
+| 3 | `vendor/bin/pint --test` | passed |
+| 4 | `vendor/bin/phpstan analyse --memory-limit=1G` | 0 error |
+| 5 | `composer validate --strict` / `composer audit --locked` | valid / tidak ada advisory |
+| 6 | `npm audit --audit-level=high` / `npm run build` | 0 vulnerability / build berhasil |
+| 7 | SQLite kosong: migrate → rollback → migrate | lulus |
+| 8 | `git diff --check` dan pemeriksaan CRLF | bersih |
+
+Skip ketiga adalah test constraint nilai/jenis entri yang hanya ada di PostgreSQL; test itu berjalan pada gate 2. Test baru Step 08: 74 (dari 463 menjadi 537).
+
+### Dependency baru
+
+`openspout/openspout` untuk membaca XLSX secara streaming. Alasannya tercatat di `DEPENDENCY_POLICY.md`.
+
+### Code review
+
+Dua review independen (PHP/Laravel dan security). Tidak ada temuan Critical. Diperbaiki dengan test regresi:
+
+| Tingkat | Temuan | Perbaikan |
+|---|---|---|
+| High | Tanggal observasi dari URL atau input kosong sampai ke SQL; error di PostgreSQL | Hanya tanggal valid yang dipakai; selain itu kembali ke rentang periode |
+| Medium | Race antara ajukan dan lepas bukti | Ajukan dan verifikasi mengunci baris aktual sebelum membaca bukti; perubahan bukti membaca versi di bawah lock |
+| Medium | Arsip XLSX kecil dapat mengembang sangat besar; baris kosong tidak dihitung | Batas ukuran terekstrak dan jumlah entri; batas baris fisik |
+| Medium | Sel angka XLSX menampilkan noise biner dan ditolak | Dibatasi 15 digit signifikan |
+| Medium | Nilai yang diketik untuk entri yang sudah diajukan dilewati diam-diam | Dilaporkan sebagai error per baris |
+| Medium | Filter atau pencarian menghapus nilai yang belum disimpan | Hanya pergantian rentang observasi yang mereset |
+| Medium | Referensi sumber diabaikan untuk aktual yang sudah ada | Ketidakcocokan ditolak eksplisit |
+| Medium | Penolakan tanpa pemeriksaan scope di service; ajukan massal mengunci draft orang lain | Service memeriksa scope dan independensi; ajukan hanya draft milik sendiri |
+| Medium | Setting scanner tidak dikenal menyebabkan error | Fail closed ke karantina dengan peringatan log |
+| Medium | Total rekonsiliasi dapat overflow; pembersihan objek dapat menutupi error asli | Penjumlahan desimal aman; pembersihan dijaga |
+| Low | `.xlsx` menerima ZIP apa pun; identitas `kpi_actuals` dapat diubah lewat SQL; index batch; halaman audit basi | Diperbaiki |
+
+Dicatat tetapi tidak dikerjakan: tidak ada exclusion constraint PostgreSQL untuk rentang tumpang tindih (dijaga lock aplikasi), agregasi kelengkapan masih di PHP, pemeriksaan independensi hanya melihat pengubah terakhir, dan pengajuan belum dapat dilakukan per baris.
+
+### Keputusan dan asumsi
+
+- Hak akses mengikuti entri `A` pada ROLE_APPROVAL_MATRIX: Employee mengisi aktualnya sendiri, Team Leader memverifikasi selain miliknya.
+- Aktual untuk target unit dan import massal dilakukan HR Performance, karena hak "bila data owner" untuk Manager dan Team Leader masih bersyarat.
+- Batas ukuran, jumlah, dan jenis file adalah batas teknis, bukan kebijakan evidence bisnis.
+
+### Blocker keputusan
+
+- **Antivirus** belum dipilih (open item THREAT_MODEL). Blocker untuk staging dan production.
+- **DEC-016 (source ownership) OPEN.** Kombinasi kunci duplikasi resmi belum disetujui; yang dipakai adalah sistem sumber + referensi per target.
+- **DEC-015 (kalender) OPEN.** Jumlah rentang observasi yang seharusnya ada tidak dihitung; kelengkapan dihitung per target.
+- **DEC-004 (aturan N/A dan missing) OPEN.** Sistem membedakan ketiganya; cara menilainya dikerjakan Step 09 setelah keputusan.
+- **DEC-006 dan DEC-010 OPEN.** Kebijakan evidence per KPI dan retention belum ada.
+- **DEC-002 OPEN.** Data owner untuk target unit dan jalur verifikasi resmi per team belum diputuskan.
+
+### Gate berikutnya
+
+- Commit dan push Step 08, tunggu GitHub Actions, lalu catat addendum.
+- Step 09 (scoring engine) dapat dimulai secara teknis, tetapi skor resmi tetap menunggu DEC-004 dan DEC-006.

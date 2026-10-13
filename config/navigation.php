@@ -17,6 +17,7 @@ return [
         ['label' => 'Dashboard', 'route' => 'dashboard', 'icon' => 'home', 'ability' => null],
         ['label' => 'KPI', 'route' => 'kpi.index', 'icon' => 'chart-bar', 'ability' => 'kpi.view'],
         ['label' => 'Periode & Target', 'route' => 'periods.index', 'icon' => 'calendar-days', 'ability' => 'periods.view'],
+        ['label' => 'Aktual', 'route' => 'actuals.index', 'icon' => 'pencil-square', 'ability' => 'actuals.view'],
         ['label' => 'Approval', 'route' => 'approvals.index', 'icon' => 'check-badge', 'ability' => null],
         ['label' => 'Reports', 'route' => 'reports.index', 'icon' => 'document-chart-bar', 'ability' => null],
         ['label' => 'Administration', 'route' => 'administration.index', 'icon' => 'cog-6-tooth', 'ability' => 'administration.view'],

@@ -17,6 +17,8 @@ Aplikasi dibuat dari official Laravel Livewire starter kit (Laravel 13, Livewire
 | `app/Modules/KpiGovernance` | Kamus KPI dan template scorecard berversi, strategi skor allowlist, kandidat PRD, dan `TemplateResolver`. Detail: `KPI_GOVERNANCE.md` |
 | `app/Modules/PeriodAssignment` | Periode penilaian, deadline per tahap, snapshot penugasan dan approver, serta kontrak `PeriodLifecycleParticipant`. Detail: `PERIOD_TARGET.md` |
 | `app/Modules/Target` | Slot dan versi target, validasi nilai terhadap definisi KPI, staged import CSV, dan unduhan file isian. Detail: `PERIOD_TARGET.md` |
+| `app/Modules/ActualEvidence` | Aktual per rentang observasi, evidence di object storage private dengan karantina dan tautan bertanda tangan, serta staged import CSV/XLSX. Detail: `ACTUAL_EVIDENCE.md` |
+| `resources/views/pages/actuals/` | Halaman Livewire aktual (daftar periode, entri dan bukti, import) |
 | `resources/views/pages/kpi/` | Halaman Livewire KPI (kamus, detail/versi/perbandingan, template builder/preview) |
 | `resources/views/pages/periods/` | Halaman Livewire periode (daftar, setup dan snapshot, matriks target, import) |
 | `resources/views/pages/administration/` | Halaman Livewire Administration (organisasi, pegawai, akun, role, delegasi, access review) |
