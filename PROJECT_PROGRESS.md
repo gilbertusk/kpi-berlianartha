@@ -1223,3 +1223,12 @@ Dicatat tetapi tidak dikerjakan: input seluruh periode dimuat ulang untuk satu s
 
 - Commit dan push Step 09, tunggu GitHub Actions (termasuk PostgreSQL), lalu catat addendum.
 - Step 10 (approval, kalibrasi, lock, koreksi) membutuhkan DEC-002 dan DEC-009; tanpa keduanya hanya mekanismenya yang dapat dibangun.
+
+### Addendum 2026-10-13 — bukti GitHub Actions Step 09
+
+**Status Step 09 diperbarui:** PASS untuk scope implementasi (mesin, snapshot, halaman, test). **Engine bisnis tetap BLOCKED** sampai DEC-004 disetujui dan sebuah policy bertanda tangan ditambahkan.
+
+- **Commit tervalidasi:** `5c5bb48aa03779a40a4da42f5d1f0f7e7006f3aa` pada `origin/main`.
+- **CI:** GitHub Actions run [`38364086796`](https://github.com/gilbertusk/kpi-berlianartha/actions/runs/38364086796) berakhir dengan conclusion `success`; kelima job lulus, termasuk dua job yang menjalankan suite pada PostgreSQL 18 + Redis. Ini menutup gate PostgreSQL yang tidak dapat dijalankan secara lokal.
+
+DEC-003, DEC-004, dan DEC-006 tetap terbuka. Belum ada skor resmi, rating resmi, atau golden example bertanda tangan. Gate berikutnya adalah Step 10.
