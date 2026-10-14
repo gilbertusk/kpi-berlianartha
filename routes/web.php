@@ -3,6 +3,7 @@
 use App\Modules\ActualEvidence\Http\ActualImportErrorsController;
 use App\Modules\ActualEvidence\Http\EvidenceDownloadController;
 use App\Modules\Notification\Http\OpenNotificationController;
+use App\Modules\Reporting\Http\ExportDownloadController;
 use App\Modules\Scoring\Http\ScorecardExportController;
 use App\Modules\Target\Http\TargetImportTemplateController;
 use Illuminate\Support\Facades\Route;
@@ -20,7 +21,6 @@ Route::middleware(['auth', 'verified', 'mfa'])->group(function () {
 
     // Navigation placeholders only: no data and no actions. Module features
     // and their role/organization-scope policies arrive in later steps.
-    Route::view('reports', 'modules.placeholder', ['title' => 'Reports'])->name('reports.index');
 
     // Step 06 — KPI dictionary and versioned scorecard templates.
     Route::prefix('kpi')->name('kpi.')->group(function () {
@@ -48,6 +48,10 @@ Route::middleware(['auth', 'verified', 'mfa'])->group(function () {
         Route::get('import/{batch}/errors.csv', ActualImportErrorsController::class)->name('import.errors');
     });
     Route::get('evidence/{evidence}/{viewer}', EvidenceDownloadController::class)->middleware('signed')->name('evidence.download');
+
+    // Step 12 — report catalog, preview, and asynchronous exports.
+    Route::livewire('reports', 'pages::reports.index')->name('reports.index');
+    Route::get('reports/exports/{export}/{viewer}', ExportDownloadController::class)->middleware('signed')->name('reports.exports.download');
 
     // Step 10 — approval inbox, period workflow, calibration, bypass, and corrections.
     Route::livewire('approvals', 'pages::approvals.index')->name('approvals.index');

@@ -23,7 +23,7 @@ return [
         ['label' => 'Team', 'route' => 'team.index', 'icon' => 'user-group', 'ability' => 'team.view'],
         ['label' => 'Team Review', 'route' => 'team-review.index', 'icon' => 'clipboard-document-check', 'ability' => 'team-review.view'],
         ['label' => 'Notifikasi', 'route' => 'notifications.index', 'icon' => 'bell', 'ability' => null],
-        ['label' => 'Reports', 'route' => 'reports.index', 'icon' => 'document-chart-bar', 'ability' => null],
+        ['label' => 'Reports', 'route' => 'reports.index', 'icon' => 'document-chart-bar', 'ability' => 'reports.view'],
         ['label' => 'Administration', 'route' => 'administration.index', 'icon' => 'cog-6-tooth', 'ability' => 'administration.view'],
     ],
 

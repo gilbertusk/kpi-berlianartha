@@ -1444,3 +1444,107 @@ Dicatat tetapi tidak dikerjakan: pengingat hanya cocok pada tanggal persis (tanp
 - **CI:** GitHub Actions run [`38382781036`](https://github.com/gilbertusk/kpi-berlianartha/actions/runs/38382781036) berakhir dengan conclusion `success`; kelima job lulus, termasuk dua job yang menjalankan suite pada PostgreSQL 18 + Redis. Ini menutup gate PostgreSQL yang tidak dapat dijalankan secara lokal: migrasi Step 11 beserta trigger dan CHECK constraint-nya berhasil dibuat dan seluruh test lulus di atasnya.
 
 Gate berikutnya adalah Step 12.
+
+## 2026-10-14 — Step 12 Laporan dan Ekspor
+
+**Status:** PARTIAL — katalog 11 laporan, pratinjau, ekspor Excel/PDF asynchronous, unduhan bertanda tangan, retensi file, dan test selesai serta lulus secara lokal (SQLite). Belum dapat dinyatakan lulus: **performa pada dataset representatif** (ukuran pilot DEC-007 dan target performa belum ada; yang diukur hanya penulis ekspor dengan baris sintetis), **object storage nyata** (hanya disk palsu pada test), dan bukti PostgreSQL/GitHub Actions yang menyusul lewat addendum. Laporan skor resmi tetap kosong selama DEC-004 terbuka.
+
+### Git preflight
+
+- HEAD awal `77d586d` sama dengan `origin/main`; working tree bersih.
+
+### Katalog laporan
+
+| Kunci | Laporan | Format |
+|---|---|---|
+| `scorecards` | Scorecard karyawan, team, department, perusahaan (skor hitung, skor berlaku setelah kalibrasi, status approval) | Excel, PDF |
+| `kpi_lines` | Target versus aktual per KPI, skor periode sebelumnya, KPI merah (bila ambang disetujui) | Excel, PDF |
+| `rating_distribution` | Distribusi rating per unit | Excel, PDF |
+| `completeness` | Kelengkapan dan data yang belum masuk per target wajib | Excel, PDF |
+| `approvals` | Status approval, tahap yang menunggu, approver, gap, umur tunggu | Excel, PDF |
+| `approval_history` | Riwayat keputusan approval | Excel, PDF |
+| `corrections` | Koreksi aktual dan keputusannya | Excel, PDF |
+| `corrective_actions` | Corrective action dan yang melewati tenggat | Excel, PDF |
+| `kpi_definitions` | Definisi dan versi KPI yang dikunci periode | Excel, PDF |
+| `calculations` | Rekonsiliasi seluruh perhitungan tersimpan | Excel, PDF |
+| `audit_log` | Laporan audit pada rentang tanggal (maks. 92 hari) | Excel, PDF |
+
+PDF dibatasi 500 baris; laporan lebih besar diekspor sebagai Excel.
+
+### Scope selesai
+
+- Satu definisi laporan dipakai untuk pratinjau dan ekspor; setiap laporan membatasi query dengan scope capability datanya sendiri. Filter divalidasi bentuknya dan filter/status yang tidak ditawarkan laporan ditolak.
+- Ekspor lewat job antrean: status dan progres baris, alasan gagal tetap yang aman, retry idempotent, permintaan identik yang masih berjalan dipakai ulang (indeks unik parsial), akses dievaluasi ulang saat job berjalan dan saat unduhan.
+- Metadata tiap file: nama dan kode laporan, periode, filter, scope organisasi, waktu dan timezone, pembuat, template/versi per baris, klasifikasi, ID ekspor.
+- File di disk private dengan nama dari server; unduhan lewat route bertanda tangan 5 menit yang terikat pemilik; audit untuk permintaan, penyelesaian, kegagalan, unduhan (dengan checksum), dan penghapusan.
+- Housekeeping tiap jam: ekspor yang ditinggal worker mati ditandai gagal, file sementara dibersihkan, file melewati retensi dihapus.
+- Pencegahan formula injection, path traversal, ekspor tanpa hak, akses objek langsung, dan kebocoran lintas scope.
+- Capability baru `report.view` dan `audit_report.view` (tidak dapat didelegasikan). Menu Reports kini halaman nyata.
+- Dependency baru `dompdf/dompdf` 3.1.6 (alasan di `DEPENDENCY_POLICY.md`).
+- Dokumentasi: `docs/architecture/REPORTING.md`; pembaruan `IDENTITY_ACCESS.md`, `APPLICATION_STRUCTURE.md`, `DEPENDENCY_POLICY.md`, `.env.example`.
+
+### Test matrix
+
+| Area | Cakupan |
+|---|---|
+| Rekonsiliasi | Scorecard report = perhitungan tersimpan = halaman scorecard; skor berlaku setelah kalibrasi; baris KPI = baris snapshot; distribusi rating = jumlah lengkap; perhitungan = seluruh snapshot; kelengkapan = ringkasan halaman aktual |
+| Otorisasi | Katalog per role; karyawan dan System Admin tanpa laporan; manager tanpa baris pegawai; filter unit di luar scope dan unit tak dikenal ditolak sama; audit hanya HR/Auditor dan tidak dapat didelegasikan |
+| Filter | Path traversal, SQL, kunci tak dikenal, tingkat, ULID, tanggal tidak valid/terbalik, filter dan status yang tidak ditawarkan, array |
+| Ekspor | Isi file = baris laporan; metadata lengkap; scope manager; PDF; PDF terlalu besar; format tak dikenal |
+| Injection | Unit test sanitizer (=, +, -, @, tab, CR, spasi awal, karakter kontrol, desimal negatif) dan end to end lewat alasan koreksi |
+| Akses file | Bukan pemilik, tanpa tanda tangan, viewer dipalsukan, tamu, akses dicabut sebelum unduhan dan sebelum worker berjalan |
+| Kedaluwarsa | Tautan kedaluwarsa (403), ekspor kedaluwarsa (410), purge menghapus file |
+| Retry/idempotensi | Permintaan ganda, job ganda, retry yang tidak perlu, batas ekspor berjalan, storage gagal lalu pulih, worker mati (running basi), retry saat permintaan identik sedang berjalan, disk publik ditolak |
+| Performa | Anggaran query lima laporan utama; uji volume penulis Excel |
+
+### Validasi
+
+| # | Gate | Hasil |
+|---|---|---|
+| 1 | `php artisan test` (SQLite in-memory, PHP 8.4) | 886 test: 883 passed, 3 skipped, 13.850 assertions |
+| 2 | Test terhadap PostgreSQL lokal | **Tidak dijalankan**: Docker Desktop tidak aktif. SQL agregat laporan, indeks unik parsial, dan CHECK constraint baru belum dieksekusi di PostgreSQL; buktinya menunggu GitHub Actions |
+| 3 | `vendor/bin/pint --test` | passed |
+| 4 | `vendor/bin/phpstan analyse --memory-limit=1G` | 0 error |
+| 5 | `composer validate --strict` / `composer audit --locked` | valid / tidak ada advisory |
+| 6 | `npm audit --audit-level=high` / `npm run build` | 0 vulnerability / build berhasil |
+| 7 | SQLite kosong: migrate → rollback → migrate | lulus, tidak ada migrasi pending |
+| 8 | `git diff --check` dan pemeriksaan CRLF | bersih |
+
+Test baru Step 12: 35 (dari 851 menjadi 886).
+
+### Ukuran dataset, waktu, dan memori
+
+- **Uji volume penulis Excel (sintetis):** 50.000 baris × 18 kolom, sekitar 9 detik pada mesin pengembangan, tambahan memori puncak di bawah 1 MB, file 2,9 MB. Ini membuktikan streaming, bukan performa laporan pada data nyata.
+- **Query laporan:** lima laporan utama ≤ 25 query pada data skenario (4 scorecard). Data yang melampaui satu chunk belum diuji pada laporan.
+- **PDF:** pemakaian memori belum diukur; dibatasi 500 baris.
+- **Dataset representatif:** belum ada (DEC-007), sehingga kriteria performa belum dapat dinilai.
+
+### Retensi yang berlaku
+
+File hasil ekspor disimpan 72 jam lalu dihapus otomatis; tautan unduhan berlaku 5 menit. Keduanya batas teknis yang dapat diatur lewat env, **bukan** kebijakan retensi data (DEC-010 OPEN). Record sumber tidak terpengaruh.
+
+### Code review
+
+Dua review independen (PHP dan keamanan). Tidak ada temuan Critical. Diperbaiki dengan test:
+
+| Tingkat | Temuan | Perbaikan |
+|---|---|---|
+| High | Ekspor dapat tertahan `running` selamanya bila worker mati atau error terjadi sebelum blok penanganan | Seluruh proses setelah klaim berada dalam penanganan error; housekeeping menggagalkan ekspor `running` yang basi dan membersihkan file sementara |
+| High | Timeout job 900 detik melebihi `retry_after` antrean 90 detik, sehingga job yang masih berjalan dapat diberikan ke worker lain dan ditandai gagal | Timeout job 75 detik; penyelesaian hanya oleh run yang masih memegang ekspor; batas baris diturunkan ke 100.000 |
+| Medium | `audit_report.view` ikut dapat didelegasikan | Dikecualikan dari delegasi |
+| Medium | Retry saat permintaan identik berjalan berakhir dengan error 500; retry melewati batas ekspor berjalan | Mengembalikan ekspor yang berjalan; batas diperiksa |
+| Medium | File yang terunggah tetapi gagal dicatat tertinggal; purge mengabaikan kegagalan hapus | File dihapus bila penyelesaian gagal; purge per ekspor dan hanya menandai bila file benar terhapus |
+| Medium | Status di luar daftar laporan menghasilkan ekspor kosong tanpa error | Ditolak sebagai filter tidak valid |
+| Medium | PDF disusun di memori | Batas PDF diturunkan ke 500 baris |
+| Low | Disk publik dapat dipakai lewat env; UTF-8 tidak valid dan sel melebihi batas Excel; tipe nilai pada PDF; rentang audit lebih satu hari; stream tidak ditutup saat gagal | Diperbaiki |
+
+Dicatat tetapi tidak dikerjakan: `corrections` (untuk Management) dan `completeness` (untuk pemegang `actual.view`) menampilkan baris per pegawai sesuai scope halaman yang sudah ada, bukan aturan scorecard individu — perlu dikonfirmasi; pratinjau tidak diaudit dan tidak di-throttle; job antrean yang gagal dapat menyimpan pesan exception di `failed_jobs`; "menunggu sejak" pada laporan approval memakai waktu perubahan terakhir review; batas ekspor berjalan dihitung tanpa lock.
+
+### Keputusan yang belum disetujui (tidak diasumsikan)
+
+- **DEC-004** skor resmi dan ambang KPI merah. **DEC-009** SLA approval (laporan memberi umur tunggu, bukan "overdue"). **DEC-010** retensi, klasifikasi data, dan kontrol ekspor (klasifikasi Internal/Terbatas adalah pembeda kerja). **DEC-007** ukuran pilot dan target performa. **DEC-015/016** shift dan mesin (tidak ada filter shift/mesin).
+
+### Gate berikutnya
+
+- Commit dan push Step 12, tunggu GitHub Actions (termasuk PostgreSQL), lalu catat addendum.
+- Step 13 (modul Commercial dan Support).

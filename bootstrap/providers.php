@@ -8,6 +8,7 @@ use App\Providers\KpiGovernanceServiceProvider;
 use App\Providers\NotificationServiceProvider;
 use App\Providers\OrganizationServiceProvider;
 use App\Providers\PeriodAssignmentServiceProvider;
+use App\Providers\ReportingServiceProvider;
 use App\Providers\ScoringServiceProvider;
 use App\Providers\SharedServiceProvider;
 use App\Providers\TargetServiceProvider;
@@ -27,5 +28,6 @@ return [
     WorkflowServiceProvider::class,
     NotificationServiceProvider::class,
     TeamReviewServiceProvider::class,
+    ReportingServiceProvider::class,
     FortifyServiceProvider::class,
 ];

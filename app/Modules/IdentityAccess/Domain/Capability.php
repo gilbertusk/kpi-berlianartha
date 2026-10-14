@@ -70,6 +70,14 @@ enum Capability: string
     case CoachingNoteManage = 'coaching_note.manage';
 
     /**
+     * Reports and exports (Step 12). A report shows what its own scope
+     * allows; exporting is a rendering of the same rows, so one read
+     * capability covers both. The audit report covers the whole audit trail.
+     */
+    case ReportView = 'report.view';
+    case AuditReportView = 'audit_report.view';
+
+    /**
      * Reserved for the KPI modules (Step 06–10). Step 05 only fixes the role
      * ceiling from ROLE_APPROVAL_MATRIX.md; ownership, workflow state, and
      * "C" conditions are enforced by the owning module's policies.
@@ -125,6 +133,11 @@ enum Capability: string
      */
     public function isDelegable(): bool
     {
+        // The audit trail is read by the audit and HR roles themselves, never on someone's behalf.
+        if ($this === self::AuditReportView) {
+            return false;
+        }
+
         return $this->isReadOnly() || $this === self::ApprovalDecide;
     }
 

@@ -22,3 +22,8 @@ Schedule::command('identity:expire-delegations')
 Schedule::command('notifications:send-reminders')
     ->hourly()
     ->withoutOverlapping(10);
+
+// Report export files are deleted after their technical retention (Step 12).
+Schedule::command('reports:purge-expired-exports')
+    ->hourly()
+    ->withoutOverlapping(10);

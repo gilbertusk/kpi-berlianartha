@@ -105,6 +105,8 @@ Legenda: `A` diizinkan dalam scope, `—` ditolak, `R*` plafon untuk modul KPI b
 | `team_review.view` (Step 11) | A | A | A | — | A | A | — |
 | `team_review.manage` (Step 11) | — | A | A | — | — | — | — |
 | `coaching_note.manage` (Step 11, akses tersempit sampai DEC-011) | — | — | A | — | — | — | — |
+| `report.view` (Step 12) | A | A | A | — | A | A | — |
+| `audit_report.view` (Step 12) | — | — | — | — | A | A | — |
 | `kpi.value.modify` | — | R* | R* | R* | R* | — | — |
 | `approval.decide` | R* | R* | R* | — | R* | — | — |
 

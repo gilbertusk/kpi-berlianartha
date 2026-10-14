@@ -23,7 +23,8 @@ Aplikasi dibuat dari official Laravel Livewire starter kit (Laravel 13, Livewire
 | `app/Modules/Workflow` | Review, kalibrasi, approval final, bypass tahap review bertanda tangan, penguncian periode, dan koreksi aktual terverifikasi. Riwayat keputusan append-only. Detail: `WORKFLOW.md` |
 | `app/Modules/Notification` | Notifikasi di aplikasi dan email, preferensi, consumer outbox, pengingat dan eskalasi dari aturan bertanda tangan. Detail: `DASHBOARD_NOTIFICATION_TEAM_REVIEW.md` |
 | `app/Modules/TeamReview` | Daily team review, corrective action dengan PIC dan tenggat, coaching notes terbatas |
-| `app/Modules/Reporting` | Query dashboard per peran dan halaman team; tanpa cache |
+| `app/Modules/Reporting` | Query dashboard per peran dan halaman team (tanpa cache); katalog laporan dan ekspor Excel/PDF lewat antrean. Detail: `REPORTING.md` |
+| `resources/views/pages/reports/` | Halaman Livewire laporan: katalog, filter, pratinjau, dan daftar ekspor |
 | `resources/views/pages/{⚡dashboard,notifications,team,team-review}` | Halaman Livewire dashboard, notifikasi, halaman team, dan team review |
 | `resources/views/pages/approvals/` | Halaman Livewire approval (inbox, board periode, scorecard, antrean koreksi, bypass) |
 | `resources/views/pages/actuals/` | Halaman Livewire aktual (daftar periode, entri dan bukti, import) |
