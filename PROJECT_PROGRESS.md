@@ -1548,3 +1548,12 @@ Dicatat tetapi tidak dikerjakan: `corrections` (untuk Management) dan `completen
 
 - Commit dan push Step 12, tunggu GitHub Actions (termasuk PostgreSQL), lalu catat addendum.
 - Step 13 (modul Commercial dan Support).
+
+### Addendum 2026-10-14 — bukti GitHub Actions Step 12
+
+**Status Step 12 diperbarui:** PASS untuk scope implementasi (katalog laporan, pratinjau, ekspor asynchronous, unduhan, retensi teknis, test). **Belum dibuktikan:** performa pada dataset representatif (DEC-007), object storage nyata, dan kebijakan retensi data (DEC-010). Laporan skor resmi tetap kosong selama DEC-004 terbuka.
+
+- **Commit tervalidasi:** `534330a0dba2e3b2d2a3a8b38a4c10ec8f84e7de` pada `origin/main`.
+- **CI:** GitHub Actions run [`38502547296`](https://github.com/gilbertusk/kpi-berlianartha/actions/runs/38502547296) berakhir dengan conclusion `success`; kelima job lulus, termasuk dua job yang menjalankan suite pada PostgreSQL 18 + Redis dan job image Docker dengan dependency baru `dompdf/dompdf`. Ini menutup gate PostgreSQL yang tidak dapat dijalankan secara lokal: SQL agregat laporan, indeks unik parsial, dan CHECK constraint ekspor berjalan di PostgreSQL.
+
+Gate berikutnya adalah Step 13.
