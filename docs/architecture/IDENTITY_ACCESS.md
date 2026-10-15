@@ -111,6 +111,9 @@ Legenda: `A` diizinkan dalam scope, `—` ditolak, `R*` plafon untuk modul KPI b
 | `operational_record.manage` (Step 13) | — | A | A | — | — | — | — |
 | `accounting_data.view` (Step 14; hanya unit Accounting, tidak dapat didelegasikan) | A | A | A | — | — | A | — |
 | `accounting_data.manage` (Step 14; hanya unit Accounting) | — | A | A | — | — | — | — |
+| `production_data.view` (Step 15; hanya unit Produksi dan PPIC) | A | A | A | — | A | A | — |
+| `production_data.manage` (Step 15; hanya jenis data tanggung jawab team) | — | A | A | — | — | — | — |
+| `ppic_board.manage` (Step 15; hanya atas team PPIC) | — | A | A | — | — | — | — |
 | `kpi.value.modify` | — | R* | R* | R* | R* | — | — |
 | `approval.decide` | R* | R* | R* | — | R* | — | — |
 
@@ -183,6 +186,6 @@ Password diambil dari `DEV_SEED_PASSWORD`. Bila variabel itu kosong, seeder memb
 
 - SSO, provisioning dari HRIS, dan penautan identitas eksternal belum ada (DEC-013, DEC-016).
 - Approver aktual per team belum diisi (DEC-002). Team Leader, Manager, dan pengganti dikonfigurasi sebagai role assignment setelah sign-off. Sejak Step 07, `RoleHolderDirectory` menjadi kontrak baca publik untuk merekam pemegang role ke snapshot approver periode.
-- Shift belum dimodelkan (DEC-015).
+- Shift belum disetujui (DEC-015). Sejak Step 15 kalender shift berupa konfigurasi berversi di `config/production.php` dengan default kosong; lihat `docs/product/PRODUCTION_SOURCES.md`.
 - Coaching notes dan data RESTRICTED lain belum ada (DEC-011).
 - Retention/purge audit dan session menunggu DEC-010.

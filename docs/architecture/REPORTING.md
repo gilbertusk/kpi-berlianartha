@@ -24,6 +24,9 @@ Mekanismenya lengkap dan teruji. Yang belum ada adalah keputusan bisnisnya: tanp
 | `ar_aging` | Aging piutang per invoice (Step 14) | Snapshot piutang | `accounting_data.view` (unit Accounting) | Terbatas |
 | `ar_aging_summary` | Ringkasan aging dan rekonsiliasi piutang (Step 14) | Snapshot piutang | `accounting_data.view` | Terbatas |
 | `tax_invoices` | Faktur pajak dan invoice tanpa faktur (Step 14) | Snapshot piutang | `accounting_data.view` | Terbatas |
+| `production_actuals` | Aktual produksi, packing, dan pengiriman versi berlaku (Step 15) | Batch produksi | `production_data.view` | Internal |
+| `warehouse_stock` | Stok warehouse per kategori lokasi (Step 15) | Batch warehouse | `production_data.view` | Internal |
+| `ppic_work_orders` | Work order dan status board PPIC (Step 15) | Batch work order + riwayat board | `production_data.view` (unit Produksi/PPIC) | Internal |
 | `audit_log` | Laporan audit | Audit log pada rentang tanggal (maks. 92 hari) | `audit_report.view` seluruh perusahaan | Terbatas |
 
 "Scope scorecard" adalah scope yang sama dengan halaman scorecard: scorecard unit dalam scope `scorecard.view`, scorecard karyawan dalam scope `individual_scorecard.view` (HR dan Auditor), dan tidak pernah scorecard pembaca sendiri. Akibatnya Management, Department Head, dan Team Leader hanya mendapat baris scorecard unit.
@@ -36,7 +39,7 @@ Catatan isi:
 - **Approval yang menunggu** menampilkan umur tunggu dalam hari. Tidak ada label "overdue" untuk approval karena SLA belum disetujui (DEC-009). Overdue corrective action dihitung dari tenggat yang ditetapkan team.
 - **Rentang laporan audit** maksimal 92 hari termasuk kedua tanggalnya.
 - **Laporan audit** menampilkan nilai sebelum/sesudah sebagaimana tersimpan di audit log (sudah disanitasi saat ditulis).
-- **Shift dan mesin** tidak menjadi filter: datanya belum ada (DEC-015, DEC-016).
+- **Shift dan mesin** tidak menjadi filter laporan skor: KPI belum memakai data produksi (DEC-006, DEC-015). Laporan `production_actuals` (Step 15) menampilkan shift dan mesin sebagai kolom.
 
 ## 2. Filter
 

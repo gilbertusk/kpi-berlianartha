@@ -10,6 +10,7 @@ use App\Providers\NotificationServiceProvider;
 use App\Providers\OperationsServiceProvider;
 use App\Providers\OrganizationServiceProvider;
 use App\Providers\PeriodAssignmentServiceProvider;
+use App\Providers\ProductionServiceProvider;
 use App\Providers\ReportingServiceProvider;
 use App\Providers\ScoringServiceProvider;
 use App\Providers\SharedServiceProvider;
@@ -33,5 +34,6 @@ return [
     ReportingServiceProvider::class,
     OperationsServiceProvider::class,
     AccountingServiceProvider::class,
+    ProductionServiceProvider::class,
     FortifyServiceProvider::class,
 ];

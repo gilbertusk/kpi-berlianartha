@@ -52,6 +52,10 @@ Route::middleware(['auth', 'verified', 'mfa'])->group(function () {
     // Step 14 — receivables snapshots, aging, and tax invoice queue (read model, no ledger).
     Route::livewire('accounting', 'pages::accounting.index')->name('accounting.index');
 
+    // Step 15 — production, warehouse, and logistics batches, and the PPIC board (read model, no MES/WMS/ERP).
+    Route::livewire('production', 'pages::production.index')->name('production.index');
+    Route::livewire('ppic', 'pages::ppic.index')->name('ppic.index');
+
     // Step 13 — operational records kept as KPI source (Design revisions, costing).
     Route::livewire('operations', 'pages::operations.index')->name('operations.index');
 

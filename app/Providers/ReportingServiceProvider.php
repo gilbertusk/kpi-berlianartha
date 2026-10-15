@@ -21,9 +21,12 @@ use App\Modules\Reporting\Application\Reports\DesignRevisionAttributionReport;
 use App\Modules\Reporting\Application\Reports\DesignRevisionReport;
 use App\Modules\Reporting\Application\Reports\KpiDefinitionReport;
 use App\Modules\Reporting\Application\Reports\KpiLineReport;
+use App\Modules\Reporting\Application\Reports\PpicWorkOrderReport;
+use App\Modules\Reporting\Application\Reports\ProductionActualsReport;
 use App\Modules\Reporting\Application\Reports\RatingDistributionReport;
 use App\Modules\Reporting\Application\Reports\ScorecardReport;
 use App\Modules\Reporting\Application\Reports\TaxInvoiceReport;
+use App\Modules\Reporting\Application\Reports\WarehouseStockReport;
 use App\Modules\Reporting\Infrastructure\Console\PurgeExpiredExportsCommand;
 use Illuminate\Contracts\Foundation\Application;
 use Illuminate\Support\Facades\Gate;
@@ -49,6 +52,9 @@ final class ReportingServiceProvider extends ServiceProvider
         ArAgingReport::class,
         ArAgingSummaryReport::class,
         TaxInvoiceReport::class,
+        ProductionActualsReport::class,
+        WarehouseStockReport::class,
+        PpicWorkOrderReport::class,
     ];
 
     public function register(): void

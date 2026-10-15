@@ -92,6 +92,15 @@ enum Capability: string
     case AccountingDataManage = 'accounting_data.manage';
 
     /**
+     * Production, packing, delivery, warehouse, and work order batches from
+     * the source systems, and the PPIC board (Step 15). Loading batches and
+     * moving work orders on the board feed KPI values.
+     */
+    case ProductionDataView = 'production_data.view';
+    case ProductionDataManage = 'production_data.manage';
+    case PpicBoardManage = 'ppic_board.manage';
+
+    /**
      * Reserved for the KPI modules (Step 06–10). Step 05 only fixes the role
      * ceiling from ROLE_APPROVAL_MATRIX.md; ownership, workflow state, and
      * "C" conditions are enforced by the owning module's policies.
@@ -123,6 +132,8 @@ enum Capability: string
             self::CorrectionApprove,
             self::OperationalRecordManage,
             self::AccountingDataManage,
+            self::ProductionDataManage,
+            self::PpicBoardManage,
         ], true);
     }
 

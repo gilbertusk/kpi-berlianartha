@@ -1734,3 +1734,91 @@ Dicatat, tidak diubah: pemeriksaan "bucket = outstanding" adalah konsistensi int
 - **CI:** GitHub Actions run [`38679108432`](https://github.com/gilbertusk/kpi-berlianartha/actions/runs/38679108432). Percobaan 1: empat job lulus (termasuk suite penuh PostgreSQL 18 + Redis dan Docker Compose); job Docker image gagal karena Trivy tidak dapat mengunduh database kerentanan (`mirror.gcr.io` HTTP 404), sehingga pemindaian tidak berjalan — bukan temuan kerentanan. Percobaan 2 (hanya job yang gagal dijalankan ulang): conclusion `success`, kelima job lulus termasuk pemindaian Trivy CRITICAL/HIGH.
 
 Gate berikutnya adalah Step 15.
+
+## 2026-10-15 — Step 15 Modul Produksi, PPIC, dan Warehouse
+
+**Status:** PARTIAL. Read model batch sumber (aktual produksi, packing, pengiriman, stok warehouse, work order), board PPIC dengan riwayat status append-only, kalender shift berversi, versi koreksi, rekonsiliasi, freshness, dan akses per team dibangun dan diuji. **BLOCKED:** kalender shift belum disetujui (DEC-015) sehingga aktual produksi dan packing belum dapat diimpor di lingkungan nyata (konfigurasi kosong; test memakai kalender **NON-PRODUCTION FIXTURE**); formula output per jam, yield, FPY, reject/rework rate, utilization, OEE, downtime rate, setup/changeover, schedule attainment, dan produktivitas (DEC-006); konversi satuan; dictionary reason/defect/downtime code (DEC-016); konektor MES/WMS/ERP (DEC-008). Sistem KPI tidak mengubah jadwal ERP dan tidak menilai operator individual.
+
+### Git preflight
+
+- HEAD awal `8e5b5e0` sama dengan `origin/main`; working tree bersih.
+
+### Scope selesai
+
+- Modul `Production`: tabel `production_batches`, `production_records`, `ppic_status_changes`. Lima jenis batch: `production` (output, downtime, waste), `packing`, `delivery`, `warehouse`, `work_orders`, masing-masing hanya dapat dimuat team yang bertanggung jawab (`production.responsibilities`; Packing Logistic, Logistic, dan Warehouse terpisah).
+- Kalender shift (`ShiftCalendar`, `ShiftCalendars`): versi bertanggal berlaku, shift lewat tengah malam, tanggal operasional `start`/`end` wajib dipilih eksplisit (tanpa nilai bawaan), shift tumpang tindih ditolak, versi kalender mengikuti tanggal mulai shift, menit yang diklaim dua versi ditolak. Default konfigurasi kosong.
+- Impor bertahap (`ProductionRowParser`, `ProductionImportService`): kontrak kolom per jenis, semua masalah per baris, shift dan tanggal operasional dari kalender (baris tanggal operasional lain ditolak), kuantitas ≥ 0 maks. 3 desimal, kuantitas/waktu mustahil ditolak, event dihitung sekali lintas tanggal (dicek saat staging dan lagi saat commit di bawah lock team), file sama = batch sama, konten versi lama atau batch ditolak menjadi versi baru, versi lebih lama tidak dapat di-commit setelah versi lebih baru, total kontrol eksak per satuan, waktu ekstraksi sumber wajib.
+- Rekonsiliasi dan monitoring (`ProductionQuery`): total per satuan tanpa konversi, rincian shift × mesin × satuan yang dijumlahkan kembali ke total batch, stok per kategori lokasi, freshness per team dan jenis (data berlaku, waktu ekstraksi, commit, reason code kosong, batch menunggu commit).
+- Board PPIC (`PpicBoard`): 8 status PRD, jadwal dan material dari batch work order terbaru, penanda overdue, material belum siap, emergency, dan perubahan jadwal (dibanding batch tanggal sebelumnya), progres output good per team pada satuan rencana (tidak dijumlahkan lintas proses), filter customer/order/WO/tanggal kebutuhan/mesin/status, perpindahan dengan expected status (optimistic concurrency), alasan wajib bila overdue atau mundur, riwayat append-only.
+- Akses: capability `production_data.view` (Management, Department Head, Team Leader, HR Performance, Auditor), `production_data.manage` dan `ppic_board.manage` (Department Head, Team Leader), dibatasi ke department Produksi dan team PPIC. Sales, Accounting, dan team lain tidak memiliki akses.
+- Halaman `production.index` (menu "Produksi": kalender shift, freshness, impor, daftar batch, rekonsiliasi, tautan scorecard) dan `ppic.index` (menu "Board PPIC"). Tiga laporan baru di katalog Step 12: `production_actuals`, `warehouse_stock`, `ppic_work_orders` (Internal).
+- Dokumentasi: `docs/product/PRODUCTION_SOURCES.md`; pembaruan `IDENTITY_ACCESS.md`, `APPLICATION_STRUCTURE.md`, `REPORTING.md`, `.env.example`.
+
+### Supported dimensions
+
+Tanggal operasional, shift, mesin, operator (referensi sumber saja, tidak diagregasi), team, work order, produk, proses, satuan, good/reject/rework, downtime (menit), waste, defect code, reason code, lokasi dan kategori warehouse, lot, customer, order, nomor pengiriman, proof of delivery, sistem sumber, versi batch, waktu ekstraksi.
+
+### Test matrix
+
+| Area | Cakupan |
+|---|---|
+| Batas shift | Menit pertama dan terakhir tiap shift (07:00, 14:59, 15:00, 22:59, 23:00, 00:00, 06:59), akhir bulan, akhir tahun, shift_code yang bertentangan dengan kalender |
+| Overnight shift | Anchor `start` dan `end`, baris 02:30/05:30 masuk tanggal operasional sebelumnya, perubahan versi kalender di tengah malam, menit ambigu antarversi ditolak, celah shift, kalender belum ada, konfigurasi tidak valid |
+| Duplikasi event | Dalam file, lintas batch berlaku tanggal lain, dua batch staged yang berbagi event (commit kedua ditolak), event bernomor sama di team lain diperbolehkan |
+| Satuan | Total per satuan tanpa konversi; total kontrol untuk file multi-satuan ditolak; progres board hanya pada satuan rencana, satuan lain disebut |
+| Presisi | 0.1 + 0.2 = 0.300; 12.345.678.902,299; lebih dari 3 desimal ditolak |
+| Kuantitas/waktu mustahil | Negatif, koma desimal, output nol, downtime terbalik, downtime > 24 jam, waktu masa depan, format waktu, jenis tak dikenal, WO kosong, waste nol, satuan tidak valid, stok negatif, kategori lokasi tak dikenal, pengiriman sebelum kirim/masa depan/POD tanpa tanggal terima |
+| Koreksi terlambat | Versi 2 menjadi berlaku, versi 1 tetap utuh dengan totalnya, audit `supersedes`, konten lama kembali sebagai versi baru, versi lama tidak dapat di-commit setelah versi baru, batch final tidak dapat diubah/dihapus/ditambah/dipindahi baris lewat SQL |
+| Rekonsiliasi | Rincian shift × mesin × satuan = total batch; total kontrol eksak; stok per kategori |
+| Akses lintas team | Woven/Flexo terpisah, Department Head memuat untuk team, Management/HR/Auditor hanya baca, Sales/Accounting tanpa akses, jenis data per team, board dibaca team produksi tetapi hanya PPIC yang memindahkan |
+| Board PPIC | Penanda, filter, expected status basi, status sama, WO tak dikenal, alasan terlambat/mundur, riwayat append-only, progres per team |
+| Halaman dan laporan | Akses halaman, impor-commit-rekonsiliasi lewat halaman, team lain tidak melihat batch, pindah status lewat halaman, laporan versi berlaku saja, filter unit/status, kategori lokasi, status board di laporan |
+| Volume | 20.000 baris output (batas impor) di-stage, di-commit, dan dijumlahkan eksak: 2,61 detik di SQLite dan 5,62 detik di PostgreSQL 18 (proses test, puncak memori ±430 MB termasuk framework test) |
+
+### Validasi
+
+| # | Gate | Hasil |
+|---|---|---|
+| 1 | `php artisan test` (SQLite in-memory, PHP 8.4) | 983 test: 980 passed, 3 skipped, 14.440 assertions. Run pertama mendapat 1 kegagalan karena `npm run build` saya jalankan bersamaan dan mengganti manifest aset di tengah test; diulang tanpa proses lain dan lulus |
+| 2 | Test PostgreSQL lokal (`bash scripts/dev.sh test-pgsql`, Docker Compose), tanpa suite host bersamaan | Suite penuh PostgreSQL 18 + Redis: 983 test, 981 passed, 2 skipped, 0 failed, 14.456 assertions (511 detik). Migrate → rollback → migrate di PostgreSQL juga lulus |
+| 3 | `vendor/bin/pint --test` | passed |
+| 4 | `vendor/bin/phpstan analyse --memory-limit=1G` | 0 error |
+| 5 | `composer validate --strict` / `composer audit` | valid / tidak ada advisory |
+| 6 | `npm audit --omit=dev` / `npm run build` | 0 vulnerability / build berhasil |
+| 7 | SQLite kosong: migrate → rollback → migrate | lulus |
+| 8 | `git diff --check` dan pemeriksaan CRLF | bersih |
+
+Tidak ada dependency baru.
+
+### Code review
+
+Satu review independen (keamanan, PHP, dan ketepatan data). Tidak ada temuan Critical; tidak ada secret, injection, IDOR, atau XSS. Diperbaiki dengan test:
+
+| Tingkat | Temuan | Perbaikan |
+|---|---|---|
+| High | Laporan memakai `lazyById` dengan urutan tanggal, sehingga di atas 100 batch ada batch yang terlewat atau berulang | Daftar batch diambil utuh lalu diurutkan |
+| High | Pemeriksaan event ganda lintas tanggal hanya saat staging; dua batch staged yang berbagi event dapat sama-sama di-commit | Diperiksa ulang saat commit di bawah lock team |
+| Medium | File identik untuk tanggal lain (stok yang tidak berubah) ditolak; konten versi lama mengembalikan versi lama yang tidak berlaku | Idempotensi per team, jenis, sumber, dan tanggal; hanya batch staged atau berlaku yang dikembalikan; konten lain menjadi versi baru |
+| Medium | Daftar batch halaman memakai 30 batch terbaru seluruh perusahaan sebelum filter scope | Filter scope diterapkan pada subquery |
+| Medium | Pencarian event lintas batch tanpa indeks yang sesuai | Indeks `(record_type, event_key)` dan pencarian per jenis |
+| Medium | Progres board menjumlahkan output semua team untuk satu WO (proses berurutan terhitung ganda) | Progres per team |
+| Medium | `FOR UPDATE` pada baris team memblokir insert lain yang mereferensikan team | `FOR NO KEY UPDATE` |
+| Medium | Rekonsiliasi dihitung di view setiap render; board tanpa batas tampilan | Computed per request; tampilan dibatasi 200 WO dengan petunjuk filter |
+| Medium | `event_key` stok dapat melebihi 200 karakter (error di PostgreSQL) | Kolom 255 |
+| Low | Versi lama dapat di-commit setelah versi baru; baris staged dapat dipindah ke batch final; konfigurasi kalender tidak valid menyebabkan 500; upload sementara tertinggal bila ada exception | Ditolak; trigger memeriksa batch tujuan; pesan jelas; dihapus di `finally` |
+
+Dicatat, tidak diubah: `operator_code` disimpan sebagai referensi sumber (tidak ditampilkan, tidak diekspor, tidak diagregasi); waktu ekstraksi versi baru tidak dibandingkan dengan versi lama; kunci pengiriman `nomor|WO` mengasumsikan nomor pengiriman unik per pengiriman; jumlah status board dihitung pada filter aktif; zona waktu sesi PostgreSQL mengikuti konvensi proyek (UTC).
+
+### Deferred dan blocker
+
+- Kalender shift, cut-off, dan tanggal operasional: DEC-015.
+- Formula metrik produksi, denominator, planned downtime, konversi satuan: DEC-006.
+- Dictionary reason/defect/downtime code dan master mesin/produk/lokasi: DEC-016.
+- Konektor MES/WMS/ERP dan write-back jadwal: Step 17 setelah DEC-008 (write-back butuh persetujuan terpisah).
+- Hak staf Admin PPIC/Admin Produksi (role Karyawan) untuk impor atau memindahkan status; granularitas rekonsiliasi yang disepakati; kebijakan penilaian operator.
+- Quality Control (NCR/CAPA): Step 16.
+
+### Gate berikutnya
+
+- Commit dan push Step 15, tunggu GitHub Actions, lalu catat addendum.
+- Step 16 (QC, NCR, dan CAPA) hanya atas permintaan.
