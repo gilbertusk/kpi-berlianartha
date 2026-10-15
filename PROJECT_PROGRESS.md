@@ -1637,3 +1637,12 @@ Dicatat untuk keputusan: siapa pun pengelola team dapat mencatat jenis apa pun u
 
 - Commit dan push Step 13, tunggu GitHub Actions, lalu catat addendum.
 - Step 14 (modul Accounting AR dan Tax).
+
+### Addendum 2026-10-15 — bukti GitHub Actions Step 13
+
+**Status Step 13 diperbarui:** PASS untuk scope yang dibangun (register operasional, revisi Design, costing vs aktual, laporan, test). Kebutuhan Sales, Customer Service, dan handover Admin PPIC tetap **BLOCKED** oleh DEC-005, DEC-006, DEC-008, DEC-010, dan DEC-016.
+
+- **Commit tervalidasi:** `cdd7327c0765be301bce450644a9e30cfcfd5884` pada `origin/main` (di-rebase di atas merge Dependabot `49035db` yang hanya mengubah `package.json`/`package-lock.json`; tidak ada konflik).
+- **CI:** GitHub Actions run [`38675203190`](https://github.com/gilbertusk/kpi-berlianartha/actions/runs/38675203190) berakhir dengan conclusion `success`; kelima job lulus, termasuk dua job yang menjalankan suite penuh pada PostgreSQL 18 + Redis. Ini menggantikan run PostgreSQL lokal yang terganggu oleh suite SQLite yang berjalan bersamaan.
+
+Gate berikutnya adalah Step 14.
