@@ -85,6 +85,13 @@ enum Capability: string
     case OperationalRecordManage = 'operational_record.manage';
 
     /**
+     * Receivables snapshots from the accounting system (Step 14): financial
+     * and customer data. Loading a snapshot feeds KPI values.
+     */
+    case AccountingDataView = 'accounting_data.view';
+    case AccountingDataManage = 'accounting_data.manage';
+
+    /**
      * Reserved for the KPI modules (Step 06–10). Step 05 only fixes the role
      * ceiling from ROLE_APPROVAL_MATRIX.md; ownership, workflow state, and
      * "C" conditions are enforced by the owning module's policies.
@@ -115,6 +122,7 @@ enum Capability: string
             self::CorrectionRequest,
             self::CorrectionApprove,
             self::OperationalRecordManage,
+            self::AccountingDataManage,
         ], true);
     }
 
@@ -141,8 +149,8 @@ enum Capability: string
      */
     public function isDelegable(): bool
     {
-        // The audit trail is read by the audit and HR roles themselves, never on someone's behalf.
-        if ($this === self::AuditReportView) {
+        // The audit trail and financial data are read by their holders themselves, never on someone's behalf.
+        if ($this === self::AuditReportView || $this === self::AccountingDataView) {
             return false;
         }
 

@@ -30,7 +30,7 @@ it('renders the main navigation and hides Administration from accounts without a
     }
 
     expect(array_column(config('navigation.main'), 'label'))
-        ->toBe(['Dashboard', 'KPI', 'Periode & Target', 'Aktual', 'Scorecard', 'Approval', 'Team', 'Team Review', 'Catatan Operasional', 'Notifikasi', 'Reports', 'Administration'])
+        ->toBe(['Dashboard', 'KPI', 'Periode & Target', 'Aktual', 'Scorecard', 'Approval', 'Team', 'Team Review', 'Piutang', 'Catatan Operasional', 'Notifikasi', 'Reports', 'Administration'])
         ->and(collect(config('navigation.main'))->firstWhere('label', 'Periode & Target')['ability'])
         ->toBe('periods.view')
         ->and(collect(config('navigation.main'))->firstWhere('label', 'Scorecard')['ability'])

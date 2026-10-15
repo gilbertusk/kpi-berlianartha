@@ -49,6 +49,9 @@ Route::middleware(['auth', 'verified', 'mfa'])->group(function () {
     });
     Route::get('evidence/{evidence}/{viewer}', EvidenceDownloadController::class)->middleware('signed')->name('evidence.download');
 
+    // Step 14 — receivables snapshots, aging, and tax invoice queue (read model, no ledger).
+    Route::livewire('accounting', 'pages::accounting.index')->name('accounting.index');
+
     // Step 13 — operational records kept as KPI source (Design revisions, costing).
     Route::livewire('operations', 'pages::operations.index')->name('operations.index');
 

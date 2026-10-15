@@ -18,10 +18,11 @@ final readonly class ReportFilters
 
     private const PATTERNS = [
         'period' => '/^[0-9A-HJKMNP-TV-Z]{26}$/',
+        'snapshot' => '/^[0-9A-HJKMNP-TV-Z]{26}$/',
         'unit' => '/^[A-Z0-9][A-Z0-9._-]{0,59}$/',
         'employee' => '/^[A-Za-z0-9][A-Za-z0-9.\/_-]{0,39}$/',
         'kpi' => '/^[A-Z0-9][A-Z0-9._-]{0,59}$/',
-        'status' => '/^[a-z][a-z_]{0,29}$/',
+        'status' => '/^[a-z][a-z0-9_]{0,29}$/',
         'source' => '/^[a-z][a-z_]{0,29}$/',
         'entity' => '/^[a-z][a-z_]{0,59}$/',
         'from' => '/^\d{4}-\d{2}-\d{2}$/',
@@ -30,6 +31,7 @@ final readonly class ReportFilters
 
     private function __construct(
         public ?string $period,
+        public ?string $snapshot,
         public ?string $unit,
         public ?string $level,
         public ?string $employee,
@@ -106,7 +108,7 @@ final readonly class ReportFilters
         }
 
         return new self(
-            $values['period'], $values['unit'], $level, $values['employee'], $values['kpi'], $values['status'],
+            $values['period'], $values['snapshot'], $values['unit'], $level, $values['employee'], $values['kpi'], $values['status'],
             $values['source'], $values['entity'], $values['from'], $values['to'], in_array($redOnly, [true, '1', 1], true),
         );
     }
@@ -119,7 +121,7 @@ final readonly class ReportFilters
     public function toArray(): array
     {
         $values = [
-            'period' => $this->period, 'unit' => $this->unit, 'level' => $this->level, 'employee' => $this->employee,
+            'period' => $this->period, 'snapshot' => $this->snapshot, 'unit' => $this->unit, 'level' => $this->level, 'employee' => $this->employee,
             'kpi' => $this->kpi, 'status' => $this->status, 'source' => $this->source, 'entity' => $this->entity,
             'from' => $this->from, 'to' => $this->to, 'red_only' => $this->redOnly ? '1' : null,
         ];

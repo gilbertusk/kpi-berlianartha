@@ -33,11 +33,13 @@ final class ImportSheet
     private const MAX_UNCOMPRESSED_BYTES = 20 * 1024 * 1024;
 
     /**
+     * @param  list<string>  $columns  columns kept from the file
+     * @param  list<string>  $required  columns the header must contain
      * @return list<array{line: int, cells: array<string, string>}>
      *
      * @throws InvalidArgumentException with a message that is safe to show
      */
-    public static function read(string $path, string $format, int $maxRows): array
+    public static function read(string $path, string $format, int $maxRows, array $columns = self::COLUMNS, array $required = self::REQUIRED_COLUMNS): array
     {
         $header = [];
         $rows = [];
@@ -55,7 +57,7 @@ final class ImportSheet
 
             if ($header === []) {
                 $header = array_map(static fn (string $cell): string => mb_strtolower($cell), $cells);
-                self::assertHeader($header);
+                self::assertHeader($header, $required);
 
                 continue;
             }
@@ -71,7 +73,7 @@ final class ImportSheet
             $named = [];
 
             foreach ($header as $position => $column) {
-                if (in_array($column, self::COLUMNS, true)) {
+                if (in_array($column, $columns, true)) {
                     $named[$column] = mb_substr($cells[$position] ?? '', 0, self::MAX_CELL_LENGTH);
                 }
             }
@@ -214,10 +216,11 @@ final class ImportSheet
 
     /**
      * @param  list<string>  $header
+     * @param  list<string>  $required
      */
-    private static function assertHeader(array $header): void
+    private static function assertHeader(array $header, array $required): void
     {
-        $missing = array_values(array_diff(self::REQUIRED_COLUMNS, $header));
+        $missing = array_values(array_diff($required, $header));
 
         if ($missing !== []) {
             throw new InvalidArgumentException('Kolom wajib tidak ditemukan pada baris judul: '.implode(', ', $missing).'.');

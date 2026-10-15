@@ -9,6 +9,8 @@ use App\Modules\Reporting\Application\ExportService;
 use App\Modules\Reporting\Application\ReportCatalog;
 use App\Modules\Reporting\Application\Reports\ApprovalHistoryReport;
 use App\Modules\Reporting\Application\Reports\ApprovalStatusReport;
+use App\Modules\Reporting\Application\Reports\ArAgingReport;
+use App\Modules\Reporting\Application\Reports\ArAgingSummaryReport;
 use App\Modules\Reporting\Application\Reports\AuditLogReport;
 use App\Modules\Reporting\Application\Reports\CalculationReport;
 use App\Modules\Reporting\Application\Reports\CompletenessReport;
@@ -21,6 +23,7 @@ use App\Modules\Reporting\Application\Reports\KpiDefinitionReport;
 use App\Modules\Reporting\Application\Reports\KpiLineReport;
 use App\Modules\Reporting\Application\Reports\RatingDistributionReport;
 use App\Modules\Reporting\Application\Reports\ScorecardReport;
+use App\Modules\Reporting\Application\Reports\TaxInvoiceReport;
 use App\Modules\Reporting\Infrastructure\Console\PurgeExpiredExportsCommand;
 use Illuminate\Contracts\Foundation\Application;
 use Illuminate\Support\Facades\Gate;
@@ -43,6 +46,9 @@ final class ReportingServiceProvider extends ServiceProvider
         DesignRevisionReport::class,
         DesignRevisionAttributionReport::class,
         CostingComparisonReport::class,
+        ArAgingReport::class,
+        ArAgingSummaryReport::class,
+        TaxInvoiceReport::class,
     ];
 
     public function register(): void

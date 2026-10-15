@@ -109,6 +109,8 @@ Legenda: `A` diizinkan dalam scope, `—` ditolak, `R*` plafon untuk modul KPI b
 | `audit_report.view` (Step 12) | — | — | — | — | A | A | — |
 | `operational_record.view` (Step 13; jenis catatan dapat membatasi role) | A | A | A | — | A | A | — |
 | `operational_record.manage` (Step 13) | — | A | A | — | — | — | — |
+| `accounting_data.view` (Step 14; hanya unit Accounting, tidak dapat didelegasikan) | A | A | A | — | — | A | — |
+| `accounting_data.manage` (Step 14; hanya unit Accounting) | — | A | A | — | — | — | — |
 | `kpi.value.modify` | — | R* | R* | R* | R* | — | — |
 | `approval.decide` | R* | R* | R* | — | R* | — | — |
 

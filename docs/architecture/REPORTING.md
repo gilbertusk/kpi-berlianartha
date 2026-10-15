@@ -21,6 +21,9 @@ Mekanismenya lengkap dan teruji. Yang belum ada adalah keputusan bisnisnya: tanp
 | `design_revisions` | Revisi Design (Step 13) | Register operasional | Jenis catatan | Internal |
 | `design_revision_attribution` | Atribusi revisi Design per team dan kategori (Step 13) | Register operasional | Jenis catatan | Internal |
 | `costing_comparisons` | Costing vs aktual produksi (Step 13) | Register operasional | Jenis catatan (tanpa HR) | Terbatas |
+| `ar_aging` | Aging piutang per invoice (Step 14) | Snapshot piutang | `accounting_data.view` (unit Accounting) | Terbatas |
+| `ar_aging_summary` | Ringkasan aging dan rekonsiliasi piutang (Step 14) | Snapshot piutang | `accounting_data.view` | Terbatas |
+| `tax_invoices` | Faktur pajak dan invoice tanpa faktur (Step 14) | Snapshot piutang | `accounting_data.view` | Terbatas |
 | `audit_log` | Laporan audit | Audit log pada rentang tanggal (maks. 92 hari) | `audit_report.view` seluruh perusahaan | Terbatas |
 
 "Scope scorecard" adalah scope yang sama dengan halaman scorecard: scorecard unit dalam scope `scorecard.view`, scorecard karyawan dalam scope `individual_scorecard.view` (HR dan Auditor), dan tidak pernah scorecard pembaca sendiri. Akibatnya Management, Department Head, dan Team Leader hanya mendapat baris scorecard unit.

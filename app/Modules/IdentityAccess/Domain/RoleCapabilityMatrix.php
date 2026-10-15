@@ -36,6 +36,7 @@ final class RoleCapabilityMatrix
                 Capability::TeamReviewView,
                 Capability::ReportView,
                 Capability::OperationalRecordView,
+                Capability::AccountingDataView,
             ],
             Role::DepartmentHead->value => [
                 Capability::OrganizationView,
@@ -53,6 +54,8 @@ final class RoleCapabilityMatrix
                 Capability::ReportView,
                 Capability::OperationalRecordView,
                 Capability::OperationalRecordManage,
+                Capability::AccountingDataView,
+                Capability::AccountingDataManage,
             ],
             Role::TeamLeader->value => [
                 Capability::OrganizationView,
@@ -72,6 +75,8 @@ final class RoleCapabilityMatrix
                 Capability::ReportView,
                 Capability::OperationalRecordView,
                 Capability::OperationalRecordManage,
+                Capability::AccountingDataView,
+                Capability::AccountingDataManage,
             ],
             Role::Employee->value => [
                 Capability::EmployeeView,
@@ -132,6 +137,7 @@ final class RoleCapabilityMatrix
                 Capability::ReportView,
                 Capability::AuditReportView,
                 Capability::OperationalRecordView,
+                Capability::AccountingDataView,
             ],
             Role::SystemAdmin->value => [
                 Capability::OrganizationView,

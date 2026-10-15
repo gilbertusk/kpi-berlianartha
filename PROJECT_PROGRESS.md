@@ -1646,3 +1646,82 @@ Dicatat untuk keputusan: siapa pun pengelola team dapat mencatat jenis apa pun u
 - **CI:** GitHub Actions run [`38675203190`](https://github.com/gilbertusk/kpi-berlianartha/actions/runs/38675203190) berakhir dengan conclusion `success`; kelima job lulus, termasuk dua job yang menjalankan suite penuh pada PostgreSQL 18 + Redis. Ini menggantikan run PostgreSQL lokal yang terganggu oleh suite SQLite yang berjalan bersamaan.
 
 Gate berikutnya adalah Step 14.
+
+## 2026-10-15 — Step 14 Modul Accounting, Account Receivable, dan Tax Invoice
+
+**Status:** PARTIAL. Read model piutang, AR aging dengan bucket PRD §10.2, staged import idempotent, rekonsiliasi snapshot, dan daftar faktur pajak dibangun dan diuji. **BLOCKED:** formula DSO/collection rate/overdue %/unapplied/forecast (DEC-006), perlakuan credit note dan lebih bayar, aturan tenggat faktur pajak, collection follow-up dan promise-to-pay, dashboard rekonsiliasi Admin Accounting (close readiness), dan koneksi sistem akuntansi (DEC-008, DEC-016). Sistem KPI tidak memposting jurnal dan tidak mengubah data sumber.
+
+### Git preflight
+
+- HEAD awal `fb3a8b0` sama dengan `origin/main`; working tree bersih. Diperiksa ulang sebelum commit (`git fetch`): tidak ada commit baru di `origin/main`.
+
+### Scope selesai
+
+- Modul `Accounting`: tabel `ar_snapshots` dan `ar_documents` (invoice, alokasi pembayaran, faktur pajak) dengan referensi sumber, hash isi, versi per tanggal as-of, total kontrol, dan hash baris. Snapshot `staged` → `committed`/`rejected`; snapshot final beserta dokumennya tidak dapat ditambah, diubah, atau dihapus (trigger PostgreSQL dan SQLite).
+- Aging (`AgingBuckets`, `AgingCalculator`): bucket PRD versi `prd-10.2` (belum jatuh tempo, 1–30, 31–60, 61–90, > 90 hari) dari konfigurasi berversi; hari kalender dari tanggal as-of; outstanding eksak (brick/math); invoice lunas dan kelebihan alokasi tidak di-aging; dispute ditandai, tidak di-netting.
+- Impor (`ArRowParser`, `ArImportService`): kontrak kolom CSV/XLSX, seluruh masalah per baris dilaporkan, file bermasalah tidak dapat di-commit, satu mata uang per file, minimal satu invoice, credit note ditolak karena aturannya belum ada, file sama = snapshot sama, file sama untuk team/as-of lain ditolak, file dari snapshot ditolak boleh diimpor ulang, file baru untuk as-of yang sama = versi berikutnya (impor team diserialkan dengan lock baris unit), total kontrol harus sama persis untuk commit.
+- Akses (`ArAccess`): capability baru `accounting_data.view` (Management, Department Head, Team Leader, Auditor; tidak dapat didelegasikan) dan `accounting_data.manage` (Department Head, Team Leader), keduanya dibatasi ke subtree department Accounting (`ACCOUNTING_DEPARTMENT_CODE`, default `ACC`). HR Performance, System Admin, Karyawan, dan Team Leader team lain tidak melihat data piutang.
+- Halaman `accounting.index` (menu "Piutang"): impor snapshot, daftar snapshot dengan masalah per baris, commit/tolak, ringkasan aging dan rekonsiliasi. Tiga laporan baru di katalog Step 12 (`ar_aging`, `ar_aging_summary`, `tax_invoices`), berklasifikasi Terbatas, dengan filter snapshot.
+- `ImportSheet` digeneralisasi (kolom dan kolom wajib sebagai parameter); perilaku impor aktual Step 08 tidak berubah.
+- Dokumentasi: `docs/product/ACCOUNTING_SOURCES.md` (yang aktif dan BLOCKED, kontrak file, aturan hitung, siklus snapshot, akses, pemilik data usulan); pembaruan `IDENTITY_ACCESS.md`, `APPLICATION_STRUCTURE.md`, `REPORTING.md`, `.env.example`.
+
+### Test matrix
+
+| Area | Cakupan |
+|---|---|
+| Batas bucket | 0, 1, 30, 31, 60, 61, 90, 91 hari; jatuh tempo besok dan tepat pada tanggal as-of; set bucket lain wajib berversi dan valid |
+| Tanggal | Hari kalender lintas akhir bulan, tahun, dan 29 Februari; as-of adalah tanggal bisnis; snapshot yang sama memberi aging yang sama |
+| Pembayaran | Sebagian, terpisah ke beberapa invoice, lunas oleh dua pembayaran, kelebihan alokasi (saldo kredit, tidak di-aging) |
+| Presisi | 0.10 + 0.20 tepat 0.30; nilai 99.999.999.999.999,99; total kontrol eksak |
+| Dispute | Ditandai per bucket, outstanding tidak berubah |
+| Impor | 10 jenis masalah per baris (duplikat, credit note, invoice tak ada, mata uang alokasi, jatuh tempo, tanggal setelah as-of, format angka, kode berspasi, status faktur), mata uang campuran, file tanpa invoice, total kontrol tidak cocok, file sama, versi baru, file sama untuk as-of lain, impor ulang setelah ditolak |
+| Imutabilitas | Ubah/hapus dokumen, ubah status, dan tambah dokumen ke snapshot committed ditolak database |
+| Rekonsiliasi | Jumlah bucket = outstanding = invoice − alokasi + saldo kredit |
+| Akses | HR, Sales TL, Tax TL (baca saja), Management/Auditor (tidak impor), Sales TL tidak dapat impor untuk team sendiri, audit tanpa data customer |
+| Halaman dan laporan | Akses per role, menu, commit dua kali ditolak, pesan "file yang sama sudah diimpor", snapshot staged lama tetap tampil, laporan aging dan faktur pajak |
+
+### Validasi
+
+| # | Gate | Hasil |
+|---|---|---|
+| 1 | `php artisan test` (SQLite in-memory, PHP 8.4) | 932 test: 929 passed, 3 skipped, 14.121 assertions |
+| 2 | Test PostgreSQL lokal (`bash scripts/dev.sh test-pgsql`, Docker Compose), dijalankan **tanpa** suite host bersamaan | Suite penuh PostgreSQL 18 + Redis: 932 test, 930 passed, 2 skipped, 0 failed, 14.137 assertions (841 detik) |
+| 3 | `vendor/bin/pint --test` | passed |
+| 4 | `vendor/bin/phpstan analyse --memory-limit=1G` | 0 error |
+| 5 | `composer validate --strict` / `composer audit` | valid / tidak ada advisory |
+| 6 | `npm audit --omit=dev` / `npm run build` | 0 vulnerability / build berhasil |
+| 7 | SQLite kosong: migrate → rollback → migrate | lulus |
+| 8 | `git diff --check` dan pemeriksaan CRLF | bersih |
+
+Jumlah test naik dari 903 menjadi 932. Tidak ada dependency baru. Catatan: `php artisan test --parallel` gagal karena ketidakcocokan versi paratest/pest yang sudah ada sebelum step ini; suite dijalankan serial.
+
+### Code review
+
+Satu review independen (keamanan, PHP, dan ketepatan finansial). Diperbaiki dengan test:
+
+| Tingkat | Temuan | Perbaikan |
+|---|---|---|
+| Critical | Trigger dokumen memakai subquery di kondisi `WHEN`, yang ditolak PostgreSQL, sehingga migrasi gagal di produksi (SQLite menyembunyikannya) | Pemeriksaan status induk dipindah ke fungsi plpgsql; diverifikasi di PostgreSQL 18 lokal |
+| High | `lockForUpdate()->max()` menghasilkan `FOR UPDATE` dengan agregat (error di PostgreSQL) dan tidak mengunci apa pun untuk versi pertama | Impor team diserialkan dengan lock baris unit |
+| High | Total, bucket, dan total kontrol dapat menjumlahkan mata uang berbeda | Satu mata uang per file |
+| Medium | File yang pernah ditolak tidak dapat diimpor ulang; file sama untuk as-of lain diam-diam mengembalikan snapshot lama dengan pesan sukses | Unique hash hanya untuk snapshot yang tidak ditolak; file sama untuk team/as-of lain ditolak; halaman menyatakan "tidak ada yang berubah" |
+| Medium | File tanpa baris dapat di-commit sebagai "tidak ada piutang" | Minimal satu invoice |
+| Medium | Dokumen dapat ditambahkan ke snapshot committed | Guard INSERT di kedua database |
+| Low | `SUM()` SQLite memakai float; daftar snapshot dibatasi 30 sehingga snapshot staged lama tidak dapat diproses; alasan penolakan dapat memuat nama customer; docblock ganda | Penjumlahan dengan BigDecimal di PHP; semua snapshot staged selalu tampil; petunjuk pada isian alasan; docblock dirapikan |
+
+Dicatat, tidak diubah: pemeriksaan "bucket = outstanding" adalah konsistensi internal (pembanding independen adalah total kontrol); angka XLSX bertipe number dibaca 15 digit (didokumentasikan); ringkasan aging dihitung ulang per permintaan (maks. 20.000 baris).
+
+### Deferred dan blocker
+
+- DSO, collection rate, overdue %, unapplied payment, forecast: menunggu formula disetujui (DEC-006).
+- Credit note dan lebih bayar: menunggu aturan perlakuan dari Accounting.
+- Tenggat dan queue faktur pajak: menunggu aturan business owner.
+- Collection follow-up dan promise-to-pay di dalam sistem: hanya bila disetujui.
+- Dashboard rekonsiliasi Admin Accounting (open item, koreksi, kelengkapan dokumen, close readiness): menunggu sumber dan aturan.
+- Konektor sistem akuntansi: Step 17 setelah DEC-008 dan DEC-016.
+- Konfirmasi pemilik data (TL AR, TL Tax Invoice, DH Accounting) dan kode department Accounting produksi.
+
+### Gate berikutnya
+
+- Commit dan push Step 14, tunggu GitHub Actions, lalu catat addendum.
+- Step 15 (produksi, PPIC, dan warehouse) hanya atas permintaan.

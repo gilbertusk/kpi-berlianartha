@@ -1,5 +1,6 @@
 <?php
 
+use App\Providers\AccountingServiceProvider;
 use App\Providers\ActualEvidenceServiceProvider;
 use App\Providers\AppServiceProvider;
 use App\Providers\FortifyServiceProvider;
@@ -31,5 +32,6 @@ return [
     TeamReviewServiceProvider::class,
     ReportingServiceProvider::class,
     OperationsServiceProvider::class,
+    AccountingServiceProvider::class,
     FortifyServiceProvider::class,
 ];

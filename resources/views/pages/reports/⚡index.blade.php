@@ -1,5 +1,7 @@
 <?php
 
+use App\Modules\Accounting\Application\ArAccess;
+use App\Modules\Accounting\Infrastructure\Persistence\Models\ArSnapshot;
 use App\Modules\IdentityAccess\Http\Livewire\GuardedPage;
 use App\Modules\PeriodAssignment\Domain\PeriodStatus;
 use App\Modules\PeriodAssignment\Infrastructure\Persistence\Models\AssessmentPeriod;
@@ -22,6 +24,8 @@ new #[Title('Laporan')] class extends GuardedPage {
     public string $report = '';
 
     public string $period = '';
+
+    public string $snapshot = '';
 
     public string $unit = '';
 
@@ -132,6 +136,22 @@ new #[Title('Laporan')] class extends GuardedPage {
     }
 
     /**
+     * Committed receivables snapshots the account may read.
+     *
+     * @return array<string, string>
+     */
+    #[Computed]
+    public function snapshotOptions(): array
+    {
+        $query = ArSnapshot::query()->with('unit')->where('status', ArSnapshot::COMMITTED);
+        app(ArAccess::class)->restrict($query, $this->currentUser());
+
+        return $query->orderByDesc('as_of_date')->orderByDesc('id')->limit(36)->get()
+            ->mapWithKeys(fn (ArSnapshot $snapshot): array => [$snapshot->public_id => "{$snapshot->unit->code} · {$snapshot->as_of_date} · {$snapshot->source_system} v{$snapshot->version}"])
+            ->all();
+    }
+
+    /**
      * @return Collection<int, ReportExport>
      */
     #[Computed]
@@ -208,7 +228,7 @@ new #[Title('Laporan')] class extends GuardedPage {
         $offered = $this->definition?->filters() ?? [];
         $input = [];
 
-        foreach (['period', 'unit', 'level', 'employee', 'kpi', 'status', 'source', 'entity', 'from', 'to'] as $field) {
+        foreach (['period', 'snapshot', 'unit', 'level', 'employee', 'kpi', 'status', 'source', 'entity', 'from', 'to'] as $field) {
             if (in_array($field, $offered, true) && $this->{$field} !== '') {
                 $input[$field] = $this->{$field};
             }
@@ -260,6 +280,9 @@ new #[Title('Laporan')] class extends GuardedPage {
             <div class="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
                 @if (in_array('period', $offered, true))
                     <x-ui.select name="period" :label="__('Periode')" :placeholder="__('Pilih periode')" :options="$this->periodOptions" required wire:model="period" />
+                @endif
+                @if (in_array('snapshot', $offered, true))
+                    <x-ui.select name="snapshot" :label="__('Snapshot piutang')" :placeholder="__('Pilih snapshot')" :options="$this->snapshotOptions" required wire:model="snapshot" />
                 @endif
                 @if (in_array('unit', $offered, true))
                     <x-ui.input name="unit" :label="__('Kode unit (termasuk unit di bawahnya)')" wire:model="unit" />

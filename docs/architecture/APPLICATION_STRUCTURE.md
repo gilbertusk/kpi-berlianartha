@@ -26,6 +26,8 @@ Aplikasi dibuat dari official Laravel Livewire starter kit (Laravel 13, Livewire
 | `app/Modules/Reporting` | Query dashboard per peran dan halaman team (tanpa cache); katalog laporan dan ekspor Excel/PDF lewat antrean. Detail: `REPORTING.md` |
 | `app/Modules/Operations` | Register operasional generik (satu tabel, jenis catatan bertipe) untuk sumber KPI team: revisi Design dan costing vs aktual. Detail: `docs/product/COMMERCIAL_SUPPORT_SOURCES.md` |
 | `resources/views/pages/operations/` | Halaman Livewire register operasional |
+| `app/Modules/Accounting` | Read model piutang dari snapshot sumber: staged import, aging berbucket PRD, rekonsiliasi, faktur pajak. Bukan buku besar. Detail: `docs/product/ACCOUNTING_SOURCES.md` |
+| `resources/views/pages/accounting/` | Halaman Livewire piutang (impor snapshot, aging, rekonsiliasi) |
 | `resources/views/pages/reports/` | Halaman Livewire laporan: katalog, filter, pratinjau, dan daftar ekspor |
 | `resources/views/pages/{⚡dashboard,notifications,team,team-review}` | Halaman Livewire dashboard, notifikasi, halaman team, dan team review |
 | `resources/views/pages/approvals/` | Halaman Livewire approval (inbox, board periode, scorecard, antrean koreksi, bypass) |
