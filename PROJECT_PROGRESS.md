@@ -1822,3 +1822,12 @@ Dicatat, tidak diubah: `operator_code` disimpan sebagai referensi sumber (tidak 
 
 - Commit dan push Step 15, tunggu GitHub Actions, lalu catat addendum.
 - Step 16 (QC, NCR, dan CAPA) hanya atas permintaan.
+
+### Addendum 2026-10-15 — bukti GitHub Actions Step 15
+
+**Status Step 15 diperbarui:** PASS untuk scope yang dibangun (batch sumber produksi, packing, pengiriman, stok warehouse, dan work order; kalender shift berversi; rekonsiliasi dan freshness; board PPIC; laporan; akses). Kalender shift resmi (DEC-015), formula metrik produksi dan konversi satuan (DEC-006), dictionary kode (DEC-016), dan konektor MES/WMS/ERP (DEC-008) tetap **BLOCKED**; aktual produksi dan packing belum dapat diimpor di lingkungan nyata sampai kalender shift disetujui.
+
+- **Commit tervalidasi:** `c11dacacac31f7d9e235c6df55c798cf004c3981` pada `origin/main`.
+- **CI:** GitHub Actions run [`38717044694`](https://github.com/gilbertusk/kpi-berlianartha/actions/runs/38717044694) berakhir dengan conclusion `success` pada percobaan pertama; kelima job lulus, termasuk suite penuh PostgreSQL 18 + Redis, environment Docker Compose, dan pemindaian Trivy.
+
+Gate berikutnya adalah Step 16.
