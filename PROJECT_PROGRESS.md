@@ -1725,3 +1725,12 @@ Dicatat, tidak diubah: pemeriksaan "bucket = outstanding" adalah konsistensi int
 
 - Commit dan push Step 14, tunggu GitHub Actions, lalu catat addendum.
 - Step 15 (produksi, PPIC, dan warehouse) hanya atas permintaan.
+
+### Addendum 2026-10-15 — bukti GitHub Actions Step 14
+
+**Status Step 14 diperbarui:** PASS untuk scope yang dibangun (read model piutang, aging bucket PRD, staged import, rekonsiliasi snapshot, faktur pajak, laporan, akses). Formula DSO dan turunannya, credit note dan lebih bayar, tenggat faktur pajak, collection follow-up, close readiness, dan koneksi sistem akuntansi tetap **BLOCKED** (DEC-006, DEC-008, DEC-016, aturan business owner).
+
+- **Commit tervalidasi:** `c4cf0f2fd8f3c9e82fe9c74e8e61f13fe68a30f8` pada `origin/main`.
+- **CI:** GitHub Actions run [`38679108432`](https://github.com/gilbertusk/kpi-berlianartha/actions/runs/38679108432). Percobaan 1: empat job lulus (termasuk suite penuh PostgreSQL 18 + Redis dan Docker Compose); job Docker image gagal karena Trivy tidak dapat mengunduh database kerentanan (`mirror.gcr.io` HTTP 404), sehingga pemindaian tidak berjalan — bukan temuan kerentanan. Percobaan 2 (hanya job yang gagal dijalankan ulang): conclusion `success`, kelima job lulus termasuk pemindaian Trivy CRITICAL/HIGH.
+
+Gate berikutnya adalah Step 15.
