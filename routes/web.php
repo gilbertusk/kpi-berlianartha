@@ -49,6 +49,9 @@ Route::middleware(['auth', 'verified', 'mfa'])->group(function () {
     });
     Route::get('evidence/{evidence}/{viewer}', EvidenceDownloadController::class)->middleware('signed')->name('evidence.download');
 
+    // Step 13 — operational records kept as KPI source (Design revisions, costing).
+    Route::livewire('operations', 'pages::operations.index')->name('operations.index');
+
     // Step 12 — report catalog, preview, and asynchronous exports.
     Route::livewire('reports', 'pages::reports.index')->name('reports.index');
     Route::get('reports/exports/{export}/{viewer}', ExportDownloadController::class)->middleware('signed')->name('reports.exports.download');

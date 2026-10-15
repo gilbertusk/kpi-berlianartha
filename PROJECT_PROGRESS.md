@@ -1557,3 +1557,83 @@ Dicatat tetapi tidak dikerjakan: `corrections` (untuk Management) dan `completen
 - **CI:** GitHub Actions run [`38502547296`](https://github.com/gilbertusk/kpi-berlianartha/actions/runs/38502547296) berakhir dengan conclusion `success`; kelima job lulus, termasuk dua job yang menjalankan suite pada PostgreSQL 18 + Redis dan job image Docker dengan dependency baru `dompdf/dompdf`. Ini menutup gate PostgreSQL yang tidak dapat dijalankan secara lokal: SQL agregat laporan, indeks unik parsial, dan CHECK constraint ekspor berjalan di PostgreSQL.
 
 Gate berikutnya adalah Step 13.
+
+## 2026-10-15 — Step 13 Modul Commercial dan Support
+
+**Status:** BLOCKED untuk sebagian besar kebutuhan per team, PARTIAL untuk yang dibangun. Prompt meminta fitur khusus hanya untuk use case yang **disetujui**, dan seluruh keputusan terkait masih OPEN: DEC-001 (Design A/B), DEC-005 (KPI rilis), DEC-006 (definisi KPI), DEC-008 (integrasi), DEC-010 (klasifikasi data), DEC-016 (system of record). Yang dibangun adalah satu register operasional generik untuk dua kebutuhan yang aturannya ditetapkan PRD sendiri. Tidak ada KPI Commercial/Support yang diaktifkan.
+
+### Git preflight
+
+- HEAD awal `411d43c` sama dengan `origin/main`; working tree bersih.
+
+### Fitur per team
+
+| Team | Hasil |
+|---|---|
+| Design A, Design B | **Register Revisi Design** dengan kategori penyebab PRD (kesalahan internal, perubahan customer, perubahan Sales, masalah produksi). Hanya kesalahan internal dibebankan ke team; laporan detail dan atribusi per team. A dan B dipisah per team tanpa workflow berbeda |
+| R&D Costing | **Register Costing vs aktual produksi** per komponen (material, waktu mesin, tenaga kerja) dan versi asumsi, dengan referensi BOM/routing/work order; selisih dan selisih relatif eksak; versi tidak bercampur; estimasi tidak pernah menjadi aktual. Angka biaya terbatas (HR tidak membaca) |
+| Sales | BLOCKED: dashboard Sales butuh CRM/ERP, klasifikasi margin/customer, dan KPI disetujui. Memakai KPI generik |
+| Customer Service | BLOCKED: tracking request/handover/complaint hanya bila menjadi sumber KPI resmi (belum diputuskan). Memakai KPI generik |
+| Admin PPIC | Workflow handover administratif BLOCKED (sumber dan aturan belum ada); board PPIC adalah Step 15. Memakai KPI generik |
+| Purchasing, HR, GA | KPI generik (tidak ada register operasional tambahan yang disetujui). Data personal HR dan coaching notes tetap dilindungi aturan Step 05/11 |
+
+### Scope selesai
+
+- Modul `Operations`: satu tabel `operational_records`, jenis catatan bertipe (`RecordType`) dengan validasi isian, referensi sumber, tautan opsional ke definisi KPI, pembatalan beralasan (tanpa edit/hapus, dijaga trigger), audit tanpa isi angka.
+- Akses: `operational_record.manage` (Team Leader, Department Head) atas team; `operational_record.view` lewat role yang diterima jenis catatan.
+- Batas adapter sumber (`OperationalRecordSource`): impor idempotent lewat aturan yang sama; baris untuk team di luar scope ditolak. Belum ada konektor nyata.
+- Halaman `operations.index` (layar per jenis, isian dinamis, pembatalan) dan tiga laporan baru di katalog Step 12 (`design_revisions`, `design_revision_attribution`, `costing_comparisons`) yang ikut ekspor Excel/PDF.
+- Dokumentasi: `docs/product/COMMERCIAL_SUPPORT_SOURCES.md` (fitur, sumber, pemilik data usulan, yang ditunda); pembaruan `IDENTITY_ACCESS.md`, `APPLICATION_STRUCTURE.md`, `REPORTING.md`.
+
+### Test matrix
+
+| Area | Cakupan |
+|---|---|
+| Atribusi revisi | Hanya kesalahan internal dibebankan; jumlah atribusi = baris detail; Design A/B terpisah; rentang tanggal wajib |
+| Auditabilitas | Kategori diperbaiki lewat batal + catat ulang; audit urut; edit/hapus/ubah setelah batal ditolak database |
+| Validasi | Kategori/komponen tak dikenal, revisi nol, isian wajib, isian tak dikenal, desimal negatif/koma, referensi berspasi, karakter kontrol dan tak terlihat, tanggal masa depan, KPI tak dikenal, jenis tak dikenal |
+| Costing | Aritmetika eksak, estimasi nol, versi tidak bercampur, duplikat ditolak, tidak menulis aktual KPI |
+| Akses sensitif | HR tidak membaca biaya; team dan departemen lain tidak melihat; audit tanpa angka dan teks; Management/HR/Auditor/System Admin/Karyawan tidak mencatat |
+| Lintas team | Team leader lain tidak melihat, mencatat, atau membatalkan; team tidak saling menghalangi untuk referensi yang sama |
+| Adapter | Impor idempotent, baris tidak valid dan di luar scope ditolak tanpa menggagalkan impor, salinan manual dan impor dianggap catatan yang sama |
+| Halaman | Akses per role, jenis catatan per role, catat, batal |
+
+### Validasi
+
+| # | Gate | Hasil |
+|---|---|---|
+| 1 | `php artisan test` (SQLite in-memory, PHP 8.4) | 903 test: 900 passed, 3 skipped, 13.953 assertions |
+| 2 | Test terhadap PostgreSQL lokal (`bash scripts/dev.sh test-pgsql`, Docker Compose) | Suite penuh: 899 passed, 2 skipped, **2 failed**. Kegagalan terjadi karena suite SQLite di host berjalan bersamaan dan berbagi folder `storage/framework/testing` (bind mount), sehingga hitungan file pada disk palsu tercampur (contoh: `EvidenceTest` mengharapkan 2 file, mendapati 3). Saat diulang sendiri di PostgreSQL, `EvidenceTest` lulus 19/19 dan gabungan ActualEvidence + Reporting + Operations lulus 156/156. Suite penuh PostgreSQL yang bersih menunggu GitHub Actions |
+| 3 | `vendor/bin/pint --test` | passed |
+| 4 | `vendor/bin/phpstan analyse --memory-limit=1G` | 0 error |
+| 5 | `composer validate --strict` / `composer audit --locked` | valid / tidak ada advisory |
+| 6 | `npm audit --audit-level=high` / `npm run build` | 0 vulnerability / build berhasil |
+| 7 | SQLite kosong: migrate → rollback → migrate | lulus |
+| 8 | `git diff --check` dan pemeriksaan CRLF | bersih |
+
+Jumlah test naik dari 886 menjadi 903; file test Step 13 berisi 29 kasus termasuk dataset. Tidak ada dependency baru.
+
+### Code review
+
+Satu review independen (keamanan dan PHP). Tidak ada temuan Critical. Diperbaiki dengan test:
+
+| Tingkat | Temuan | Perbaikan |
+|---|---|---|
+| High | Kunci deduplikasi tidak memuat team, sehingga satu team dapat menghalangi catatan team lain dan impor diam-diam melewatinya | Team menjadi bagian kunci unik |
+| Medium | Salinan manual dan hasil impor dari catatan yang sama terhitung dua kali | Sistem sumber dikeluarkan dari kunci unik |
+| Medium | Isian wajib dapat lolos berisi karakter kontrol yang lalu dibuang | Pembersihan dilakukan sebelum pemeriksaan wajib; karakter tak terlihat dibuang dari isian satu baris |
+| Medium | Laporan costing memuat relasi per baris | Iterasi per chunk dengan eager loading |
+| Low | Pembatalan tanpa pemeriksaan pelaku; halaman membaca versi terbaru saat membatalkan; referensi sumber dipotong diam-diam; metode publik halaman | Diperbaiki |
+
+Dicatat untuk keputusan: siapa pun pengelola team dapat mencatat jenis apa pun untuk team-nya dan team Design mengkategorikan revisinya sendiri; hak baca dapat didelegasikan; catatan boleh bertanggal mundur; audit memuat referensi sumber (tanpa angka); tautan KPI tidak dicek terhadap unit.
+
+### Deferred dan blocker
+
+- Dashboard Sales, tracking Customer Service, workflow handover Admin PPIC: menunggu DEC-005, DEC-006, DEC-008, DEC-010, DEC-016.
+- Konektor sumber (CRM, ERP, design tracker): Step 17 setelah DEC-008.
+- Pemakaian catatan sebagai nilai aktual KPI: menunggu definisi KPI (DEC-006).
+
+### Gate berikutnya
+
+- Commit dan push Step 13, tunggu GitHub Actions, lalu catat addendum.
+- Step 14 (modul Accounting AR dan Tax).

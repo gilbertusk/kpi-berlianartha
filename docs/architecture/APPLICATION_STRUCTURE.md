@@ -24,6 +24,8 @@ Aplikasi dibuat dari official Laravel Livewire starter kit (Laravel 13, Livewire
 | `app/Modules/Notification` | Notifikasi di aplikasi dan email, preferensi, consumer outbox, pengingat dan eskalasi dari aturan bertanda tangan. Detail: `DASHBOARD_NOTIFICATION_TEAM_REVIEW.md` |
 | `app/Modules/TeamReview` | Daily team review, corrective action dengan PIC dan tenggat, coaching notes terbatas |
 | `app/Modules/Reporting` | Query dashboard per peran dan halaman team (tanpa cache); katalog laporan dan ekspor Excel/PDF lewat antrean. Detail: `REPORTING.md` |
+| `app/Modules/Operations` | Register operasional generik (satu tabel, jenis catatan bertipe) untuk sumber KPI team: revisi Design dan costing vs aktual. Detail: `docs/product/COMMERCIAL_SUPPORT_SOURCES.md` |
+| `resources/views/pages/operations/` | Halaman Livewire register operasional |
 | `resources/views/pages/reports/` | Halaman Livewire laporan: katalog, filter, pratinjau, dan daftar ekspor |
 | `resources/views/pages/{⚡dashboard,notifications,team,team-review}` | Halaman Livewire dashboard, notifikasi, halaman team, dan team review |
 | `resources/views/pages/approvals/` | Halaman Livewire approval (inbox, board periode, scorecard, antrean koreksi, bypass) |

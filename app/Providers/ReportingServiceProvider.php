@@ -14,6 +14,9 @@ use App\Modules\Reporting\Application\Reports\CalculationReport;
 use App\Modules\Reporting\Application\Reports\CompletenessReport;
 use App\Modules\Reporting\Application\Reports\CorrectionReport;
 use App\Modules\Reporting\Application\Reports\CorrectiveActionReport;
+use App\Modules\Reporting\Application\Reports\CostingComparisonReport;
+use App\Modules\Reporting\Application\Reports\DesignRevisionAttributionReport;
+use App\Modules\Reporting\Application\Reports\DesignRevisionReport;
 use App\Modules\Reporting\Application\Reports\KpiDefinitionReport;
 use App\Modules\Reporting\Application\Reports\KpiLineReport;
 use App\Modules\Reporting\Application\Reports\RatingDistributionReport;
@@ -37,6 +40,9 @@ final class ReportingServiceProvider extends ServiceProvider
         KpiDefinitionReport::class,
         CalculationReport::class,
         AuditLogReport::class,
+        DesignRevisionReport::class,
+        DesignRevisionAttributionReport::class,
+        CostingComparisonReport::class,
     ];
 
     public function register(): void

@@ -6,6 +6,7 @@ use App\Providers\FortifyServiceProvider;
 use App\Providers\IdentityAccessServiceProvider;
 use App\Providers\KpiGovernanceServiceProvider;
 use App\Providers\NotificationServiceProvider;
+use App\Providers\OperationsServiceProvider;
 use App\Providers\OrganizationServiceProvider;
 use App\Providers\PeriodAssignmentServiceProvider;
 use App\Providers\ReportingServiceProvider;
@@ -29,5 +30,6 @@ return [
     NotificationServiceProvider::class,
     TeamReviewServiceProvider::class,
     ReportingServiceProvider::class,
+    OperationsServiceProvider::class,
     FortifyServiceProvider::class,
 ];

@@ -78,6 +78,13 @@ enum Capability: string
     case AuditReportView = 'audit_report.view';
 
     /**
+     * Operational records a team keeps as KPI source (Step 13): Design
+     * revisions, costing comparisons. Keeping them feeds KPI values.
+     */
+    case OperationalRecordView = 'operational_record.view';
+    case OperationalRecordManage = 'operational_record.manage';
+
+    /**
      * Reserved for the KPI modules (Step 06–10). Step 05 only fixes the role
      * ceiling from ROLE_APPROVAL_MATRIX.md; ownership, workflow state, and
      * "C" conditions are enforced by the owning module's policies.
@@ -107,6 +114,7 @@ enum Capability: string
             self::ScorecardCalculate,
             self::CorrectionRequest,
             self::CorrectionApprove,
+            self::OperationalRecordManage,
         ], true);
     }
 
