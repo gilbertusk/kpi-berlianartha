@@ -1922,3 +1922,12 @@ Inspeksi: file batch (CSV/XLSX) melalui halaman Produksi oleh team QC. Complaint
 
 - Commit dan push Step 16, tunggu GitHub Actions, lalu catat addendum.
 - Step 17 (integrasi dan migrasi data) hanya atas permintaan.
+
+### Addendum 2026-10-16 — bukti GitHub Actions Step 16
+
+**Status Step 16 diperbarui:** PASS untuk scope yang dibangun (inspeksi QC, NCR dan CAPA dengan lifecycle PRD §10.3, bukti, reopen, koreksi berhistori, tautan repeat dan KPI berversi, dashboard, laporan). Taxonomy severity/defect/root cause, approver dan SLA per tahap termasuk pemisahan tugas verifikator, disposition, preventive action, effectiveness review, formula metrik QC, dan integrasi QMS/CRM tetap **BLOCKED** atau nonaktif sampai disetujui.
+
+- **Commit tervalidasi:** `0456135dec1063567065a010e891597b6e30d5d7` pada `origin/main`.
+- **CI:** GitHub Actions run [`38840400039`](https://github.com/gilbertusk/kpi-berlianartha/actions/runs/38840400039) berakhir dengan conclusion `success` pada percobaan pertama; kelima job lulus, termasuk suite penuh PostgreSQL 18 + Redis, environment Docker Compose, dan pemindaian Trivy.
+
+Gate berikutnya adalah Step 17.
