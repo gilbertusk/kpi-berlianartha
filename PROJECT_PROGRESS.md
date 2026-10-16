@@ -2054,3 +2054,12 @@ Dicatat, tidak diubah: akun layanan (run-as) adalah akun biasa dengan role team 
 
 - Commit dan push Step 17, tunggu GitHub Actions, lalu catat addendum.
 - Step 18 (keamanan, observability, backup, dan DR) hanya atas permintaan.
+
+### Addendum 2026-10-16 — bukti GitHub Actions Step 17
+
+**Status Step 17 diperbarui:** PASS untuk scope yang dibangun (inventori integrasi, kontrak `kpi-inbound-v1`, adapter, pipeline staging dengan rekonsiliasi, retry/dead-letter dan pemulihan manual, dashboard dan exception register, migrasi master pegawai dengan dry run, requeue outbox). Seluruh koneksi runtime tetap **BLOCKED** atau **DEFERRED** (DEC-008, DEC-013, DEC-014, DEC-015, DEC-016); migrasi produksi menunggu sumber legacy dan sign-off pemilik bisnis.
+
+- **Commit tervalidasi:** `c92f5d122659c9143006e878b771cea2025c6f1c` pada `origin/main`.
+- **CI:** GitHub Actions run [`38845623403`](https://github.com/gilbertusk/kpi-berlianartha/actions/runs/38845623403) berakhir dengan conclusion `success` pada percobaan pertama; kelima job lulus, termasuk suite penuh PostgreSQL 18 + Redis, environment Docker Compose, dan pemindaian Trivy.
+
+Gate berikutnya adalah Step 18.
