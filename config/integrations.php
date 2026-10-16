@@ -16,6 +16,8 @@
 $pipeline = static fn (string $prefix): array => [
     'enabled' => (bool) env("INTEGRATION_{$prefix}_ENABLED", false),
     'hmac_key' => env("INTEGRATION_{$prefix}_HMAC_KEY"),
+    // During a key rotation the previous key stays valid until the sender has switched.
+    'hmac_key_previous' => env("INTEGRATION_{$prefix}_HMAC_KEY_PREVIOUS"),
     'run_as' => env("INTEGRATION_{$prefix}_RUN_AS"),
 ];
 

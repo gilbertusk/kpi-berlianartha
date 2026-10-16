@@ -31,6 +31,7 @@ final readonly class Connection
         public ?string $kind,
         public bool $enabled,
         public ?string $hmacKey,
+        public ?string $previousHmacKey,
         public ?string $runAs,
         public array $controlTotals,
         public array $columnMap,
@@ -72,6 +73,7 @@ final readonly class Connection
             $optional('kind'),
             ($config['enabled'] ?? false) === true,
             $optional('hmac_key'),
+            $optional('hmac_key_previous'),
             $optional('run_as'),
             $controls,
             $map,
@@ -80,6 +82,17 @@ final readonly class Connection
             $metadata,
             str_starts_with($metadata['classification'], 'Restricted'),
         );
+    }
+
+    /**
+     * Keys a manifest may be signed with: the current one, and during a
+     * rotation the previous one until the sender has switched.
+     *
+     * @return list<string>
+     */
+    public function hmacKeys(): array
+    {
+        return array_values(array_filter([$this->hmacKey, $this->previousHmacKey], static fn (?string $key): bool => $key !== null));
     }
 
     public function isPipeline(): bool
@@ -96,7 +109,7 @@ final readonly class Connection
             ! $this->isPipeline() => 'Bukan pipeline file.',
             ! $this->enabled => 'Koneksi belum diaktifkan.',
             $this->hmacKey === null => 'Kunci tanda tangan manifest belum disediakan di environment/secret store.',
-            strlen($this->hmacKey) < self::MIN_KEY_LENGTH => 'Kunci tanda tangan manifest terlalu pendek (minimal '.self::MIN_KEY_LENGTH.' karakter).',
+            strlen($this->hmacKey) < self::MIN_KEY_LENGTH, $this->previousHmacKey !== null && strlen($this->previousHmacKey) < self::MIN_KEY_LENGTH => 'Kunci tanda tangan manifest terlalu pendek (minimal '.self::MIN_KEY_LENGTH.' karakter).',
             $this->runAs === null => 'Akun layanan (run-as) belum ditetapkan.',
             default => null,
         };

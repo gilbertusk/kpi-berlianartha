@@ -2063,3 +2063,128 @@ Dicatat, tidak diubah: akun layanan (run-as) adalah akun biasa dengan role team 
 - **CI:** GitHub Actions run [`38845623403`](https://github.com/gilbertusk/kpi-berlianartha/actions/runs/38845623403) berakhir dengan conclusion `success` pada percobaan pertama; kelima job lulus, termasuk suite penuh PostgreSQL 18 + Redis, environment Docker Compose, dan pemindaian Trivy.
 
 Gate berikutnya adalah Step 18.
+
+## 2026-10-16 — Step 18 Keamanan, Observability, Backup, dan Disaster Recovery
+
+**Status:** PARTIAL. Hardening aplikasi, observability, register kerentanan, dan backup terenkripsi + restore rehearsal terisolasi **terbukti di lingkungan lokal** dengan test dan bukti runtime. **BLOCKED:** penerimaan DR (target RPO/RTO, retention, offsite — DEC-010/DEC-014), alert aktif dan backend log/metrik (DEC-014), TLS/WAF/secret manager produksi (DEC-014), SSO/MFA dan kebijakan penguncian akun (DEC-013), retention/purge/anonymization (DEC-010), serta persetujuan exception kerentanan oleh pemiliknya.
+
+### Git preflight
+
+- HEAD awal `99f950c` sama dengan `origin/main`; working tree bersih (setelah addendum CI Step 17).
+
+### Threat yang diperbaiki
+
+| Threat | Perbaikan | Bukti |
+|---|---|---|
+| Rute bawaan `storage/{path}` (GET/PUT) dari disk `local` dengan `serve` terdaftar tanpa auth | `serve => false`; test memastikan tidak ada rute `storage/` | `HardeningTest` |
+| Unduhan bukti/ekspor tanpa batas laju (scraping) | Limiter `downloads` 60/menit per akun, dihitung sebelum lookup | `HardeningTest` (60× lalu 429) |
+| Enumerasi akun lewat lupa password; rute reset tanpa throttle | Jawaban seragam (`UniformPasswordResetLinkResponse`); limiter `password-reset` 5/menit per IP untuk `password.email` dan `password.update` | `HardeningTest` |
+| Tidak ada header keamanan aplikasi / CSP | `SecurityHeaders`: CSP same-origin, `nosniff`, `X-Frame-Options`, `Referrer-Policy`, `Permissions-Policy`, COOP, HSTS hanya di HTTPS; nginx tidak lagi mengirim header ganda | `HardeningTest`; smoke nginx; browser (login dan lupa password: Alpine/Livewire/Flux termuat tanpa pelanggaran CSP, tanpa resource eksternal) |
+| HTTPS di belakang proxy TLS tidak dikenali (cookie secure, HSTS, URL bertanda tangan) | `TrustConfiguredProxies` dari `TRUSTED_PROXIES`; default tidak mempercayai proxy | Konfigurasi + gerbang `ops:security-check` |
+| Secret dapat masuk log | Processor redaksi di setiap channel yang menulis (diuji per channel); kunci dinormalkan (`X-Api-Key`, `privateKey`), bentuk JSON, header Authorization/Cookie, kredensial URL; log request tanpa query string; slow query tanpa binding; job gagal tanpa pesan exception | `HardeningTest`, `ObservabilityTest` |
+| Konfigurasi produksi tidak aman lolos deploy | `ops:security-check` (APP_DEBUG, APP_KEY, APP_URL https, cookie session, integrasi aktif lengkap; peringatan enkripsi session, log JSON, level log, proxy, pengirim email) tanpa mencetak nilai | `HardeningTest` |
+| Host header poisoning: tautan reset password dibangun dari Host request; `X-Forwarded-Host` dipercaya di belakang proxy | Tautan reset dari `APP_URL`; `TrustApplicationHost` (host selain `APP_URL` → 400 di luar local/test, `/health` dikecualikan); proxy hanya dipercaya untuk alamat, port, skema; nginx membuang header host/prefix | `HardeningTest`; smoke image produksi (Host asing → 400, `/health` 200) dan langkah smoke CI baru |
+| Exception (mis. `QueryException` dengan nilai binding: email, hash password) masuk log apa adanya | Exception diringkas oleh processor redaksi; error database hanya SQLSTATE + SQL berplaceholder | `HardeningTest` (sentinel) |
+| Rotasi kunci integrasi memutus pengiriman | `INTEGRATION_<KONEKSI>_HMAC_KEY_PREVIOUS` diterima selama transisi; `ops:security-check` memperingatkan selama kunci lama masih diterima | `InboundPipelineTest`, `ObservabilityTest` |
+| Toolchain compiler dan header kernel di image produksi | Dibuang; hanya library runtime PHP | Trivy, smoke runtime |
+
+Tinjauan lengkap: `docs/security/THREAT_MODEL.md` §6 dan `docs/security/AUTHORIZATION_REVIEW.md` (setiap controller, halaman/action Livewire, job, deep link, dan direct object access dengan test negatifnya). Webhook: N/A (tidak ada endpoint webhook).
+
+### Dependency dan container
+
+| Sumber | Hasil |
+|---|---|
+| `composer audit` | tidak ada advisory |
+| `npm audit` (semua dependency) | 0 kerentanan |
+| Image `http` (nginx/Alpine), Trivy 0.74.0 | 0 CRITICAL/HIGH |
+| Image `production` sebelum Step 18 | 2 CRITICAL, 118 HIGH, 927 MEDIUM; 0 yang punya fix; 62 dari 80 CVE unik CRITICAL/HIGH di header kernel toolchain compiler |
+| Image `production` setelah Step 18 | 1 CRITICAL, 52 HIGH (18 CVE unik), 0 yang punya fix; gerbang CI `--ignore-unfixed` lulus pada image final |
+
+- Mitigasi: toolchain compiler, header kernel, `curl` CLI, dan modul Perl penuh dibuang dari image produksi (177 → 114 paket); semua ekstensi dan smoke runtime terverifikasi.
+- Triage exploitability dan exception E-01 s.d. E-08 dengan pemilik role dan tanggal kedaluwarsa: `docs/security/VULNERABILITY_EXCEPTIONS.md`. Hanya E-01 (`libxml2`, lewat upload XLSX oleh akun berwenang) yang dapat dijangkau; semua berstatus **USULAN** sampai disetujui pemiliknya.
+- CI: langkah baru "Vulnerability report including unfixed" (tidak memblokir) untuk triage berkelanjutan.
+
+### Observability
+
+- Log terstruktur: channel `json`, correlation ID `X-Request-Id` (ikut ke setiap entri dan job), entri `http.request`, `db.slow_query`, `queue.job_failed`, redaksi di semua channel.
+- Readiness `ops:readiness` membedakan dependency kritis (database, cache, storage, queue → FAIL) dari sinyal opsional (heartbeat scheduler/worker, job gagal, outbox dead-letter, kesegaran integrasi → WARN; `--strict` dan `--json`).
+- Metrik `ops:metrics` (JSON/Prometheus): antrean, job gagal, outbox (pending/dead-letter/umur), heartbeat, ekspor, notifikasi, run dan exception integrasi, batch staged.
+- Alert: 16 alert usulan dengan pemilik role, severity, dan langkah pertama (`docs/operations/ALERTS.md`); **belum aktif** (DEC-014).
+- Dokumen: `docs/operations/OBSERVABILITY.md`.
+
+### Backup dan restore rehearsal
+
+- `scripts/backup.sh`: PostgreSQL (`pg_dump -Fc`) dan semua objek disk `s3` (manifest SHA-256), dienkripsi GnuPG AES-256 dengan pemeriksaan integritas (MDC); jumlah baris, checksum tabel kunci, dan dump dari satu snapshot database (`pg_export_snapshot`); file kunci satu baris di luar repository; `umask 077`; plaintext dihapus juga saat gagal; penanda `INCOMPLETE`.
+- `scripts/dr-rehearsal.sh`: restore ke PostgreSQL 18.6 baru di jaringan Docker `--internal`, verifikasi skema, jumlah baris semua tabel, checksum tabel kunci, file bukti terhadap manifest dan metadata database, aplikasi membaca data, login canary; laporan per run; password ke Docker lewat nama variabel.
+
+Bukti (lokal, data sintetis `kpi_test`, skrip final):
+
+| Ukuran | Hasil |
+|---|---|
+| Backup `20261016T090807Z` | 4 detik; dump terenkripsi 423.998 byte, objek 10.322 byte; 66 tabel; 21 migrasi |
+| Restore | `pg_restore` 8 detik; skema, jumlah baris 66 tabel, dan checksum 7 tabel kunci sama |
+| File bukti | 3 objek, 0 rusak, 3 metadata, 0 hilang, 0 checksum berbeda |
+| Aplikasi | 14 akun dan 25 unit terbaca; login canary terverifikasi |
+| **RTO terukur** | **14 detik** |
+| **RPO terukur** | **15 detik** (kegagalan simulasi 15 detik setelah snapshot); jendela terburuk = interval backup |
+| Negatif | ciphertext diubah + `SHA256SUMS` ditulis ulang → ditolak ("manipulated"); kunci salah → ditolak; file kunci dua baris dan kunci di repository → ditolak sebelum mulai; tidak ada container/jaringan/plaintext tersisa |
+
+**Target:** RPO/RTO belum disetujui (DEC-010). Usulan RPO ≤ 24 jam, RTO ≤ 4 jam terpenuhi di lokal, tetapi pada 0,4 MB data sintetis; **penerimaan DR BLOCKED** sampai target disetujui, lokasi offsite dipilih (DEC-014), dan pengukuran diulang di staging dengan volume pilot. Retention/purge/anonymization tidak diterapkan karena belum ada kebijakan (DEC-010); audit dan legal hold tidak tersentuh.
+
+### Runbook
+
+- `docs/operations/BACKUP_RESTORE.md` (prosedur, enkripsi dan kunci, rehearsal, bukti, rotasi kredensial, dependency pemulihan).
+- `docs/operations/DR_RUNBOOK.md` (target usulan, skenario, prosedur restore produksi, latihan).
+- `docs/operations/INCIDENT_RESPONSE.md` (severity, peran, eskalasi, komunikasi, template update dan PIR).
+
+### Validasi
+
+| # | Gate | Hasil |
+|---|---|---|
+| 1 | `php artisan test` (SQLite in-memory, PHP 8.4), setelah semua perbaikan kode | 1.063 test: 1.060 passed, 3 skipped, 15.114 assertions |
+| 2 | Test PostgreSQL lokal (`bash scripts/dev.sh test-pgsql`), tanpa proses bersamaan | Run pertama: 1 gagal (limiter tersimpan di Redis, test reset password memakai IP yang sama dengan test lain). Test diisolasi (IP acak, bucket unduhan dikosongkan), diulang 2× untuk file keamanan, lalu suite penuh: **1.063 test, 1.061 passed, 2 skipped, 0 failed**, 15.130 assertions (770 detik) |
+| 3 | `vendor/bin/pint --test` | passed |
+| 4 | `vendor/bin/phpstan analyse --memory-limit=1G` | 0 error |
+| 5 | `composer validate --strict` / `composer audit` | valid / tidak ada advisory |
+| 6 | `npm audit` / `npm audit --audit-level=high` / `npm run build` | 0 vulnerability / lulus / build berhasil (sebelum suite, tidak bersamaan) |
+| 7 | Migrate → rollback → migrate: SQLite kosong dan PostgreSQL `kpi_test` | lulus di keduanya (21 migrasi) |
+| 8 | Image produksi + nginx final (build lokal) | ekstensi termuat; `/health` 200, `/login` 200, Host asing → 400, `/health` dengan Host asing 200, setiap header keamanan sekali; Trivy `--ignore-unfixed` CRITICAL/HIGH lulus untuk kedua image |
+| 9 | Backup + restore rehearsal + 4 skenario negatif | lulus (lihat di atas) |
+| 10 | Browser (stack lokal `http://127.0.0.1:8088`) | halaman login dan lupa password: tanpa pesan console/pelanggaran CSP, tanpa resource eksternal; halaman setelah login belum diverifikasi |
+| 11 | `git diff --check` dan pemeriksaan CRLF | bersih |
+
+Tidak ada dependency aplikasi baru. Skrip backup kini membutuhkan `gpg` di host operator (bukan dependency aplikasi).
+
+### Code review
+
+Satu review keamanan independen read-only atas seluruh perubahan Step 18. Tidak ada temuan Critical. Diperbaiki dengan test atau bukti runtime:
+
+| Tingkat | Temuan | Perbaikan |
+|---|---|---|
+| High | Host header poisoning pada tautan reset password (`X-Forwarded-Host` dipercaya, tanpa trusted host) | Tautan dari `APP_URL`, `TrustApplicationHost`, header host/prefix tidak dipercaya, nginx membuang header tersebut, smoke CI |
+| High | Redaksi tidak menyentuh exception; `QueryException` membawa nilai binding | Exception diringkas; error database hanya SQLSTATE + SQL berplaceholder |
+| Medium | Topologi proxy tidak jelas; `*` dapat dipalsukan | Panduan `TRUSTED_PROXIES` (CIDR load balancer), peringatan `*` di gerbang keamanan, nginx membuang header host/prefix |
+| Medium | Backup AES-CBC tanpa autentikasi (dapat dimanipulasi) | GnuPG AES-256 + MDC; diuji dengan ciphertext yang diubah |
+| Medium | File kunci hanya diperiksa jumlah byte; `-pass file:` membaca baris pertama | Validasi satu baris, ≥32 karakter base64/hex |
+| Medium | Redaksi tidak di semua channel; variasi kunci/JSON/header/URL lolos | Tap di semua channel (diuji per channel), normalisasi kunci, pola tambahan |
+| Medium | Kunci HMAC lama diterima tanpa batas tanpa peringatan | Peringatan di `ops:security-check` |
+| Medium | Plaintext rehearsal dengan umask bawaan; password di argv Docker | `umask 077`; password lewat nama variabel environment |
+| Medium | Jumlah baris/checksum dan dump tidak dari snapshot yang sama; waktu snapshot tidak tepat | Satu snapshot `pg_export_snapshot` + `pg_dump --snapshot`; `snapshot_at` = waktu snapshot |
+| Medium | `CONTENT_SECURITY_POLICY=` kosong menghasilkan CSP kosong | Fallback `?:` |
+| Low | Request ID menerima newline di akhir; path snapshot/manifest tidak divalidasi; salinan objek tidak dicek; metrik crash bila satu sumber gagal; bukti rehearsal masih placeholder; limiter reset berbagi bucket; HSTS `includeSubDomains` sejak awal; pengecualian rute aset di test terlalu lebar; event job gagal tidak diuji | Diperbaiki |
+
+Dicatat, tidak diubah: CSP masih `'unsafe-inline'`/`'unsafe-eval'` (bukan kontrol XSS yang berarti; target CSP berbasis build Livewire); timing oracle reset password karena email sinkron; route model binding berjalan sebelum `signed` pada unduhan (ID ULID tidak dapat ditebak); rehearsal memakai image development (rehearsal image produksi di staging); `Connection` menyimpan kunci sebagai properti publik (tidak di-dehydrate Livewire).
+
+### Deferred dan blocker
+
+- DEC-010: retention/purge/anonymization (tidak ada purge yang diterapkan; audit dan legal hold tidak tersentuh), target RPO/RTO, availability, maintenance window, retensi log dan backup.
+- DEC-014: hosting, TLS/WAF, secret manager, lokasi backup offsite, registry, agregator log/metrik/pager, nama pemilik alert dan exception.
+- DEC-013: SSO, kewajiban MFA, kebijakan penguncian akun dan masa idle session.
+- Persetujuan exception kerentanan E-01 s.d. E-08; E-01 (libxml2, dapat dijangkau lewat upload XLSX oleh akun berwenang) kedaluwarsa 2026-10-30.
+- CSP masih `'unsafe-inline'`/`'unsafe-eval'` (Livewire/Alpine); halaman setelah login belum diverifikasi CSP di browser.
+- Pengukuran RPO/RTO pada volume produksi/pilot di staging (Step 20).
+
+### Gate berikutnya
+
+- Commit dan push Step 18, tunggu GitHub Actions, lalu catat addendum.
+- Step 19 (pengujian menyeluruh dan kualitas) hanya atas permintaan.

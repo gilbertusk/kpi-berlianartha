@@ -47,7 +47,7 @@ Route::middleware(['auth', 'verified', 'mfa'])->group(function () {
         Route::livewire('import', 'pages::actuals.import')->name('import');
         Route::get('import/{batch}/errors.csv', ActualImportErrorsController::class)->name('import.errors');
     });
-    Route::get('evidence/{evidence}/{viewer}', EvidenceDownloadController::class)->middleware('signed')->name('evidence.download');
+    Route::get('evidence/{evidence}/{viewer}', EvidenceDownloadController::class)->middleware(['throttle:downloads', 'signed'])->name('evidence.download');
 
     // Step 14 — receivables snapshots, aging, and tax invoice queue (read model, no ledger).
     Route::livewire('accounting', 'pages::accounting.index')->name('accounting.index');
@@ -68,7 +68,7 @@ Route::middleware(['auth', 'verified', 'mfa'])->group(function () {
 
     // Step 12 — report catalog, preview, and asynchronous exports.
     Route::livewire('reports', 'pages::reports.index')->name('reports.index');
-    Route::get('reports/exports/{export}/{viewer}', ExportDownloadController::class)->middleware('signed')->name('reports.exports.download');
+    Route::get('reports/exports/{export}/{viewer}', ExportDownloadController::class)->middleware(['throttle:downloads', 'signed'])->name('reports.exports.download');
 
     // Step 10 — approval inbox, period workflow, calibration, bypass, and corrections.
     Route::livewire('approvals', 'pages::approvals.index')->name('approvals.index');

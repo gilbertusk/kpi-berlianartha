@@ -229,7 +229,7 @@ jobs:
         run: |
           docker network create kpi-ci
           docker run -d --name web --network kpi-ci \
-            -e APP_KEY="base64:$(openssl rand -base64 32)" \
+            -e APP_KEY="base64:$(openssl rand -base64 32)" -e APP_URL=http://127.0.0.1:8080 \
             -e DB_CONNECTION=sqlite -e DB_DATABASE=:memory: \
             -e CACHE_STORE=array -e SESSION_DRIVER=array -e QUEUE_CONNECTION=sync \
             kpi-app:ci
@@ -242,6 +242,8 @@ jobs:
           curl -fsS -o /dev/null http://127.0.0.1:8080/login
           curl -fsS -o /dev/null http://127.0.0.1:8080/build/manifest.json
           test "$(curl -s -o /dev/null -w '%{http_code}' http://127.0.0.1:8080/.env)" = "403"
+          # Only the APP_URL host is answered (host header poisoning, Step 18).
+          test "$(curl -s -o /dev/null -w '%{http_code}' -H 'Host: evil.example' http://127.0.0.1:8080/login)" = "400"
           docker run --rm -e APP_KEY="base64:$(openssl rand -base64 32)" -e CACHE_STORE=array kpi-app:ci php artisan schedule:list | grep -q "ops:heartbeat scheduler"
 
       - name: Container logs
@@ -255,6 +257,16 @@ jobs:
           for image in kpi-app:ci kpi-http:ci; do
             docker run --rm -v /var/run/docker.sock:/var/run/docker.sock "$TRIVY_IMAGE" image \
               --scanners vuln --severity CRITICAL,HIGH --ignore-unfixed --exit-code 1 --no-progress "$image"
+          done
+
+      # Triage input for docs/security/VULNERABILITY_EXCEPTIONS.md: CRITICAL/HIGH
+      # without an upstream fix do not block, but every one must be listed there.
+      - name: Vulnerability report including unfixed (triage, non-blocking)
+        run: |
+          for image in kpi-app:ci kpi-http:ci; do
+            echo "== $image"
+            docker run --rm -v /var/run/docker.sock:/var/run/docker.sock "$TRIVY_IMAGE" image \
+              --scanners vuln --severity CRITICAL,HIGH --exit-code 0 --no-progress "$image"
           done
 
       - name: Generate SBOM (CycloneDX)

@@ -14,11 +14,12 @@ Dokumen ini menjelaskan implementasi aktual Step 05. Keputusan bisnis yang masih
 | MFA | 2FA TOTP dan passkey bawaan starter kit tersedia untuk setiap akun. `IDENTITY_MFA_REQUIRED=true` mewajibkan 2FA sebelum aplikasi dapat dipakai. Middleware ini juga didaftarkan sebagai persistent middleware Livewire. Default-nya `false` | Kebijakan MFA menunggu DEC-013 |
 | Registrasi publik | Nonaktif. Akun hanya dibuat oleh System Admin | — |
 | Password | Akun baru dibuat dengan secret acak yang tidak dapat dipakai. Pengguna membuat password sendiri lewat tautan reset. Reset yang berhasil sekaligus memverifikasi email. Akun nonaktif tidak dapat reset. Audit `account.password_reset_link_sent` hanya ditulis bila broker benar-benar mengirim. Bila pengiriman di-throttle atau gagal, admin mendapat pesan dan dapat mengirim ulang | — |
+| Lupa password (publik) | Jawaban sama untuk alamat terdaftar, tidak terdaftar, akun nonaktif, atau tautan yang baru dikirim (`UniformPasswordResetLinkResponse`), sehingga form tidak membuka daftar akun. `password.email` dan `password.update` dibatasi masing-masing 5/menit per IP (`ThrottlePasswordResets`, limiter `password-reset`) selain throttle broker 60 detik per akun. Tautan reset selalu dibangun dari `APP_URL`, bukan dari Host request (Step 18) | — |
 | Hapus akun sendiri | Dihapus dari halaman profil. Akun dinonaktifkan, bukan dihapus, agar nama tetap muncul pada histori (PRD §5.1) | — |
 | Session | `EnsureAccountIsActive` berjalan pada setiap request `web`, termasuk update Livewire. Middleware ini mengakhiri session akun nonaktif sebelum dan sesudah request; jalur sesudah request menutup login passkey/2FA yang tidak melewati adapter. Saat akun dinonaktifkan, `remember_token` diganti dan session database dihapus | — |
 | Audit login | `auth.login_succeeded`, `auth.login_failed`, `auth.lockout`, `auth.logout`, `auth.password_reset_completed`, `auth.session_terminated`. Email yang dicoba dan password tidak pernah disimpan | — |
 
-Login yang gagal karena password salah, akun tidak dikenal, atau akun nonaktif menghasilkan pesan generik yang sama (`auth.failed`). Untuk akun yang tidak dikenal, waktu pemrosesan disamakan dengan hash dummy.
+Login yang gagal karena password salah, akun tidak dikenal, atau akun nonaktif menghasilkan pesan generik yang sama (`auth.failed`). Login dibatasi 5/menit per email+IP; penguncian akun setelah sejumlah kegagalan belum diterapkan karena kebijakannya belum ada (DEC-013). Untuk akun yang tidak dikenal, waktu pemrosesan disamakan dengan hash dummy.
 
 ## 2. Organization
 

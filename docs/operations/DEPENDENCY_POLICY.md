@@ -22,10 +22,10 @@ Konfigurasi: `.github/dependabot.yml`.
 4. Pembaruan **major** (framework, PHP, PostgreSQL, Redis, Node) memerlukan catatan upgrade, review changelog/breaking change, dan pengujian di lingkungan Compose.
 5. **Keamanan:**
    - `composer audit` dan `npm audit --audit-level=high` harus lulus di CI;
-   - Trivy memblokir image dengan CVE **CRITICAL/HIGH yang sudah memiliki fix**;
+   - Trivy memblokir image dengan CVE **CRITICAL/HIGH yang sudah memiliki fix**; CRITICAL/HIGH yang belum memiliki fix ditampilkan (tidak memblokir) di langkah CI terpisah dan wajib tercatat di `docs/security/VULNERABILITY_EXCEPTIONS.md` (Step 18);
    - advisory Critical/High ditangani maksimal 7 hari kalender; Medium dijadwalkan pada pembaruan berikutnya;
-   - pengecualian sementara wajib dicatat (ID advisory, alasan, mitigasi, pemilik, tanggal kedaluwarsa) di PR dan `PROJECT_PROGRESS.md`.
-6. Image dibangun dengan `apt-get upgrade`/`apk upgrade` agar perbaikan keamanan OS tidak menunggu rilis image upstream. Konsekuensinya, build tidak sepenuhnya bit-for-bit reproducible; artifact yang dipromosikan diidentifikasi dengan digest image (`RELEASE_STRATEGY.md`).
+   - pengecualian sementara wajib dicatat (ID advisory, alasan, mitigasi, pemilik, tanggal kedaluwarsa) di PR, `PROJECT_PROGRESS.md`, dan `docs/security/VULNERABILITY_EXCEPTIONS.md`.
+6. Image dibangun dengan `apt-get upgrade`/`apk upgrade` agar perbaikan keamanan OS tidak menunggu rilis image upstream. Image `production` membuang toolchain compiler base image dan hanya menyimpan library yang dipakai PHP (Step 18). Konsekuensinya, build tidak sepenuhnya bit-for-bit reproducible; artifact yang dipromosikan diidentifikasi dengan digest image (`RELEASE_STRATEGY.md`).
 
 ## 3. Pengecualian/override yang aktif
 

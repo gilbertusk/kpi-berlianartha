@@ -8,6 +8,7 @@ use App\Providers\IdentityAccessServiceProvider;
 use App\Providers\IntegrationServiceProvider;
 use App\Providers\KpiGovernanceServiceProvider;
 use App\Providers\NotificationServiceProvider;
+use App\Providers\ObservabilityServiceProvider;
 use App\Providers\OperationsServiceProvider;
 use App\Providers\OrganizationServiceProvider;
 use App\Providers\PeriodAssignmentServiceProvider;
@@ -23,6 +24,7 @@ use App\Providers\WorkflowServiceProvider;
 return [
     AppServiceProvider::class,
     SharedServiceProvider::class,
+    ObservabilityServiceProvider::class,
     OrganizationServiceProvider::class,
     IdentityAccessServiceProvider::class,
     KpiGovernanceServiceProvider::class,

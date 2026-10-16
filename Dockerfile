@@ -109,6 +109,21 @@ ENV APP_ENV=production \
 RUN cp "$PHP_INI_DIR/php.ini-production" "$PHP_INI_DIR/php.ini"
 COPY docker/php/conf.d/opcache-production.ini "$PHP_INI_DIR/conf.d/zz-opcache.ini"
 
+# The php base image keeps its compiler toolchain (PHPIZE_DEPS: gcc, g++,
+# make, kernel headers, ...) for building extensions; production needs none
+# of it (Step 18 container triage). Keep the libraries PHP and its extensions
+# link against (pattern of the official php image), the FastCGI healthcheck,
+# and the CA bundle; remove every other non-essential package.
+RUN apt-mark auto '.*' > /dev/null \
+    && apt-mark manual libfcgi-bin ca-certificates > /dev/null \
+    && find /usr/local -type f -executable -exec ldd '{}' ';' 2>/dev/null \
+        | awk '/=>/ { so = $(NF-1); if (index(so, "/usr/local/") == 1) { next }; gsub("^/(usr/)?", "", so); print "*/" so }' \
+        | sort -u | xargs -r dpkg-query --search | grep -v '^diversion' | cut -d: -f1 | sort -u | xargs -r apt-mark manual > /dev/null \
+    && apt-get purge -y --auto-remove -o APT::AutoRemove::RecommendsImportant=false \
+    && rm -rf /var/lib/apt/lists/* \
+    && php -m > /dev/null \
+    && ! php -m 2>&1 | grep -qi 'warning'
+
 # Code is owned by root (read-only for the runtime user); only storage/ and
 # bootstrap/cache/ are writable by www-data.
 COPY --from=vendor /app /var/www/html

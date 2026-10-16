@@ -33,7 +33,9 @@ return [
         'local' => [
             'driver' => 'local',
             'root' => storage_path('app/private'),
-            'serve' => true,
+            // No public storage/{path} route (Step 18): private files are only
+            // served by the application's own signed download controllers.
+            'serve' => false,
             'throw' => false,
             'report' => false,
         ],

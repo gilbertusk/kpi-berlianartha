@@ -357,3 +357,17 @@ test('size limits, crashed runs, concurrent processes, and short keys are handle
 
     expect($this->runner->run('mes-production')['skipped']['mes-production'] ?? '')->toContain('terlalu pendek');
 });
+
+test('during a key rotation the previous key is accepted until it is removed', function (): void {
+    $old = bin2hex(random_bytes(24));
+    $new = Inbox::enable('mes-production', $this->svc, ['hmac_key_previous' => $old]);
+    Inbox::drop('mes-production', 'old.csv', $this->header, $this->single, $old, $this->controls);
+
+    expect(runOnce($this)->status)->toBe(IntegrationRun::STAGED);
+
+    config(['integrations.connections.mes-production.hmac_key_previous' => null]);
+    Inbox::drop('mes-production', 'late.csv', $this->header, [...$this->single, 'output,EV-3,WO-1,,,M-01,,,2026-10-13 10:00,,pcs,1,,,,,'], $old);
+
+    expect(runOnce($this)->error_code)->toBe('signature_invalid')
+        ->and($new)->not->toBe($old);
+});

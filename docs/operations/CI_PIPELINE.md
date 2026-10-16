@@ -8,7 +8,7 @@
 | `php-quality` | `composer validate --strict`, `composer install`, `composer audit`, `pint --test`, Larastan level 7 |
 | `tests` | Service PostgreSQL 18.6 + Redis 8.2; `migrate` → `migrate:rollback` → `migrate` pada database kosong; `php artisan test` dengan `DB_CONNECTION=pgsql` dan `CACHE_STORE=redis`; `ops:readiness`; worker `queue:work redis` + `ops:queue-smoke` (tepat satu kali) |
 | `frontend` | `npm ci`, `npm audit --audit-level=high`, `npm run build`, manifest wajib ada |
-| `docker-image` | Build target `production` dan `http`; hygiene (user non-root, tanpa `.env`/tests/dev dependency, kode tidak writable); runtime smoke nginx → php-fpm (`/health`, `/login`, asset, `.env` ditolak); Trivy gagal pada CVE fixable CRITICAL/HIGH; SBOM CycloneDX diunggah |
+| `docker-image` | Build target `production` dan `http`; hygiene (user non-root, tanpa `.env`/tests/dev dependency, kode tidak writable); runtime smoke nginx → php-fpm (`/health`, `/login`, asset, `.env` ditolak); Trivy gagal pada CVE fixable CRITICAL/HIGH; laporan CRITICAL/HIGH termasuk yang belum punya fix (tidak memblokir, bahan `VULNERABILITY_EXCEPTIONS.md`); SBOM CycloneDX diunggah |
 | `compose-smoke` | `bash scripts/dev.sh bootstrap` dari checkout bersih (build, `up --wait`, migrate, smoke HTTP/readiness/storage privat/queue/heartbeat), `test-pgsql`, persistensi data setelah container dibuat ulang |
 
 ## Cache

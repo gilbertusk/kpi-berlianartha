@@ -393,7 +393,9 @@ final readonly class InboundRunner
             return $this->refuse($connection, $run, 'manifest_invalid', 'Manifest bukan JSON yang valid.');
         }
 
-        if (! is_array($data) || ! Manifest::verify($data, (string) $connection->hmacKey)) {
+        $signed = is_array($data) && array_filter($connection->hmacKeys(), static fn (string $key): bool => Manifest::verify($data, $key)) !== [];
+
+        if (! $signed) {
             return $this->refuse($connection, $run, 'signature_invalid', 'Tanda tangan manifest tidak valid untuk koneksi ini.');
         }
 
