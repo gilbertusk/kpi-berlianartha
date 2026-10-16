@@ -22,7 +22,7 @@ final class ProductionActualsReport extends ProductionBatchReport
 
     public function title(): string
     {
-        return 'Aktual produksi, packing, dan pengiriman';
+        return 'Aktual produksi, packing, pengiriman, dan inspeksi';
     }
 
     public function description(): string
@@ -48,12 +48,13 @@ final class ProductionActualsReport extends ProductionBatchReport
             ProductionRecord::WASTE => 'Waste',
             ProductionRecord::PACKING => 'Packing',
             ProductionRecord::DELIVERY => 'Pengiriman',
+            ProductionRecord::INSPECTION => 'Inspeksi QC',
         ];
     }
 
     public function rows(ReportContext $context): iterable
     {
-        foreach ($this->batches($context, [BatchKind::Production, BatchKind::Packing, BatchKind::Delivery])->orderBy('coverage_date')->orderBy('id')->get() as $batch) {
+        foreach ($this->batches($context, [BatchKind::Production, BatchKind::Packing, BatchKind::Delivery, BatchKind::Inspection])->orderBy('coverage_date')->orderBy('id')->get() as $batch) {
             $records = ProductionRecord::query()->where('production_batch_id', $batch->id)
                 ->when($context->filters->status !== null, fn ($query) => $query->where('record_type', $context->filters->status))
                 ->orderBy('id')->lazyById(1000);

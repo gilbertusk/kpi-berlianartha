@@ -15,7 +15,7 @@ return [
     /*
     | Which team loads which kind of source data, by team code. Warehouse,
     | Packing Logistic, and Logistic keep separate responsibilities (PRD
-    | Lampiran B). Quality Control follows in Step 16 (NCR and CAPA).
+    | Lampiran B). Quality Control loads its inspections (Step 16).
     */
     'responsibilities' => [
         'PROD-WOVEN' => ['production'],
@@ -24,6 +24,7 @@ return [
         'PROD-HANG-TAG' => ['production'],
         'PROD-FLEXO' => ['production'],
         'PROD-WAREHOUSE' => ['warehouse'],
+        'PROD-QC' => ['inspection'],
         'PROD-PACKING-LOGISTIC' => ['packing'],
         'PROD-LOGISTIC' => ['delivery'],
         'COMSUP-ADMIN-PPIC' => ['work_orders'],

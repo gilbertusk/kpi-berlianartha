@@ -11,7 +11,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 /**
  * One row of a batch. `quantity` is the row's main quantity: good output,
- * waste, packed, shipped, on hand, or planned, by record type.
+ * waste, packed, shipped, on hand, planned, or inspected, by record type.
  *
  * @property int $id
  * @property int $production_batch_id
@@ -54,6 +54,8 @@ final class ProductionRecord extends Model
     public const STOCK = 'stock';
 
     public const WORK_ORDER = 'work_order';
+
+    public const INSPECTION = 'inspection';
 
     protected $guarded = [];
 

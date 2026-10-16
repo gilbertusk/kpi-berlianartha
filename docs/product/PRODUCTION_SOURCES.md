@@ -22,7 +22,7 @@ Belum ada koneksi ke MES/WMS/ERP (DEC-008, DEC-016 OPEN). Data masuk sebagai fil
 | Penilaian operator individual | **Tidak dibangun** | Kebijakan belum menetapkan; `operator_code` hanya disimpan sebagai referensi sumber |
 | Dictionary reason/defect/downtime code | **BLOCKED** (DEC-016) | Kode diterima apa adanya; baris yang wajar memerlukan kode tetapi kosong dihitung sebagai "reason code kosong" |
 | Write-back jadwal ke ERP | **Tidak dibangun** | Butuh persetujuan integrasi terpisah |
-| Quality Control detail (NCR/CAPA) | Step 16 | — |
+| Quality Control: inspeksi | Aktif sejak Step 16 (jenis `inspection`) | NCR/CAPA: `QUALITY_NCR_CAPA.md` |
 
 ## 2. Kalender shift (DEC-015)
 
@@ -56,6 +56,7 @@ Belum ada koneksi ke MES/WMS/ERP (DEC-008, DEC-016 OPEN). Data masuk sebagai fil
 | `delivery` (pengiriman dan proof of delivery) | Logistic | Tanggal kirim | Tidak |
 | `warehouse` (stok per lokasi) | Warehouse | Tanggal as-of | Tidak |
 | `work_orders` (jadwal, material) | Admin PPIC | Tanggal as-of | Tidak |
+| `inspection` (incoming, in-process, final; Step 16) | Quality Control | Tanggal inspeksi | Tidak |
 
 Packing Logistic menyiapkan barang sebelum dikirim; Logistic mengirim dan mencatat proof of delivery. Team tidak dapat memuat jenis data team lain.
 
@@ -69,6 +70,7 @@ CSV (UTF-8, koma atau titik koma) atau XLSX dengan baris judul. Kuantitas positi
 | packing | **event_id**, **work_order**, product_code, **packed_at**, shift_code, **unit**, **packed_qty**, repacked_qty, reason_code | packed_qty > 0 |
 | delivery | **delivery_number**, **work_order**, customer_code, **shipped_date**, **unit**, **shipped_qty**, delivered_date, pod_reference | shipped_date = tanggal batch; delivered_date ≥ shipped_date dan tidak di masa depan; pod_reference memerlukan delivered_date |
 | warehouse | **location_code**, **location_category**, **item_code**, lot, **unit**, **quantity** | Kategori: `raw_material`, `work_in_process`, `finished_goods`, `reject_quarantine`, `return`, `scrap` |
+| inspection | **inspection_id**, **inspection_stage**, **inspected_at**, work_order, product_code, lot, supplier_code, **unit**, **inspected_qty**, accepted_qty, rejected_qty, defect_code | inspection_stage `incoming`/`in_process`/`final`; inspected_at pada tanggal batch; accepted + rejected ≤ inspected; work_order wajib untuk in_process dan final; reject tanpa defect_code dihitung sebagai reason code kosong |
 | work_orders | **work_order**, order_number, customer_code, product_code, process_code, machine_code, **planned_qty**, **unit**, planned_start, planned_end, **need_date**, **material_status**, design_status, priority | material_status `ready`/`partial`/`not_ready`; design_status `approved`/`pending`/`not_required`; priority `normal`/`emergency` |
 
 Waktu ekstraksi dari sistem sumber wajib diisi saat impor dan ditampilkan sebagai freshness.

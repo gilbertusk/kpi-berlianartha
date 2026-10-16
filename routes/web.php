@@ -56,6 +56,10 @@ Route::middleware(['auth', 'verified', 'mfa'])->group(function () {
     Route::livewire('production', 'pages::production.index')->name('production.index');
     Route::livewire('ppic', 'pages::ppic.index')->name('ppic.index');
 
+    // Step 16 — Quality Control: NCR and CAPA (inspections arrive as Step 15 batches).
+    Route::livewire('quality', 'pages::quality.index')->name('quality.index');
+    Route::livewire('quality/{ncr}', 'pages::quality.show')->name('quality.show');
+
     // Step 13 — operational records kept as KPI source (Design revisions, costing).
     Route::livewire('operations', 'pages::operations.index')->name('operations.index');
 

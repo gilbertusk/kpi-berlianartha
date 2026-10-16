@@ -1831,3 +1831,94 @@ Dicatat, tidak diubah: `operator_code` disimpan sebagai referensi sumber (tidak 
 - **CI:** GitHub Actions run [`38717044694`](https://github.com/gilbertusk/kpi-berlianartha/actions/runs/38717044694) berakhir dengan conclusion `success` pada percobaan pertama; kelima job lulus, termasuk suite penuh PostgreSQL 18 + Redis, environment Docker Compose, dan pemindaian Trivy.
 
 Gate berikutnya adalah Step 16.
+
+## 2026-10-16 — Step 16 Modul Quality Control, NCR, dan CAPA
+
+**Status:** PARTIAL. Referensi inspeksi QC (incoming, in-process, final), NCR dengan lifecycle PRD §10.3, PIC/tenggat/isi/bukti per tahap, verifikasi gagal, reopen, koreksi berhistori, tautan complaint/return/repeat, KPI terkait berversi, dashboard corrective action, bukti terbatas, dan laporan dibangun dan diuji. **BLOCKED:** skala severity, taxonomy defect dan root cause (DEC-006, DEC-016); approver dan SLA per tahap (DEC-002, DEC-009); disposition; preventive action dan effectiveness review (nonaktif sampai disetujui); aturan pencocokan repeat defect otomatis; formula rejection, FPY, complaint, return, repeat defect, inspection lead time, dan closure SLA (DEC-006, DEC-009); integrasi QMS/CRM complaint/return (DEC-008).
+
+### Git preflight
+
+- HEAD awal `98828a5` sama dengan `origin/main`; working tree bersih.
+
+### State model
+
+`TEMUAN → CONTAINMENT → ROOT_CAUSE → CORRECTIVE_ACTION → VERIFICATION → CLOSED`, ditambah `VERIFICATION → CORRECTIVE_ACTION` (verifikasi gagal, alasan wajib) dan `CLOSED → CONTAINMENT | ROOT_CAUSE | CORRECTIVE_ACTION` (reopen, alasan wajib, siklus baru). Tidak ada tahap tambahan. Raise, Temuan, Verification/close, return, reopen, dan koreksi oleh manager QC; Containment, Root Cause, dan Corrective Action juga oleh manager team penanggung jawab atau PIC tahap. Satu tahap terbuka per NCR (indeks unik parsial), tahap selesai tidak dapat diubah, NCR/tahap/riwayat tidak dapat dihapus (trigger PostgreSQL dan SQLite), `lock_version` pada setiap aksi.
+
+### Taxonomy yang aktif
+
+Tidak ada. `config/quality.php` default kosong: NCR tanpa severity, kategori defect dan metode root cause diterima sebagai kode (metode hanya dari daftar bila daftar disetujui), preventive action dan effectiveness review nonaktif, bukti wajib hanya untuk Verification (selalu wajib untuk close).
+
+### Sample traceability
+
+Inspeksi `INS-1` (in-process, WO-100, P-1, lot L-7, 500 diperiksa, 20 reject, defect DF-WEAVE) pada batch inspeksi QC 2026-10-14 v1 → NCR-2026-0001 (team penanggung jawab PROD-WOVEN, kuantitas 20 pcs dan waktu ditemukan diambil dari inspeksi, KPI `QC-REJECT` versi terpublikasi) → Containment, Root Cause, Corrective Action oleh Woven → Closed oleh QC dengan bukti `QC-REC-2026-118`. Complaint `CMP-2026-09` → NCR-2026-0002 "ulangan dari NCR-2026-0001", tanpa menyalin record complaint.
+
+### Scope selesai
+
+- Batch Step 15 jenis baru `inspection` untuk team QC: incoming/in_process/final, inspected_at pada tanggal batch, accepted + rejected ≤ inspected (eksak), work order wajib untuk in-process dan final, reject tanpa defect code dihitung sebagai reason code kosong; CHECK kind PostgreSQL diperbarui.
+- Modul `Quality`: tabel `quality_ncrs`, `quality_ncr_stages`, `quality_ncr_events`; `NcrService` (raise, advance, returnToCorrectiveAction, reopen, correct), `NcrQuery` (dashboard, ringkasan, timeline), `QualityAccess`, `QualityRules`.
+- Capability `quality_record.view` (Management, Department Head, Team Leader, HR Performance, Auditor) dan `quality_record.manage` (Department Head, Team Leader). Menu "NCR & CAPA" hanya untuk pembaca team QC, team yang punya NCR dalam scope, dan PIC.
+- Halaman `quality.index` (ringkasan, filter tahap/team/severity/overdue/milik saya/repeat, form NCR) dan `quality.show` (ketertelusuran, timeline tahap dengan tenggat dan keterlambatan, bukti terbatas, aksi, riwayat). Laporan `quality_ncrs`; laporan `production_actuals` mencakup inspeksi.
+- Dokumentasi: `docs/product/QUALITY_NCR_CAPA.md`; pembaruan `PRODUCTION_SOURCES.md`, `IDENTITY_ACCESS.md`, `APPLICATION_STRUCTURE.md`, `REPORTING.md`, `.env.example`.
+
+### Test matrix
+
+| Area | Cakupan |
+|---|---|
+| Lifecycle | Raise dari inspeksi dengan ketertelusuran, lima tahap sampai Closed, riwayat event, audit tanpa teks bukti |
+| Transisi tidak sah | Raise/Temuan/Verification oleh non-QC, team lain, Management, Sales; PIC tahap lain; advance NCR Closed; return dari tahap selain Verification; reopen NCR terbuka atau ke Temuan; reopen oleh non-QC |
+| Bukti dan aturan opsional | Close tanpa bukti, isi tahap kosong, metode root cause belum disetujui, preventive action nonaktif/aktif, effectiveness review diwajibkan (efektif/tidak efektif), tahap tambahan wajib bukti lewat konfigurasi, teks kepanjangan ditolak |
+| Reopen dan koreksi | Verifikasi gagal → Corrective Action, close, reopen ke Root Cause siklus 2; koreksi menyimpan nilai sebelum/sesudah; koreksi tanpa perubahan ditolak |
+| Overdue | Hari lewat tenggat dari tahap terbuka, ringkasan dan filter overdue, timeline menampilkan keterlambatan saat tahap diselesaikan, tenggat masa lalu ditolak |
+| Duplikasi dan repeat | Defect yang sama dari sumber yang sama ditolak, inspeksi tak dikenal, tautan repeat manual, tidak ada pencocokan otomatis, tautan ke NCR tak dikenal, siklus repeat ditolak |
+| Konkurensi | Versi basi ditolak untuk advance dan koreksi |
+| Taxonomy | Severity ditolak tanpa skala; skala/taxonomy disetujui membatasi pilihan; konfigurasi tidak valid; skala yang disetujui kemudian tidak menghalangi koreksi kategori |
+| KPI | Tautan ke versi definisi terpublikasi, KPI tak dikenal, koreksi tautan berhistori |
+| Akses dan bukti | Scope baca (QC, team penanggung jawab, PIC lintas team), bukti terbatas untuk QC, team penanggung jawab, pencatat, Auditor, HR (pemegang `audit_report.view`) dan tidak untuk Management atau operator |
+| Inspeksi | Jumlah melebihi diperiksa, WO wajib, tanggal lain, tahap tak dikenal, reason code kosong, inspeksi tanpa reject menghasilkan NCR tanpa kuantitas, team non-QC tidak dapat memuat |
+| Halaman dan laporan | Raise dari dashboard, alur penuh lewat halaman (QC dan team penanggung jawab), bukti terbatas di halaman, scope halaman, overdue di dashboard, laporan dengan filter tahap dan unit (subtree), nomor NCR melewati 9999 |
+
+### Validasi
+
+| # | Gate | Hasil |
+|---|---|---|
+| 1 | `php artisan test` (SQLite in-memory, PHP 8.4) | 998 test: 995 passed, 3 skipped, 14.640 assertions |
+| 2 | Test PostgreSQL lokal (`bash scripts/dev.sh test-pgsql`, Docker Compose), tanpa suite host bersamaan | Suite penuh PostgreSQL 18 + Redis: 998 test, 996 passed, 2 skipped, 0 failed, 14.656 assertions (680 detik). Run pertama terputus di tengah karena engine Docker Desktop berhenti (Docker API HTTP 500), bukan kegagalan test; stack dinyalakan ulang dan suite diulang penuh |
+| 3 | `vendor/bin/pint --test` | passed |
+| 4 | `vendor/bin/phpstan analyse --memory-limit=1G` | 0 error |
+| 5 | `composer validate --strict` / `composer audit` | valid / tidak ada advisory |
+| 6 | `npm audit --omit=dev` / `npm run build` | 0 vulnerability / build berhasil (dijalankan sebelum suite, tidak bersamaan) |
+| 7 | Migrate → rollback → migrate: SQLite kosong dan PostgreSQL `kpi_test` | lulus di keduanya |
+| 8 | `git diff --check` dan pemeriksaan CRLF | bersih |
+
+Tidak ada dependency baru.
+
+### Code review
+
+Satu review independen (keamanan, PHP, dan workflow). Tidak ada temuan Critical atau High. Diperbaiki dengan test:
+
+| Tingkat | Temuan | Perbaikan |
+|---|---|---|
+| Medium | Isi tahap dan referensi bukti yang terlalu panjang dipotong diam-diam, padahal tahap selesai tidak dapat dikoreksi | Ditolak dengan pesan |
+| Medium | NCR dari inspeksi tanpa reject gagal karena kuantitas 0.000 dari inspeksi | Kuantitas nol dari inspeksi dianggap kosong |
+| Medium | Filter unit laporan hanya mencocokkan team penanggung jawab persis | Subtree unit, sebagai team QC pemilik atau team penanggung jawab |
+| Medium | Koreksi kategori yang bertabrakan bersamaan menghasilkan error 500 | Dipetakan ke `duplicate_ncr` |
+| Low | Nomor setelah NCR-YYYY-9999 bertabrakan; siklus tautan repeat; skala severity yang disetujui kemudian menghalangi koreksi kategori; koreksi kuantitas setara tercatat sebagai perubahan; computed `rules()` bentrok dengan hook validasi Livewire; payload koreksi yang dimanipulasi menyebabkan 500; lookup inspeksi ambigu; team penanggung jawab tidak aktif diterima | Diperbaiki |
+
+Dicatat untuk keputusan (tidak diubah karena akan mengarang aturan approval): Department Head Produksi mencakup team QC dan team produksi, sehingga dapat menyelesaikan Corrective Action sekaligus memverifikasi; Team Leader QC dapat menjadi PIC Corrective Action dan verifikator NCR yang sama. Pemisahan tugas menunggu DEC-002. Juga dicatat: daftar PIC menampilkan nama akun aktif kepada pengguna yang melihat form aksi; nomor NCR "ulangan dari" tampil walau NCR tersebut di luar scope pembaca; rollback migrasi PostgreSQL gagal bila sudah ada batch inspeksi.
+
+### Source integration status
+
+Inspeksi: file batch (CSV/XLSX) melalui halaman Produksi oleh team QC. Complaint, return, dan temuan internal: rujukan nomor dari sistemnya. Belum ada konektor QMS, CRM, atau sistem return (DEC-008, Step 17).
+
+### Deferred dan blocker
+
+- Skala severity, taxonomy defect, metode root cause: DEC-006/DEC-016.
+- Approver dan SLA per tahap, pemisahan tugas verifikator: DEC-002, DEC-009.
+- Disposition, preventive action, effectiveness review, aturan repeat otomatis: menunggu persetujuan quality process.
+- Formula metrik QC: DEC-006.
+- Konektor sumber: Step 17.
+
+### Gate berikutnya
+
+- Commit dan push Step 16, tunggu GitHub Actions, lalu catat addendum.
+- Step 17 (integrasi dan migrasi data) hanya atas permintaan.

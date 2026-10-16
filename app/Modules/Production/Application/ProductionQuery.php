@@ -214,6 +214,7 @@ final class ProductionQuery
             BatchKind::Delivery => ProductionRecord::DELIVERY,
             BatchKind::Warehouse => ProductionRecord::STOCK,
             BatchKind::WorkOrders => ProductionRecord::WORK_ORDER,
+            BatchKind::Inspection => ProductionRecord::INSPECTION,
         };
     }
 

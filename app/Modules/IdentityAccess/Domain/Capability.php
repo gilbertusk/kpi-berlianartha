@@ -101,6 +101,13 @@ enum Capability: string
     case PpicBoardManage = 'ppic_board.manage';
 
     /**
+     * Nonconformance reports and CAPA of Quality Control (Step 16). Raising,
+     * moving, and correcting them feeds KPI values.
+     */
+    case QualityRecordView = 'quality_record.view';
+    case QualityRecordManage = 'quality_record.manage';
+
+    /**
      * Reserved for the KPI modules (Step 06–10). Step 05 only fixes the role
      * ceiling from ROLE_APPROVAL_MATRIX.md; ownership, workflow state, and
      * "C" conditions are enforced by the owning module's policies.
@@ -134,6 +141,7 @@ enum Capability: string
             self::AccountingDataManage,
             self::ProductionDataManage,
             self::PpicBoardManage,
+            self::QualityRecordManage,
         ], true);
     }
 

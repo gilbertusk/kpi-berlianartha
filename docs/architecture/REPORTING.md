@@ -24,8 +24,9 @@ Mekanismenya lengkap dan teruji. Yang belum ada adalah keputusan bisnisnya: tanp
 | `ar_aging` | Aging piutang per invoice (Step 14) | Snapshot piutang | `accounting_data.view` (unit Accounting) | Terbatas |
 | `ar_aging_summary` | Ringkasan aging dan rekonsiliasi piutang (Step 14) | Snapshot piutang | `accounting_data.view` | Terbatas |
 | `tax_invoices` | Faktur pajak dan invoice tanpa faktur (Step 14) | Snapshot piutang | `accounting_data.view` | Terbatas |
-| `production_actuals` | Aktual produksi, packing, dan pengiriman versi berlaku (Step 15) | Batch produksi | `production_data.view` | Internal |
+| `production_actuals` | Aktual produksi, packing, pengiriman, dan inspeksi QC versi berlaku (Step 15/16) | Batch produksi | `production_data.view` | Internal |
 | `warehouse_stock` | Stok warehouse per kategori lokasi (Step 15) | Batch warehouse | `production_data.view` | Internal |
+| `quality_ncrs` | NCR dan CAPA per tahap (Step 16) | NCR | `quality_record.view` | Internal |
 | `ppic_work_orders` | Work order dan status board PPIC (Step 15) | Batch work order + riwayat board | `production_data.view` (unit Produksi/PPIC) | Internal |
 | `audit_log` | Laporan audit | Audit log pada rentang tanggal (maks. 92 hari) | `audit_report.view` seluruh perusahaan | Terbatas |
 

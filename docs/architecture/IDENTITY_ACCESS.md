@@ -114,6 +114,8 @@ Legenda: `A` diizinkan dalam scope, `—` ditolak, `R*` plafon untuk modul KPI b
 | `production_data.view` (Step 15; hanya unit Produksi dan PPIC) | A | A | A | — | A | A | — |
 | `production_data.manage` (Step 15; hanya jenis data tanggung jawab team) | — | A | A | — | — | — | — |
 | `ppic_board.manage` (Step 15; hanya atas team PPIC) | — | A | A | — | — | — | — |
+| `quality_record.view` (Step 16; NCR team QC atau team penanggung jawab) | A | A | A | — | A | A | — |
+| `quality_record.manage` (Step 16; atas team QC: semua aksi; atas team penanggung jawab: tahap investigasi) | — | A | A | — | — | — | — |
 | `kpi.value.modify` | — | R* | R* | R* | R* | — | — |
 | `approval.decide` | R* | R* | R* | — | R* | — | — |
 

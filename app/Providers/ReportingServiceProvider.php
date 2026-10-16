@@ -23,6 +23,7 @@ use App\Modules\Reporting\Application\Reports\KpiDefinitionReport;
 use App\Modules\Reporting\Application\Reports\KpiLineReport;
 use App\Modules\Reporting\Application\Reports\PpicWorkOrderReport;
 use App\Modules\Reporting\Application\Reports\ProductionActualsReport;
+use App\Modules\Reporting\Application\Reports\QualityNcrReport;
 use App\Modules\Reporting\Application\Reports\RatingDistributionReport;
 use App\Modules\Reporting\Application\Reports\ScorecardReport;
 use App\Modules\Reporting\Application\Reports\TaxInvoiceReport;
@@ -55,6 +56,7 @@ final class ReportingServiceProvider extends ServiceProvider
         ProductionActualsReport::class,
         WarehouseStockReport::class,
         PpicWorkOrderReport::class,
+        QualityNcrReport::class,
     ];
 
     public function register(): void

@@ -17,6 +17,7 @@ enum BatchKind: string
     case Delivery = 'delivery';
     case Warehouse = 'warehouse';
     case WorkOrders = 'work_orders';
+    case Inspection = 'inspection';
 
     public function label(): string
     {
@@ -26,6 +27,7 @@ enum BatchKind: string
             self::Delivery => 'Pengiriman dan proof of delivery',
             self::Warehouse => 'Stok per lokasi warehouse',
             self::WorkOrders => 'Work order dan jadwal (PPIC)',
+            self::Inspection => 'Inspeksi QC (incoming, in-process, final)',
         };
     }
 
@@ -40,6 +42,7 @@ enum BatchKind: string
             self::Production, self::Packing => 'Tanggal operasional',
             self::Delivery => 'Tanggal kirim',
             self::Warehouse, self::WorkOrders => 'Tanggal as-of',
+            self::Inspection => 'Tanggal inspeksi',
         };
     }
 
@@ -59,6 +62,6 @@ enum BatchKind: string
      */
     public function countsEvents(): bool
     {
-        return $this === self::Production || $this === self::Packing || $this === self::Delivery;
+        return in_array($this, [self::Production, self::Packing, self::Delivery, self::Inspection], true);
     }
 }

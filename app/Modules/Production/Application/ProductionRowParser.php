@@ -9,6 +9,7 @@ use App\Modules\Production\Domain\LocationCategory;
 use App\Modules\Production\Domain\ShiftCalendar;
 use App\Modules\Production\Domain\ShiftCalendars;
 use App\Modules\Production\Infrastructure\Persistence\Models\ProductionRecord;
+use Brick\Math\BigDecimal;
 use DateTimeImmutable;
 use DateTimeZone;
 use InvalidArgumentException;
@@ -28,6 +29,7 @@ final class ProductionRowParser
         'delivery' => ['delivery_number', 'work_order', 'customer_code', 'shipped_date', 'unit', 'shipped_qty', 'delivered_date', 'pod_reference'],
         'warehouse' => ['location_code', 'location_category', 'item_code', 'lot', 'unit', 'quantity'],
         'work_orders' => ['work_order', 'order_number', 'customer_code', 'product_code', 'process_code', 'machine_code', 'planned_qty', 'unit', 'planned_start', 'planned_end', 'need_date', 'material_status', 'design_status', 'priority'],
+        'inspection' => ['inspection_id', 'inspection_stage', 'inspected_at', 'work_order', 'product_code', 'lot', 'supplier_code', 'unit', 'inspected_qty', 'accepted_qty', 'rejected_qty', 'defect_code'],
     ];
 
     public const REQUIRED = [
@@ -36,7 +38,10 @@ final class ProductionRowParser
         'delivery' => ['delivery_number', 'work_order', 'shipped_date', 'unit', 'shipped_qty'],
         'warehouse' => ['location_code', 'location_category', 'item_code', 'unit', 'quantity'],
         'work_orders' => ['work_order', 'planned_qty', 'unit', 'need_date', 'material_status'],
+        'inspection' => ['inspection_id', 'inspection_stage', 'inspected_at', 'unit', 'inspected_qty'],
     ];
+
+    public const INSPECTION_STAGES = ['incoming', 'in_process', 'final'];
 
     public const MATERIAL_STATUSES = ['ready', 'partial', 'not_ready'];
 
@@ -82,6 +87,7 @@ final class ProductionRowParser
                 BatchKind::Delivery => $this->delivery($cells, $problems),
                 BatchKind::Warehouse => $this->warehouse($cells, $problems),
                 BatchKind::WorkOrders => $this->workOrder($cells, $problems),
+                BatchKind::Inspection => $this->inspection($cells, $problems),
             };
 
             if ($record !== null) {
@@ -346,6 +352,63 @@ final class ProductionRowParser
                 'material_status' => $material,
                 'design_status' => $design,
                 'priority' => $priority,
+            ],
+        ];
+    }
+
+    /**
+     * An inspection from the source: incoming, in-process, or final. The
+     * accepted and rejected quantities never exceed what was inspected.
+     *
+     * @param  array<string, string>  $cells
+     * @param  list<string>  $problems
+     * @return array<string, mixed>
+     */
+    private function inspection(array $cells, array &$problems): array
+    {
+        $stage = mb_strtolower($cells['inspection_stage'] ?? '');
+
+        if (! in_array($stage, self::INSPECTION_STAGES, true)) {
+            $problems[] = 'inspection_stage harus incoming, in_process, atau final';
+        }
+
+        $inspected = $this->localMoment($cells['inspected_at'] ?? '', 'inspected_at', $problems, required: true);
+
+        if ($inspected !== null && $inspected->setTimezone($this->timezone)->format('Y-m-d') !== $this->coverageDate) {
+            $problems[] = "inspected_at bukan tanggal inspeksi batch ini ({$this->coverageDate})";
+        }
+
+        $quantity = $this->quantity($cells, 'inspected_qty', $problems, required: true, positive: true);
+        $accepted = $this->quantity($cells, 'accepted_qty', $problems, required: false);
+        $rejected = $this->quantity($cells, 'rejected_qty', $problems, required: false);
+
+        if ($quantity !== null && BigDecimal::of($accepted ?? '0')->plus($rejected ?? '0')->isGreaterThan($quantity)) {
+            $problems[] = 'accepted_qty ditambah rejected_qty melebihi inspected_qty';
+        }
+
+        if ($rejected !== null && ! self::isZero($rejected) && ($cells['defect_code'] ?? '') === '') {
+            $this->missingReasons++;
+        }
+
+        if ($stage !== 'incoming' && ($cells['work_order'] ?? '') === '') {
+            $problems[] = 'work_order wajib untuk inspeksi in_process dan final';
+        }
+
+        return [
+            'record_type' => ProductionRecord::INSPECTION,
+            'event_key' => (string) $this->code($cells, 'inspection_id', $problems, required: true),
+            'work_order' => $this->code($cells, 'work_order', $problems),
+            'product_code' => $this->code($cells, 'product_code', $problems),
+            'operational_date' => $this->coverageDate,
+            'started_at' => $inspected,
+            'unit' => $this->unit($cells, $problems),
+            'quantity' => $quantity,
+            'reject_quantity' => $rejected,
+            'defect_code' => $this->code($cells, 'defect_code', $problems),
+            'details' => [
+                'inspection_stage' => $stage,
+                'accepted_qty' => $accepted,
+                ...$this->details($cells, ['lot', 'supplier_code'], $problems),
             ],
         ];
     }

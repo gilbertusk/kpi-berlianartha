@@ -25,6 +25,7 @@ return [
         ['label' => 'Piutang', 'route' => 'accounting.index', 'icon' => 'banknotes', 'ability' => 'accounting.view'],
         ['label' => 'Board PPIC', 'route' => 'ppic.index', 'icon' => 'view-columns', 'ability' => 'ppic.view'],
         ['label' => 'Produksi', 'route' => 'production.index', 'icon' => 'cube', 'ability' => 'production.view'],
+        ['label' => 'NCR & CAPA', 'route' => 'quality.index', 'icon' => 'shield-check', 'ability' => 'quality.view'],
         ['label' => 'Catatan Operasional', 'route' => 'operations.index', 'icon' => 'clipboard-document-list', 'ability' => 'operations.view'],
         ['label' => 'Notifikasi', 'route' => 'notifications.index', 'icon' => 'bell', 'ability' => null],
         ['label' => 'Reports', 'route' => 'reports.index', 'icon' => 'document-chart-bar', 'ability' => 'reports.view'],
