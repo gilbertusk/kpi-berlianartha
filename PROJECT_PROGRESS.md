@@ -2188,3 +2188,12 @@ Dicatat, tidak diubah: CSP masih `'unsafe-inline'`/`'unsafe-eval'` (bukan kontro
 
 - Commit dan push Step 18, tunggu GitHub Actions, lalu catat addendum.
 - Step 19 (pengujian menyeluruh dan kualitas) hanya atas permintaan.
+
+### Addendum 2026-10-16 — bukti GitHub Actions Step 18
+
+**Status Step 18 tetap PARTIAL.** Yang terbukti (test, CI, dan runtime lokal): hardening aplikasi (header/CSP, host tepercaya, reset password seragam dan di-throttle, unduhan signed dan di-throttle, tanpa rute storage publik, gerbang konfigurasi produksi), redaksi log termasuk exception, correlation ID, readiness/metrik, rotasi kunci integrasi, image produksi tanpa toolchain compiler, register exception kerentanan, serta backup terenkripsi-terautentikasi dengan restore rehearsal terisolasi (RTO 14 detik, RPO 15 detik pada data sintetis). Tetap **BLOCKED**: penerimaan DR dan target RPO/RTO, retention/purge (DEC-010); hosting, TLS/WAF, secret manager, backup offsite, backend log/metrik/alert dan pemilik (DEC-014); SSO/MFA dan kebijakan penguncian akun (DEC-013); persetujuan exception E-01 s.d. E-08 (E-01 kedaluwarsa 2026-10-30).
+
+- **Commit tervalidasi:** `456455b4b0dc485699b4f02cf1eeb4395a9cc60b` pada `origin/main`.
+- **CI:** GitHub Actions run [`38882815993`](https://github.com/gilbertusk/kpi-berlianartha/actions/runs/38882815993) berakhir `success` pada percobaan pertama; kelima job lulus, termasuk suite penuh PostgreSQL 18 + Redis, environment Docker Compose, smoke image produksi dengan pemeriksaan Host asing → 400, dan gerbang Trivy. Langkah baru laporan CVE tanpa fix menampilkan `Total: 53 (HIGH: 52, CRITICAL: 1)` untuk image aplikasi, sama dengan triage di `docs/security/VULNERABILITY_EXCEPTIONS.md`.
+
+Gate berikutnya adalah Step 19 (hanya atas permintaan).
