@@ -5,6 +5,7 @@ use App\Providers\ActualEvidenceServiceProvider;
 use App\Providers\AppServiceProvider;
 use App\Providers\FortifyServiceProvider;
 use App\Providers\IdentityAccessServiceProvider;
+use App\Providers\IntegrationServiceProvider;
 use App\Providers\KpiGovernanceServiceProvider;
 use App\Providers\NotificationServiceProvider;
 use App\Providers\OperationsServiceProvider;
@@ -37,5 +38,6 @@ return [
     AccountingServiceProvider::class,
     ProductionServiceProvider::class,
     QualityServiceProvider::class,
+    IntegrationServiceProvider::class,
     FortifyServiceProvider::class,
 ];

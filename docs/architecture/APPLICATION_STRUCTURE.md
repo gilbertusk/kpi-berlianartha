@@ -26,6 +26,8 @@ Aplikasi dibuat dari official Laravel Livewire starter kit (Laravel 13, Livewire
 | `app/Modules/Reporting` | Query dashboard per peran dan halaman team (tanpa cache); katalog laporan dan ekspor Excel/PDF lewat antrean. Detail: `REPORTING.md` |
 | `app/Modules/Operations` | Register operasional generik (satu tabel, jenis catatan bertipe) untuk sumber KPI team: revisi Design dan costing vs aktual. Detail: `docs/product/COMMERCIAL_SUPPORT_SOURCES.md` |
 | `resources/views/pages/operations/` | Halaman Livewire register operasional |
+| `app/Modules/Integration` | Inventori koneksi, kontrak manifest `kpi-inbound-v1`, adapter anti-corruption ke staged import modul, pipeline inbound (autentikasi, checksum, rekonsiliasi, retry/dead-letter, arsip/karantina), exception register, migrasi master pegawai. Detail: `docs/integration/` |
+| `resources/views/pages/integrations/` | Dashboard run integrasi dan exception register |
 | `app/Modules/Quality` | NCR dan CAPA Quality Control: lifecycle PRD §10.3, PIC/tenggat/bukti per tahap, reopen, koreksi, repeat link, KPI terkait berversi. Detail: `docs/product/QUALITY_NCR_CAPA.md` |
 | `resources/views/pages/quality/` | Dashboard corrective action NCR dan halaman detail NCR |
 | `app/Modules/Production` | Read model produksi, packing, pengiriman, stok warehouse, dan work order dari batch sumber; kalender shift berversi; board PPIC dengan riwayat status append-only. Bukan MES/WMS/ERP. Detail: `docs/product/PRODUCTION_SOURCES.md` |

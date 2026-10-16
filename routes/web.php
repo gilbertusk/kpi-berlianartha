@@ -60,6 +60,9 @@ Route::middleware(['auth', 'verified', 'mfa'])->group(function () {
     Route::livewire('quality', 'pages::quality.index')->name('quality.index');
     Route::livewire('quality/{ncr}', 'pages::quality.show')->name('quality.show');
 
+    // Step 17 — integration runs, reconciliation, and the exception register.
+    Route::livewire('integrations', 'pages::integrations.index')->name('integrations.index');
+
     // Step 13 — operational records kept as KPI source (Design revisions, costing).
     Route::livewire('operations', 'pages::operations.index')->name('operations.index');
 

@@ -1931,3 +1931,126 @@ Inspeksi: file batch (CSV/XLSX) melalui halaman Produksi oleh team QC. Complaint
 - **CI:** GitHub Actions run [`38840400039`](https://github.com/gilbertusk/kpi-berlianartha/actions/runs/38840400039) berakhir dengan conclusion `success` pada percobaan pertama; kelima job lulus, termasuk suite penuh PostgreSQL 18 + Redis, environment Docker Compose, dan pemindaian Trivy.
 
 Gate berikutnya adalah Step 17.
+
+## 2026-10-16 — Step 17 Integrasi dan Migrasi Data
+
+**Status:** BLOCKED untuk seluruh koneksi runtime; PARTIAL untuk yang dibangun. DEC-008 (sistem sumber, akses, owner, SLA) dan DEC-016 (system of record per master) masih OPEN, sehingga **tidak ada koneksi PROVEN**. Yang dibangun dan diuji: inventori integrasi, kontrak inbound bertanda tangan, adapter anti-corruption, pipeline staging lengkap dengan rekonsiliasi, retry terbatas, dead-letter dan pemulihan manual, dashboard run integrasi, exception register, alat migrasi master pegawai dengan dua dry run di PostgreSQL, dan pemulihan manual outbox.
+
+### Git preflight
+
+- HEAD awal `db4c53f` sama dengan `origin/main`; working tree bersih (setelah addendum CI Step 16).
+
+### Integration matrix
+
+| Koneksi | Status | Bukti |
+|---|---|---|
+| `hris-employees` (master pegawai) | BLOCKED | Alat migrasi; 2 dry run + 2 apply di PostgreSQL 18 pada fixture sintetis |
+| `hris-organization` | DEFERRED | Dikelola di aplikasi (Step 04) sampai DEC-016 |
+| `attendance` | DEFERRED | Tidak ada KPI disetujui yang memakai |
+| `crm-sales-orders` | BLOCKED | Tidak ada kontrak internal disetujui |
+| `erp-receivables` | BLOCKED | Contract test pipeline + adapter AR (staged, rekonsiliasi, auto-commit) |
+| `erp-purchasing` | DEFERRED | Tidak ada modul/KPI disetujui |
+| `mes-production`, `mes-packing`, `tms-delivery`, `erp-work-orders`, `wms-stock`, `qms-inspection` | BLOCKED | Contract test pipeline + adapter batch Step 15/16 |
+| `qms-complaints` | DEFERRED | Rujukan nomor di NCR (Step 16) |
+| `smtp-email` | BLOCKED | SMTP produksi belum ditetapkan (DEC-014); Mailpit lokal |
+| `sso` | BLOCKED | DEC-013 |
+| `outbound-results` | DEFERRED | Kompensasi di luar scope (DEC-012); outbox siap |
+
+Metadata lengkap per koneksi ada di `config/integrations.php`, halaman Integrasi, dan `docs/integration/INTEGRATION_MATRIX.md`.
+
+### Scope selesai
+
+- Modul `Integration`: `Manifest` (kontrak `kpi-inbound-v1`, HMAC-SHA256, bentuk kanonik), `ConnectionRegistry`, `InboundAdapter` + adapter `ProductionBatchAdapter` dan `ReceivablesAdapter` (modul tidak pernah melihat payload vendor), `CsvHeaderMapper` (nama kolom vendor → kontrak), `InboundRunner`, `ExceptionRegister`, `IntegrationQuery`, `EmployeeMigration`.
+- Pipeline: batas ukuran sebelum membaca → salinan stream → verifikasi tanda tangan → kontrak/koneksi/nama file → checksum → tolak ekstrak yang lebih lama → deteksi replay (konten sama untuk team, tanggal, dan sumber yang sama dengan target yang masih berlaku) → pemetaan kolom → staged import modul sebagai akun layanan → rekonsiliasi baris dan total kontrol yang dideklarasikan koneksi → commit atomik hanya bila `auto_commit` disetujui dan rekonsiliasi cocok → arsip atau karantina. Satu proses per koneksi (lock), satu file per run, kegagalan satu file/koneksi tidak menghentikan yang lain.
+- Retry: kegagalan teknis diulang dengan jeda bertambah sampai `INTEGRATION_MAX_ATTEMPTS`, lalu dead-letter + exception; run yang ditinggalkan crash dihitung sebagai percobaan; pemulihan manual `integration:retry` atau tombol Ulangi (diaudit atas nama orangnya). Outbound: `ops:outbox-requeue <id> --reason` untuk pesan outbox dead-letter (diaudit).
+- Tabel `integration_runs` dan `integration_exceptions` (tidak dapat dihapus; trigger PostgreSQL dan SQLite).
+- Halaman `integrations.index` (menu "Integrasi"): status dan alasan per koneksi, run terakhir, sukses terakhir, watermark dan umurnya, jumlah baris/diterima/ditolak/duplikat, retry, dead-letter, exception terbuka, rekonsiliasi; daftar run; exception register dengan keputusan beralasan. Total bernilai terbatas (AR) tidak ditampilkan.
+- Capability `integration.view` (System Admin, HR Performance, Auditor) dan `integration.manage` (System Admin). Jadwal `integration:run` tiap 15 menit; semua koneksi nonaktif secara bawaan.
+- Dokumentasi: `docs/integration/INTEGRATION_MATRIX.md`, `docs/integration/MIGRATION_PLAN.md` (mapping, aturan alat, hasil dry run, cutover dan rollback, exception register, template sign-off); pembaruan `IDENTITY_ACCESS.md`, `APPLICATION_STRUCTURE.md`, `.env.example`.
+
+### Hasil dry run migrasi (salinan aman)
+
+PostgreSQL 18, database sekali pakai `kpi_test` (Docker Compose lokal), struktur referensi berlaku 2026-01-01, fixture sintetis `tests/Fixtures/integration/legacy-employees.csv` (10 baris `[FIXTURE]`), dijalankan dengan kode final:
+
+| Run | Mode | Baris | Dibuat | Sudah ada | Konflik | Ditolak | Seimbang |
+|---|---|---|---|---|---|---|---|
+| 1 | dry run | 10 | 7 | 0 | 0 | 3 | ya |
+| 2 | dry run | 10 | 7 | 0 | 0 | 3 | ya |
+| 3 | apply | 10 | 7 | 0 | 0 | 3 | ya |
+| 4 | apply | 10 | 0 | 7 | 0 | 3 | ya |
+
+Pegawai `MIG-*` setelah keempat run: 7. Dua dry run identik dan tidak menulis data; apply kedua tidak menambah apa pun. Test otomatis menambah skenario konflik dengan pegawai yang sudah ada (tidak ditimpa) dan tanggal mustahil.
+
+### Reconciliation dan exception
+
+- Rekonsiliasi per run: baris manifest vs batch, dan setiap total kontrol yang dideklarasikan koneksi (wajib ada di manifest) vs total batch per satuan (BigDecimal). Selisih, total yang hilang, atau baris ditolak → exception dan tidak ada auto-commit.
+- Contoh test: total kontrol 11 vs batch 10.000 → selisih −1.000, batch tetap staged; inspeksi reject 20 vs 20.000 → cocok dan ter-commit.
+- Exception register mencatat file karantina (tanda tangan, checksum, manifest, ukuran, ekstrak lama, skema, otorisasi), baris ditolak, selisih rekonsiliasi, penolakan commit, konflik dan penolakan migrasi, dan dead-letter, dengan pemilik data (usulan) dan keputusan beralasan.
+
+### Credential boundary
+
+- Kunci manifest (`INTEGRATION_<KONEKSI>_HMAC_KEY`, minimal 32 karakter) dan akun layanan (`INTEGRATION_<KONEKSI>_RUN_AS`) hanya dari environment/secret store; `.env.example` berisi nama variabel dengan nilai kosong; semua koneksi nonaktif.
+- Signature tidak disimpan; kegagalan teknis menyimpan dan me-log nama kelas, file, dan baris saja, tidak pernah pesan exception; audit dan exception tanpa isi baris atau nama pegawai.
+- Test memakai kunci acak per test dan memastikan kunci serta pesan exception (termasuk "password=...") tidak muncul di run, exception register, atau audit log.
+
+### Test matrix
+
+| Area | Cakupan |
+|---|---|
+| Kontrak dan autentikasi | Tanda tangan kunci lain, manifest diubah setelah ditandatangani, file diubah (checksum), koneksi/nama file lain, kontrak tak dikenal, total kontrol sebagai float, bukan JSON, kunci terlalu pendek, koneksi nonaktif/tanpa kunci/tanpa akun layanan |
+| Skema dan data rusak | Kolom wajib hilang, file kosong, header vendor yang tidak dapat dipetakan, baris salah (batch staged tanpa baris tersimpan), file melebihi batas ukuran |
+| Idempotensi dan replay | File yang sama → duplikat tanpa data baru; konten sama untuk tanggal lain atau setelah batch ditolak → dimuat lagi; konten yang sudah dimuat manusia → duplikat, tidak di-commit atas nama orang lain; ekstrak lebih lama ditolak |
+| Retry dan partial failure | Kegagalan teknis diulang sesuai jeda sampai dead-letter, tidak diulang otomatis setelahnya, pemulihan manual; run crash menjadi dead-letter; lock antar-proses; satu koneksi gagal tidak menghentikan koneksi lain |
+| Rekonsiliasi | Total cocok → auto-commit; selisih, total hilang, multi-satuan → exception tanpa commit; AR dan inspeksi lewat adapter masing-masing |
+| Anti-corruption | Pemetaan kolom vendor (delimiter titik koma) ke kontrak |
+| Migrasi | Dua dry run identik tanpa tulis, apply sekali, apply kedua tanpa tambahan, konflik tidak ditimpa, baris duplikat/team tidak aktif/tanggal salah/tanggal mustahil ditolak, pemetaan kolom legacy, file tanpa kolom kontrak, command dry run/apply, tidak ada data KPI/approval yang dibuat |
+| Akses | Dashboard hanya System Admin/HR/Auditor, keputusan exception hanya System Admin, run manual diaudit atas nama orangnya, total AR disembunyikan, exception tidak dapat dihapus |
+| Outbox | Requeue dead-letter dengan alasan wajib dan audit |
+
+### Validasi
+
+| # | Gate | Hasil |
+|---|---|---|
+| 1 | `php artisan test` (SQLite in-memory, PHP 8.4) | 1.034 test: 1.031 passed, 3 skipped, 14.913 assertions |
+| 2 | Test PostgreSQL lokal (`bash scripts/dev.sh test-pgsql`), tanpa suite host bersamaan | Suite penuh PostgreSQL 18 + Redis: 1.034 test, 1.032 passed, 2 skipped, 0 failed, 14.929 assertions (520 detik) |
+| 3 | `vendor/bin/pint --test` | passed |
+| 4 | `vendor/bin/phpstan analyse --memory-limit=1G` | 0 error |
+| 5 | `composer validate --strict` / `composer audit` | valid / tidak ada advisory |
+| 6 | `npm audit --omit=dev` / `npm run build` | 0 vulnerability / build berhasil (sebelum suite, tidak bersamaan) |
+| 7 | Migrate → rollback → migrate: SQLite kosong dan PostgreSQL `kpi_test` | lulus di keduanya |
+| 8 | `git diff --check` dan pemeriksaan CRLF | bersih |
+
+Run SQLite pertama gagal 1 test: ArchTest (preset keamanan) menolak `tempnam` di kode aplikasi; diganti dengan file sementara bernama acak yang dibuat eksklusif (`TempFile`), lalu suite diulang dan lulus. Docker Desktop sempat mati sebelum dry run final; dinyalakan ulang dan dry run diulang. Tidak ada dependency baru.
+
+### Code review
+
+Satu review independen (keamanan, PHP, integrasi); run pertama review terhenti dan dilanjutkan sampai selesai. Tidak ada temuan Critical. Diperbaiki dengan test:
+
+| Tingkat | Temuan | Perbaikan |
+|---|---|---|
+| High | Kunci replay hanya koneksi + hash: stok/AR yang tidak berubah untuk tanggal baru dan konten dari batch yang ditolak dianggap duplikat | Replay = konten sama untuk team, tanggal, sumber yang sama dengan target yang masih berlaku |
+| High | File/manifest dibaca utuh ke memori tanpa batas; run crash tertinggal `received` dan dibuat ulang tanpa batas | Batas ukuran sebelum membaca, salinan stream, batas manifest 16 KB, run crash dihitung sebagai percobaan |
+| Medium | Kegagalan saat memproses penolakan (storage) lolos dari pipeline | Dibungkus; menjadi kegagalan teknis |
+| Medium | Total kontrol yang dideklarasikan boleh tidak ada, lalu auto-commit | Wajib ada; bila hilang menjadi selisih tanpa commit |
+| Medium | Total kontrol reject inspeksi ditolak modul batch | Adapter hanya meneruskan total yang diperiksa modul; sisanya direkonsiliasi runner |
+| Medium | File kosong/header tidak terpetakan diulang sebagai kegagalan sementara | Dikarantina sebagai `invalid_file` |
+| Medium | Scheduler dan tombol manual dapat memproses koneksi bersamaan | Lock per koneksi |
+| Medium | Konten yang sudah di-stage manusia dapat di-auto-commit atas nama akun layanan | Dicatat duplikat; tidak di-commit |
+| Medium | Ekstrak lama yang terlambat menggantikan data yang lebih baru | Ditolak `stale_extract` |
+| Medium | Total AR terlihat oleh System Admin/HR di dashboard dan exception | Disembunyikan untuk koneksi Restricted |
+| Medium | Tanggal mustahil menggagalkan seluruh run migrasi di PostgreSQL; pencarian home team berbeda dari aturan direktori | Validasi tanggal; memakai `homeUnitId()` direktori |
+| Low | Diagnostik kegagalan tidak ada; run/retry manual tidak mencatat orangnya; header bertanda kutip; `{}` vs `[]` pada tanda tangan; panjang kunci minimum; tombol Ulangi untuk run migrasi; indeks; error terakhir outbox tidak masuk audit | Diperbaiki |
+
+Dicatat, tidak diubah: akun layanan (run-as) adalah akun biasa dengan role team — harus akun khusus non-interaktif yang didaftarkan dan direview (belum ada role layanan); keputusan exception hanya oleh System Admin dengan alasan yang menyebut pemilik data yang menyetujui (pemilik data belum ditetapkan, DEC-016); urutan pengiriman "data dulu, manifest terakhir" didokumentasikan, belum ada pemeriksaan umur file; migrasi tidak membandingkan jabatan/tanggal mulai pegawai yang sudah ada.
+
+### Deferred dan blocker
+
+- Semua koneksi runtime: DEC-008, DEC-016 (dan DEC-013 SSO, DEC-014 SMTP/hosting, DEC-015 kalender shift untuk produksi/packing).
+- Migrasi historis periode, target, aktual, bukti: tidak ada sumber legacy disetujui; riwayat approval tidak pernah dibuat dari data legacy.
+- Sign-off pemilik bisnis, rencana cutover dan rollback, RPO/RTO (DEC-010): template di `MIGRATION_PLAN.md`.
+- Role akun layanan non-interaktif dan media transfer (SFTP/share) beserta kredensialnya.
+
+### Gate berikutnya
+
+- Commit dan push Step 17, tunggu GitHub Actions, lalu catat addendum.
+- Step 18 (keamanan, observability, backup, dan DR) hanya atas permintaan.

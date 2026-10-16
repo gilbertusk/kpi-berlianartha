@@ -27,3 +27,9 @@ Schedule::command('notifications:send-reminders')
 Schedule::command('reports:purge-expired-exports')
     ->hourly()
     ->withoutOverlapping(10);
+
+// Inbound integration files (Step 17). Only connections enabled in the
+// environment run; none is enabled until DEC-008 approves a source.
+Schedule::command('integration:run')
+    ->everyFifteenMinutes()
+    ->withoutOverlapping(30);

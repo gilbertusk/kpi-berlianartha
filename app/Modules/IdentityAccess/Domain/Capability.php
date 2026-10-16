@@ -108,6 +108,13 @@ enum Capability: string
     case QualityRecordManage = 'quality_record.manage';
 
     /**
+     * Integration runs and the exception register (Step 17): counts,
+     * checksums, and decisions; never row data or credentials.
+     */
+    case IntegrationView = 'integration.view';
+    case IntegrationManage = 'integration.manage';
+
+    /**
      * Reserved for the KPI modules (Step 06–10). Step 05 only fixes the role
      * ceiling from ROLE_APPROVAL_MATRIX.md; ownership, workflow state, and
      * "C" conditions are enforced by the owning module's policies.

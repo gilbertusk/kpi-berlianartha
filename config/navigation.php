@@ -27,6 +27,7 @@ return [
         ['label' => 'Produksi', 'route' => 'production.index', 'icon' => 'cube', 'ability' => 'production.view'],
         ['label' => 'NCR & CAPA', 'route' => 'quality.index', 'icon' => 'shield-check', 'ability' => 'quality.view'],
         ['label' => 'Catatan Operasional', 'route' => 'operations.index', 'icon' => 'clipboard-document-list', 'ability' => 'operations.view'],
+        ['label' => 'Integrasi', 'route' => 'integrations.index', 'icon' => 'arrows-right-left', 'ability' => 'integrations.view'],
         ['label' => 'Notifikasi', 'route' => 'notifications.index', 'icon' => 'bell', 'ability' => null],
         ['label' => 'Reports', 'route' => 'reports.index', 'icon' => 'document-chart-bar', 'ability' => 'reports.view'],
         ['label' => 'Administration', 'route' => 'administration.index', 'icon' => 'cog-6-tooth', 'ability' => 'administration.view'],

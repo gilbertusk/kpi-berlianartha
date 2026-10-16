@@ -1,0 +1,11 @@
+employee_number,full_name,home_team_code,position_title,effective_from
+MIG-001,[FIXTURE] Pegawai Satu,PROD-WOVEN,Operator,2026-01-01
+MIG-002,[FIXTURE] Pegawai Dua,PROD-WOVEN,Operator,2026-01-01
+MIG-003,[FIXTURE] Pegawai Tiga,PROD-QC,Inspector,2026-03-01
+MIG-004,[FIXTURE] Pegawai Empat,ACC-AR,Staff AR,2026-02-01
+MIG-005,[FIXTURE] Pegawai Lima,COMSUP-SALES,Sales,2026-01-15
+MIG-001,[FIXTURE] Pegawai Satu Ganda,PROD-WOVEN,Operator,2026-01-01
+MIG-006,[FIXTURE] Pegawai Enam,NOPE-TEAM,Staff,2026-01-01
+MIG-007,[FIXTURE] Pegawai Tujuh,PROD-WOVEN,Staff,01-01-2026
+MIG-100,[FIXTURE] Sudah Ada,PROD-FLEXO,Operator,2026-01-01
+MIG-101,[FIXTURE] Nama Lain,PROD-FLEXO,Operator,2026-01-01

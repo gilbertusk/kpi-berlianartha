@@ -132,6 +132,7 @@ final class RoleCapabilityMatrix
                 Capability::OperationalRecordView,
                 Capability::ProductionDataView,
                 Capability::QualityRecordView,
+                Capability::IntegrationView,
             ],
             Role::Auditor->value => [
                 Capability::OrganizationView,
@@ -154,6 +155,7 @@ final class RoleCapabilityMatrix
                 Capability::AccountingDataView,
                 Capability::ProductionDataView,
                 Capability::QualityRecordView,
+                Capability::IntegrationView,
             ],
             Role::SystemAdmin->value => [
                 Capability::OrganizationView,
@@ -163,6 +165,8 @@ final class RoleCapabilityMatrix
                 Capability::RoleManage,
                 Capability::DelegationView,
                 Capability::AccessReviewView,
+                Capability::IntegrationView,
+                Capability::IntegrationManage,
             ],
         ];
 

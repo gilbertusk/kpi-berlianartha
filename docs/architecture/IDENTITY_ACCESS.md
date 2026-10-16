@@ -116,6 +116,8 @@ Legenda: `A` diizinkan dalam scope, `—` ditolak, `R*` plafon untuk modul KPI b
 | `ppic_board.manage` (Step 15; hanya atas team PPIC) | — | A | A | — | — | — | — |
 | `quality_record.view` (Step 16; NCR team QC atau team penanggung jawab) | A | A | A | — | A | A | — |
 | `quality_record.manage` (Step 16; atas team QC: semua aksi; atas team penanggung jawab: tahap investigasi) | — | A | A | — | — | — | — |
+| `integration.view` (Step 17; jumlah, checksum, keputusan; tanpa isi baris) | — | — | — | — | A | A | A |
+| `integration.manage` (Step 17; jalankan, ulangi, putuskan exception) | — | — | — | — | — | — | A |
 | `kpi.value.modify` | — | R* | R* | R* | R* | — | — |
 | `approval.decide` | R* | R* | R* | — | R* | — | — |
 
