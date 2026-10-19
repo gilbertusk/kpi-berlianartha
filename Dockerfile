@@ -137,7 +137,7 @@ USER www-data
 # -----------------------------------------------------------------------------
 # http: nginx serving public/ of the same build and proxying PHP to php-fpm
 # -----------------------------------------------------------------------------
-FROM nginx:1.31.0-alpine AS http
+FROM nginx:1.31.7-alpine AS http
 
 ENV PHP_FPM_UPSTREAM=app:9000
 
