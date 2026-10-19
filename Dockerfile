@@ -12,7 +12,7 @@
 # Base images are pinned with literal FROM lines so Dependabot can update them.
 
 FROM composer:2.10.3 AS composer
-FROM mlocati/php-extension-installer:2.12.0 AS php-extension-installer
+FROM mlocati/php-extension-installer:2.12.1 AS php-extension-installer
 
 # -----------------------------------------------------------------------------
 # base: PHP runtime and extensions shared by every PHP target
