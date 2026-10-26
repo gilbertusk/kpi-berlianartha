@@ -2284,3 +2284,13 @@ Satu review independen read-only atas seluruh perubahan. Tidak ada temuan Critic
 
 - Commit dan push Step 19, tunggu GitHub Actions, catat addendum (job `frontend` diperkirakan gagal karena N-01; job lain termasuk `e2e` harus lulus).
 - Step 20 hanya setelah keputusan pilot (DEC-007) dan prasyarat staging (DEC-013/014) tersedia, atas permintaan.
+
+### Addendum 2026-10-26 — bukti GitHub Actions Step 19
+
+**Status Step 19 tetap PARTIAL.**
+
+- **Commit tervalidasi:** `54cea96a9b12fc3d08270ac036496dc0893c21a1` pada `origin/main`.
+- **CI:** GitHub Actions run [`40269488224`](https://github.com/gilbertusk/kpi-berlianartha/actions/runs/40269488224) berakhir `failure`, hanya karena job `frontend`. Lima job lain lulus: `php-quality`, `tests` (PostgreSQL 18 + Redis), `e2e` (job baru, Chromium: journey inti, otorisasi, aksesibilitas), `docker-image` (image produksi tanpa ext-sockets, Trivy lulus), dan `compose-smoke` (image development baru dengan ext-sockets, `test-pgsql`).
+- **Penyebab `frontend` gagal:** langkah `npm audit --audit-level=high` melaporkan `5 vulnerabilities (4 moderate, 1 high)` pada `vite-plus` ≤ 1.0.0. Ini temuan D-06/N-01 yang sudah ada sebelum Step 19 dan tercatat di `docs/security/VULNERABILITY_EXCEPTIONS.md` §2a. Build produksi tidak terdampak, tetapi gerbang CI tetap merah sampai `vite-plus` dimigrasi ke 1.x.
+
+Gate berikutnya: migrasi `vite-plus` 1.x (tugas terpisah) agar CI hijau; Step 20 atas permintaan setelah prasyarat pilot tersedia.
