@@ -47,3 +47,6 @@ pnpm-debug.log*
 Thumbs.db
 Desktop.ini
 
+
+# Step 19 browser tests (screenshots on failure, plugin temp files)
+/tests/Browser/Screenshots

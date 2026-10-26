@@ -2197,3 +2197,90 @@ Dicatat, tidak diubah: CSP masih `'unsafe-inline'`/`'unsafe-eval'` (bukan kontro
 - **CI:** GitHub Actions run [`38882815993`](https://github.com/gilbertusk/kpi-berlianartha/actions/runs/38882815993) berakhir `success` pada percobaan pertama; kelima job lulus, termasuk suite penuh PostgreSQL 18 + Redis, environment Docker Compose, smoke image produksi dengan pemeriksaan Host asing → 400, dan gerbang Trivy. Langkah baru laporan CVE tanpa fix menampilkan `Total: 53 (HIGH: 52, CRITICAL: 1)` untuk image aplikasi, sama dengan triage di `docs/security/VULNERABILITY_EXCEPTIONS.md`.
 
 Gate berikutnya adalah Step 19 (hanya atas permintaan).
+
+## 2026-10-26 — Step 19 Pengujian Menyeluruh dan Kualitas (run 1: core readiness)
+
+**Status:** PARTIAL. Gerbang teknis lulus: authorization negatif, journey inti di browser sungguhan (Chromium, Firefox, WebKit), aksesibilitas otomatis, tidak ada defect Critical/High pada produk, dan tidak ada flaky test atau skip tanpa alasan. **BLOCKED oleh keputusan:** golden example skor bertanda tangan (DEC-004), beban performa yang disepakati (DEC-007), daftar browser resmi (DEC-010), dan UAT (Step 20). **Terbuka:** D-06/N-01, advisory high pada `vite-plus` 0.3.0 (dev tooling) yang membuat job CI `frontend` (`npm audit --audit-level=high`) gagal sampai `vite-plus` dimigrasi ke 1.x.
+
+### Git preflight
+
+- HEAD awal `99f31dd` sama dengan `origin/main`; working tree bersih; `git merge --ff-only origin/main` sudah up to date.
+
+### Scope selesai
+
+- **Traceability matrix** `docs/qa/TRACEABILITY_MATRIX.md`: PRD §16 (12 kriteria rilis inti), §15 (NFR 001–010), §14 (audit/keamanan), dan 10 butir prompt → test → bukti → status.
+- **E2E Playwright** (`pestphp/pest-plugin-browser` 5.1, `playwright` 1.64.0), suite `Browser` (`tests/Browser`):
+  - `CoreJourneyTest`: pegawai mengisi aktual dan mengajukan; bukti terlihat di UI; TL memverifikasi; HR menghitung dan memindahkan periode ke Review; Department Head review; HR kalibrasi; Management approval final; HR finalisasi dan lock; input aktual hilang setelah lock; koreksi HR disetujui Management (perhitungan baru menunjuk yang lama, periode tetap Locked); ekspor Excel dari UI; Auditor membaca audit koreksi tanpa kontrol ubah. Tambahan: HR membuka periode lewat UI.
+  - `AccessAndAccessibilityTest`: 7 peran × 26 halaman harian dengan scan axe-core (serious/critical) + error JavaScript/CSP; 2 halaman di viewport tablet; 6 direct URL di luar peran (403/404, tanpa konten halaman); login hanya keyboard; password salah.
+  - Browser test memakai build Vite produksi (`withVite()` khusus suite Browser).
+- **Probe performa** suite `Performance` (`tests/Performance/PageResponseTest.php`, `tests/Support/PerformanceDataset.php`): 21 team, 316 pegawai, 632 target/aktual, 316 scorecard sintetis lewat service aplikasi; 16 halaman × 20 sampel; gagal bila p95 > 3 detik. Laporan `docs/qa/PERFORMANCE_REPORT.md`.
+- **Regresi concurrency/boundary** `tests/Feature/Release/ReleaseRegressionTest.php`: lock vs edit aktual/target/hitung ulang, submit ganda, koreksi vs ekspor (file lama tidak berubah; ekspor yang diantrekan sebelum koreksi lalu dibuat sesudahnya memuat skor terkoreksi; permintaan baru = ekspor baru).
+- **Laporan** `docs/qa/RELEASE_TEST_REPORT.md` dan `docs/qa/EVIDENCE_INDEX.md`.
+- `phpunit.xml`: suite default `Unit,Feature`; `Browser` dan `Performance` dijalankan eksplisit.
+- CI: job baru `e2e` (Chromium, `npm run build`, suite Browser, screenshot kegagalan sebagai artifact); `sockets` ditambahkan ke `PHP_EXTENSIONS`.
+- Dockerfile: `ext-sockets` hanya di stage `development` (dibutuhkan plugin browser saat `composer install`); image produksi tidak berubah.
+
+### Defect yang ditemukan Step 19
+
+| ID | Temuan | Severity | Status |
+|---|---|---|---|
+| D-01 | Dashboard: `<dl>` dengan tautan di luar `<dt>/<dd>` (axe serious) | Medium | Ditutup |
+| D-02 | Pagination Livewire: `aria-label` pada `<span>` tanpa role; label "&laquo; Previous" dibacakan mentah | Medium | Ditutup: override `resources/views/vendor/livewire/tailwind.blade.php` |
+| D-03 | Judul "Menu" sidebar kontras 2,41:1 | Low | Ditutup |
+| D-04 | N+1: lookup bypass review per scorecard di dashboard, inbox, dan alur approval (396 query pada 316 scorecard) | Medium | Ditutup: `WorkflowService::reviewBypassesInForce()`; test `WorkflowQueryEfficiencyTest` (24 → 1 query) |
+| D-05 | `livewire/livewire` 4.4.7 GHSA-mhf7-xp6r-6qrc (dipublikasikan 23-10-2026) | Medium | Ditutup: 4.4.8 (atribut `#[Authorize]` tidak dipakai aplikasi) |
+| D-06 | N-01: `vite-plus` 0.3.0 → advisory high/moderate dev server Vite, `launch-editor`, Vitest; `npm audit --audit-level=high` gagal | Medium (tanpa eksposur produksi) | **Terbuka**: butuh migrasi `vite-plus` 1.x (`vp migrate`); usulan exception di `docs/security/VULNERABILITY_EXCEPTIONS.md` §2a sampai 2026-11-09 |
+
+### Validasi
+
+| # | Gate | Hasil |
+|---|---|---|
+| 1 | Baseline sebelum perubahan, `php artisan test` (SQLite, PHP 8.4.25) | 1.063 test: 1.060 lulus, 3 skip, 0 gagal |
+| 2 | `php artisan test` (suite default Unit + Feature, SQLite) setelah semua perubahan | **1.069 test: 1.066 lulus, 3 skip, 0 gagal**, 15.141 assertion |
+| 3 | `bash scripts/dev.sh test-pgsql` (Compose PostgreSQL 18 + Redis, PHP 8.5.11) | **1.069 test: 1.067 lulus, 2 skip, 0 gagal**, 15.157 assertion |
+| 4 | `php artisan test --testsuite=Browser` (Chromium) setelah perbaikan review | 18/18 lulus, 196 assertion, 3 run berturut-turut |
+| 5 | Suite Browser di Firefox 157 dan WebKit 27.2 | 18/18 lulus di masing-masing |
+| 6 | `bash scripts/dev.sh test-pgsql --testsuite=Performance` | lulus; p95 tertinggi 547 ms |
+| 7 | `vendor/bin/pint --test` / `vendor/bin/phpstan analyse` (level 7) | lulus / 0 error |
+| 8 | `composer validate --strict` / `composer audit` | valid / tanpa advisory (setelah Livewire 4.4.8) |
+| 9 | `npm audit --audit-level=high` | **gagal**: N-01 (`vite-plus` 0.3.0, sudah ada sebelum Step 19) |
+| 10 | `npm run build` | berhasil |
+| 11 | `bash scripts/dev.sh bootstrap` dengan image development baru | health, readiness, storage privat 403, queue smoke tepat 1×, heartbeat |
+| 12 | `git diff --check` dan pemeriksaan CRLF | bersih |
+
+Skip: 2 test registrasi (fitur registrasi mandiri Fortify sengaja nonaktif) dan 1 test constraint khusus PostgreSQL (di-skip hanya di SQLite).
+
+### Performa (PostgreSQL 18 + Redis, Compose lokal, i5-10300H)
+
+- 16 halaman standar, 20 sampel: p95 tertinggi **547 ms** (dashboard Team Leader); alur approval periode HR 530 ms; halaman lain ≤ 418 ms.
+- Setelah D-04, query dashboard/approval turun dari 380–396 menjadi 22–38 pada dataset yang sama.
+- **Bukan bukti NFR 002**: beban dan konkurensi yang disepakati belum ada (DEC-007); diukur ulang di staging.
+
+### Aksesibilitas dan browser
+
+- axe-core serious/critical: 0 pelanggaran setelah D-01 s.d. D-03, di Chromium, Firefox, dan WebKit.
+- Review manual screen reader belum dilakukan (Step 20).
+- Daftar browser resmi belum ditetapkan (DEC-010).
+
+### Code review
+
+Satu review independen read-only atas seluruh perubahan. Tidak ada temuan Critical/High; perbaikan N+1 dinyatakan setara semantiknya dan tanpa state lintas request. Diperbaiki: placeholder laporan diisi dari hasil nyata; login keyboard menunggu dashboard sebelum memeriksa URL; test password salah memeriksa pesan sebelum path; cek 403/404 juga memastikan konten halaman terlindungi tidak tampil; test bypass terjadwal (belum berlaku) ditambahkan; klaim jumlah query di laporan performa dipersempit.
+
+### Keputusan dan asumsi
+
+- Tidak ada aturan bisnis baru. Journey, workflow test, dan probe performa memakai policy skor TEST-ONLY di memori proses test; `config/scoring.php` tetap kosong.
+- Unggah Livewire tidak dapat diuji lewat server in-process plugin browser (field multipart `files[]` tidak di-nest; KI-04). Unggah tetap diuji `ActualPagesTest`; journey melampirkan bukti lewat service yang sama lalu memeriksa UI.
+- Coverage baris tidak diukur (tidak ada driver pcov/Xdebug); cakupan dinilai per perilaku di traceability matrix.
+- Dependency baru (dev saja): `pestphp/pest-plugin-browser` ^5.1 (dengan amphp), `playwright` 1.64.0. `package-lock.json` hanya ditambah entri Playwright; npm di Windows sempat mengubah entri lain dan perubahan itu dibuang.
+- PHP 8.4 lokal: `extension=sockets` diaktifkan di php.ini winget (cadangan `php.ini.bak-step19`).
+
+### Blocker
+
+- DEC-004 (golden example bertanda tangan), DEC-007 (beban performa, pilot), DEC-010 (browser resmi, retensi), DEC-002/006/013/014 untuk pilot.
+- D-06/N-01: migrasi `vite-plus` 1.x agar job CI `frontend` hijau kembali.
+- UAT dan review aksesibilitas manual (Step 20).
+
+### Gate berikutnya
+
+- Commit dan push Step 19, tunggu GitHub Actions, catat addendum (job `frontend` diperkirakan gagal karena N-01; job lain termasuk `e2e` harus lulus).
+- Step 20 hanya setelah keputusan pilot (DEC-007) dan prasyarat staging (DEC-013/014) tersedia, atas permintaan.

@@ -264,20 +264,20 @@ new #[Title('Dashboard')] class extends GuardedPage {
                     <div class="rounded-lg border border-zinc-200 bg-white p-4 dark:border-zinc-700 dark:bg-zinc-900">
                         <dt class="text-sm text-zinc-600 dark:text-zinc-400">{{ __('Scorecard menunggu keputusan') }}</dt>
                         <dd class="text-2xl font-semibold">{{ $this->approvals['inbox'] }}</dd>
-                        <a href="{{ route('approvals.index') }}" wire:navigate class="{{ $link }} text-sm">{{ __('Buka inbox approval') }}</a>
+                        <dd><a href="{{ route('approvals.index') }}" wire:navigate class="{{ $link }} text-sm">{{ __('Buka inbox approval') }}</a></dd>
                     </div>
                     @if ($this->approvals['resubmit'] > 0 || $sections['hr'])
                         <div class="rounded-lg border border-zinc-200 bg-white p-4 dark:border-zinc-700 dark:bg-zinc-900">
                             <dt class="text-sm text-zinc-600 dark:text-zinc-400">{{ __('Scorecard menunggu pengajuan ulang') }}</dt>
                             <dd class="text-2xl font-semibold">{{ $this->approvals['resubmit'] }}</dd>
-                            <a href="{{ route('approvals.index') }}" wire:navigate class="{{ $link }} text-sm">{{ __('Buka approval') }}</a>
+                            <dd><a href="{{ route('approvals.index') }}" wire:navigate class="{{ $link }} text-sm">{{ __('Buka approval') }}</a></dd>
                         </div>
                     @endif
                     @if ($this->approvals['corrections'] > 0 || $sections['management'])
                         <div class="rounded-lg border border-zinc-200 bg-white p-4 dark:border-zinc-700 dark:bg-zinc-900">
                             <dt class="text-sm text-zinc-600 dark:text-zinc-400">{{ __('Koreksi menunggu keputusan') }}</dt>
                             <dd class="text-2xl font-semibold">{{ $this->approvals['corrections'] }}</dd>
-                            <a href="{{ route('approvals.corrections') }}" wire:navigate class="{{ $link }} text-sm">{{ __('Buka antrean koreksi') }}</a>
+                            <dd><a href="{{ route('approvals.corrections') }}" wire:navigate class="{{ $link }} text-sm">{{ __('Buka antrean koreksi') }}</a></dd>
                         </div>
                     @endif
                 @endif
@@ -285,7 +285,7 @@ new #[Title('Dashboard')] class extends GuardedPage {
                     <div class="rounded-lg border border-zinc-200 bg-white p-4 dark:border-zinc-700 dark:bg-zinc-900">
                         <dt class="text-sm text-zinc-600 dark:text-zinc-400">{{ __('Corrective action belum selesai / lewat tenggat / menunggu verifikasi') }}</dt>
                         <dd class="text-2xl font-semibold">{{ $this->actions['outstanding'] }} / {{ $this->actions['overdue'] }} / {{ $this->actions['to_verify'] }}</dd>
-                        <a href="{{ route('team-review.index', ['tindakan_status' => 'overdue']) }}" wire:navigate class="{{ $link }} text-sm">{{ __('Buka team review') }}</a>
+                        <dd><a href="{{ route('team-review.index', ['tindakan_status' => 'overdue']) }}" wire:navigate class="{{ $link }} text-sm">{{ __('Buka team review') }}</a></dd>
                     </div>
                 @endif
             </dl>

@@ -23,5 +23,8 @@
     },
     "overrides": {
         "tinypool": "2.1.2"
+    },
+    "devDependencies": {
+        "playwright": "1.64.0"
     }
 }

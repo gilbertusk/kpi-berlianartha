@@ -16,7 +16,7 @@ concurrency:
 
 env:
   PHP_VERSION: "8.4"
-  PHP_EXTENSIONS: bcmath, intl, pcntl, pdo_pgsql, pgsql, redis, zip
+  PHP_EXTENSIONS: bcmath, intl, pcntl, pdo_pgsql, pgsql, redis, sockets, zip
   NODE_VERSION: "24"
   TRIVY_IMAGE: aquasec/trivy:0.74.0
 
@@ -196,6 +196,69 @@ jobs:
         run: |
           npm run build
           test -f public/build/manifest.json
+
+  e2e:
+    name: E2E browser (Playwright, core journey, authorization, accessibility)
+    runs-on: ubuntu-24.04
+    timeout-minutes: 25
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Setup PHP
+        uses: shivammathur/setup-php@eb7c497e18156a6bbabfef1d3a82760b9eda3962 # 2.40.0
+        with:
+          php-version: ${{ env.PHP_VERSION }}
+          extensions: ${{ env.PHP_EXTENSIONS }}
+          tools: composer:v2
+          coverage: none
+
+      - name: Composer cache directory
+        id: composer-cache
+        run: echo "dir=$(composer config cache-files-dir)" >> "$GITHUB_OUTPUT"
+
+      - name: Cache Composer downloads
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: ${{ steps.composer-cache.outputs.dir }}
+          key: composer-${{ runner.os }}-${{ hashFiles('composer.lock') }}
+          restore-keys: composer-${{ runner.os }}-
+
+      - name: Install Composer dependencies
+        run: composer install --no-interaction --prefer-dist --no-progress
+
+      - name: Setup Node
+        uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: npm
+
+      - name: Install npm dependencies and the Playwright browser
+        run: |
+          npm ci --no-fund
+          npx playwright install --with-deps chromium
+
+      - name: Production asset build (browser tests use the real CSS/JS)
+        run: npm run build
+
+      - name: Prepare environment
+        run: |
+          cp .env.example .env
+          php artisan key:generate --no-interaction
+
+      - name: Browser suite (Chromium, in-memory SQLite)
+        run: php artisan test --testsuite=Browser
+
+      - name: Failure screenshots
+        if: failure()
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: e2e-screenshots-${{ github.sha }}-${{ github.run_attempt }}
+          path: tests/Browser/Screenshots/
+          retention-days: 14
+          if-no-files-found: ignore
 
   docker-image:
     name: Docker image (build, hygiene, runtime smoke, scan, SBOM)

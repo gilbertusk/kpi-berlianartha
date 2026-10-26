@@ -47,6 +47,12 @@ FROM base AS development
 ARG UID=1000
 ARG GID=1000
 
+# Development only: pest-plugin-browser (Step 19 E2E) needs ext-sockets to
+# install. The production image is built from base and does not get it.
+COPY --from=php-extension-installer /usr/bin/install-php-extensions /usr/local/bin/
+RUN install-php-extensions sockets \
+    && rm /usr/local/bin/install-php-extensions
+
 RUN cp "$PHP_INI_DIR/php.ini-development" "$PHP_INI_DIR/php.ini" \
     && groupmod --non-unique --gid "${GID}" www-data \
     && usermod --non-unique --uid "${UID}" --gid "${GID}" www-data \

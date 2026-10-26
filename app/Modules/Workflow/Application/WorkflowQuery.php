@@ -17,6 +17,7 @@ use App\Modules\Scoring\Infrastructure\Persistence\Models\ScorecardCalculation;
 use App\Modules\Scoring\Infrastructure\Persistence\Models\ScorecardCalculationLine;
 use App\Modules\Workflow\Domain\CorrectionStatus;
 use App\Modules\Workflow\Domain\ReviewState;
+use App\Modules\Workflow\Infrastructure\Persistence\Models\ApprovalStageBypass;
 use App\Modules\Workflow\Infrastructure\Persistence\Models\CorrectionRequest;
 use App\Modules\Workflow\Infrastructure\Persistence\Models\ScorecardReview;
 use Illuminate\Database\Eloquent\Builder;
@@ -260,18 +261,21 @@ final readonly class WorkflowQuery
     private function rows(Builder $query, User $user): Collection
     {
         $latest = [];
+        $bypasses = null;
 
-        return $query->with(self::RELATIONS)->orderBy('id')->get()->map(function (ScorecardReview $review) use ($user, &$latest): ReviewRow {
+        return $query->with(self::RELATIONS)->orderBy('id')->get()->map(function (ScorecardReview $review) use ($user, &$latest, &$bypasses): ReviewRow {
             $latest[$review->assessment_period_id] ??= WorkflowService::latestCalculations($review->assessment_period_id);
+            $bypasses ??= $this->workflow->reviewBypassesInForce();
 
-            return $this->toRow($review, $user, $latest[$review->assessment_period_id]);
+            return $this->toRow($review, $user, $latest[$review->assessment_period_id], $bypasses);
         });
     }
 
     /**
      * @param  array<int, ScorecardCalculation>  $latest
+     * @param  array<int, ApprovalStageBypass>|null  $bypasses  review bypasses in force, preloaded for a list
      */
-    private function toRow(ScorecardReview $review, User $user, array $latest): ReviewRow
+    private function toRow(ScorecardReview $review, User $user, array $latest, ?array $bypasses = null): ReviewRow
     {
         $assignment = $review->assignment;
         $pending = $review->period->status === PeriodStatus::Review ? $review->pendingStage() : null;
@@ -287,7 +291,7 @@ final readonly class WorkflowQuery
             $gap = ($assignment->approver_gaps ?? [])[$pending->value] ?? null;
 
             if ($gap !== null) {
-                $bypassed = $pending === ApprovalStage::Review && $this->workflow->bypassFor($assignment) !== null;
+                $bypassed = $pending === ApprovalStage::Review && $this->workflow->bypassFor($assignment, $bypasses) !== null;
                 $waitingOn = $bypassed ? null : $pending->label().': '.ApprovalStage::gapLabel($gap);
 
                 if ($bypassed && $this->authority->resolve($user, $assignment, ApprovalStage::Calibration) !== null) {

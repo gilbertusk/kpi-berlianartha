@@ -499,10 +499,17 @@ final readonly class WorkflowService
         return ['score' => $calculation->final_score, 'rating_key' => $calculation->rating_key, 'rating_label' => $calculation->rating_label, 'adjusted' => false];
     }
 
-    public function bypassFor(PeriodAssignment $assignment): ?ApprovalStageBypass
+    /**
+     * @param  array<int, ApprovalStageBypass>|null  $inForce  {@see reviewBypassesInForce()} when a list resolves many assignments
+     */
+    public function bypassFor(PeriodAssignment $assignment, ?array $inForce = null): ?ApprovalStageBypass
     {
         if (! array_key_exists(ApprovalStage::Review->value, $assignment->approver_gaps ?? [])) {
             return null;
+        }
+
+        if ($inForce !== null) {
+            return $inForce[$assignment->organization_unit_id] ?? null;
         }
 
         return ApprovalStageBypass::query()
@@ -511,6 +518,30 @@ final readonly class WorkflowService
             ->where('stage', ApprovalStage::Review->value)
             ->orderBy('id')
             ->first();
+    }
+
+    /**
+     * Review-stage bypasses in force today, one per unit (the oldest, as
+     * {@see bypassFor()} picks it), read once for a whole list instead of
+     * once per scorecard (Step 19 N+1).
+     *
+     * @return array<int, ApprovalStageBypass> organization unit id => bypass
+     */
+    public function reviewBypassesInForce(): array
+    {
+        $byUnit = [];
+
+        $bypasses = ApprovalStageBypass::query()
+            ->inForceOn($this->access->businessToday())
+            ->where('stage', ApprovalStage::Review->value)
+            ->orderBy('id')
+            ->get();
+
+        foreach ($bypasses as $bypass) {
+            $byUnit[$bypass->organization_unit_id] ??= $bypass;
+        }
+
+        return $byUnit;
     }
 
     public static function latestCalculation(int $assignmentId): ?ScorecardCalculation

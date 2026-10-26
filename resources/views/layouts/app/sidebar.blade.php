@@ -15,7 +15,9 @@
             </flux:sidebar.header>
 
             <flux:sidebar.nav :aria-label="__('Navigasi utama')">
-                <flux:sidebar.group :heading="__('Menu')" class="grid">
+                {{-- Own heading: Flux renders it in zinc-400 on zinc-50 (contrast 2.41:1, axe Step 19). --}}
+                <div class="px-3 py-2 text-sm font-medium leading-none text-zinc-600 in-data-flux-sidebar-collapsed-desktop:hidden dark:text-zinc-300">{{ __('Menu') }}</div>
+                <flux:sidebar.group class="grid">
                     @foreach (config('navigation.main') as $item)
                         @if ($item['ability'] === null || auth()->user()->can($item['ability']))
                             <flux:sidebar.item :icon="$item['icon']" :href="route($item['route'])" :current="request()->routeIs($item['route'])" wire:navigate>

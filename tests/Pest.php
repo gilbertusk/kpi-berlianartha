@@ -16,4 +16,13 @@ use Tests\TestCase;
 
 pest()->extend(TestCase::class)
     ->use(RefreshDatabase::class)
-    ->in('Feature');
+    ->in('Feature', 'Performance');
+
+// Step 19: a real browser needs the real CSS/JS (Livewire, Alpine, Flux), so
+// browser tests use the production build (`npm run build` first).
+pest()->extend(TestCase::class)
+    ->use(RefreshDatabase::class)
+    ->beforeEach(function (): void {
+        $this->withVite();
+    })
+    ->in('Browser');
