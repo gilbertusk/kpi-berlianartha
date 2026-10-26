@@ -17,7 +17,7 @@ FROM mlocati/php-extension-installer:2.12.0 AS php-extension-installer
 # -----------------------------------------------------------------------------
 # base: PHP runtime and extensions shared by every PHP target
 # -----------------------------------------------------------------------------
-FROM php:8.5.11-fpm-trixie AS base
+FROM php:8.5.12-fpm-trixie AS base
 
 COPY --from=php-extension-installer /usr/bin/install-php-extensions /usr/local/bin/
 
