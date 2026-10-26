@@ -93,7 +93,7 @@ services:
   # developer UID, and node_modules lives in tmpfs so Linux binaries never
   # overwrite the host copy.
   assets:
-    image: node:26.11.1-trixie-slim
+    image: node:26.12.1-trixie-slim
     user: "${DOCKER_UID:-1000}:${DOCKER_GID:-1000}"
     working_dir: /app
     environment:
