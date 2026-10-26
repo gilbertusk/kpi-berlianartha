@@ -31,7 +31,7 @@ Konfigurasi: `.github/dependabot.yml`.
 
 | Item | Alasan | Tinjau ulang |
 |---|---|---|
-| npm `overrides.tinypool = 2.1.2` | Menutup GHSA-5gmw-xhrv-c9v3 dan GHSA-85c8-ppgw-ccpr pada `vite-plus@0.3.0` → `oxfmt` tanpa migrasi `vp migrate` | Saat `vite-plus` dinaikkan |
+| npm `overrides.vite = npm:@voidzero-dev/vite-plus-core@<versi vite-plus>` (dan `dependencies.vite` dengan alias yang sama) | `vite-plus` 1.x mewajibkan `vite` milik plugin (`laravel-vite-plugin`, `@tailwindcss/vite`) di-resolve ke core-nya; tanpa alias, `vp build` gagal ("Expected @voidzero-dev/vite-plus-core …, but found vite …"). Override `tinypool` 2.1.2 dihapus 26 Oktober 2026 karena `oxfmt` 0.74.0 sudah membawa `tinypool` 2.2.0 | Setiap kenaikan `vite-plus`: versi alias harus sama dengan versi `vite-plus` |
 | Composer `extra.aws/aws-sdk-php = ["S3"]` + `pre-autoload-dump` | Membuang service AWS SDK yang tidak dipakai (vendor AWS 76 MB → 5 MB) | Bila layanan AWS lain dibutuhkan |
 
 ### Dependency yang ditambahkan setelah baseline

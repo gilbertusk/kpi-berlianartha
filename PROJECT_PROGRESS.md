@@ -2294,3 +2294,13 @@ Satu review independen read-only atas seluruh perubahan. Tidak ada temuan Critic
 - **Penyebab `frontend` gagal:** langkah `npm audit --audit-level=high` melaporkan `5 vulnerabilities (4 moderate, 1 high)` pada `vite-plus` ≤ 1.0.0. Ini temuan D-06/N-01 yang sudah ada sebelum Step 19 dan tercatat di `docs/security/VULNERABILITY_EXCEPTIONS.md` §2a. Build produksi tidak terdampak, tetapi gerbang CI tetap merah sampai `vite-plus` dimigrasi ke 1.x.
 
 Gate berikutnya: migrasi `vite-plus` 1.x (tugas terpisah) agar CI hijau; Step 20 atas permintaan setelah prasyarat pilot tersedia.
+
+### Addendum 2026-10-26 — migrasi `vite-plus` 1.4.0 (D-06/N-01 ditutup)
+
+**Status Step 19 tetap PARTIAL** (blocker keputusan tidak berubah); D-06/N-01 ditutup.
+
+- **Perubahan:** `vite-plus` 0.3.0 → 1.4.0. `vite` di `dependencies` dan `overrides` dialiaskan ke `npm:@voidzero-dev/vite-plus-core@1.4.0`, sebab `vite-plus` 1.x mewajibkan plugin (`laravel-vite-plugin`, `@tailwindcss/vite`) memakai core-nya (penyebab PR Dependabot #22 gagal build). Override `tinypool` 2.1.2 dihapus: `oxfmt` 0.74.0 membawa `tinypool` 2.2.0 dan audit tetap bersih. `vite.config.js` tidak berubah; `vp migrate` tidak dijalankan (tidak ada lint/format/test Vitest yang dipakai).
+- **Lockfile:** entri `vite-plus`/`vite`/`oxfmt`/`oxlint`/`vitest` lama dibuang lalu di-resolve ulang; paket lain tetap. npm di Windows menghapus field `libc`; field itu dipulihkan dari metadata registry untuk 39 binary Linux (termasuk `@rollup/rollup-linux-x64-gnu`).
+- **Bukti lokal (Windows 11, PHP 8.4.25):** `npm ci` berhasil; `npm audit --audit-level=high` → 0 kerentanan; `npm run build` → `public/build/manifest.json`; `php artisan test --testsuite=Browser` → 18/18 lulus, 196 assertion (percobaan pertama, saat `docker build` berjalan bersamaan, 4 timeout 5000 ms; diulang sendirian lulus semua); `docker build --target http .` berhasil (target `assets` menjalankan `npm ci` + build di `node:26.11.1-trixie-slim`, Linux glibc).
+- **Dokumen:** N-01 di `docs/security/VULNERABILITY_EXCEPTIONS.md` dan D-06 di `docs/qa/RELEASE_TEST_REPORT.md` ditandai ditutup; tabel override di `docs/operations/DEPENDENCY_POLICY.md` diganti dengan alias `vite`.
+- **Catatan:** setiap kenaikan `vite-plus` berikutnya harus menaikkan versi alias `vite` ke versi yang sama.

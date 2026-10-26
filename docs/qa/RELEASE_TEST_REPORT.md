@@ -19,7 +19,7 @@ Dokumen pendamping: `TRACEABILITY_MATRIX.md` (requirement → test → status), 
 | Format | `vendor/bin/pint --test` | — | lulus |
 | Static analysis | `vendor/bin/phpstan analyse` (level 7) | — | 0 error |
 | Dependency PHP | `composer validate --strict`, `composer audit` | — | valid; tidak ada advisory (setelah Livewire 4.4.8) |
-| Dependency npm | `npm audit --audit-level=high` | — | **gagal**: N-01 (`vite-plus` 0.3.0, dev tooling), lihat §5 |
+| Dependency npm | `npm audit --audit-level=high` | — | **gagal** saat Step 19: N-01 (`vite-plus` 0.3.0, dev tooling), lihat §5. Setelah migrasi `vite-plus` 1.4.0 (26 Oktober 2026): 0 kerentanan |
 | Build | `npm run build` | — | berhasil |
 
 ### Test per kategori (suite default, SQLite)
@@ -89,9 +89,9 @@ Severity mengikuti gerbang defect `docs/product/UAT_SIGNOFF_MATRIX.md`.
 | D-03 | Judul grup "Menu" di sidebar: kontras 2,41:1 (axe `color-contrast`, serious; WCAG AA butuh 4,5:1) | Low | **Ditutup** | Judul sendiri `text-zinc-600` / `dark:text-zinc-300` |
 | D-04 | N+1: bypass review dicari per scorecard di dashboard, inbox, dan alur approval (396 query pada 316 scorecard) | Medium | **Ditutup** | `WorkflowService::reviewBypassesInForce()`; test `WorkflowQueryEfficiencyTest` |
 | D-05 | `livewire/livewire` 4.4.7: GHSA-mhf7-xp6r-6qrc (bypass `#[Authorize]`) | Medium | **Ditutup** | Naik ke 4.4.8. Aplikasi tidak memakai atribut itu |
-| D-06 | N-01: `vite-plus` 0.3.0 membawa advisory high/moderate pada dev server Vite, `launch-editor`, dan Vitest; gerbang CI `npm audit --audit-level=high` gagal | Medium (advisory: high; tidak ada eksposur produksi) | **Terbuka** | Migrasi `vite-plus` 1.x (`vp migrate`). Pemilik: Engineering Lead; usulan exception sampai 2026-11-09 (`docs/security/VULNERABILITY_EXCEPTIONS.md` §2a) |
+| D-06 | N-01: `vite-plus` 0.3.0 membawa advisory high/moderate pada dev server Vite, `launch-editor`, dan Vitest; gerbang CI `npm audit --audit-level=high` gagal | Medium (advisory: high; tidak ada eksposur produksi) | **Ditutup** | `vite-plus` 1.4.0 dengan alias `vite` → `@voidzero-dev/vite-plus-core@1.4.0` (26 Oktober 2026). `npm audit --audit-level=high` 0 kerentanan, `npm run build` berhasil, suite Browser (Chromium) 18/18 lulus, `docker build --target http` berhasil. Pemilik: Engineering Lead |
 
-Ringkas: Critical 0, High 0, Medium 5 (4 ditutup, 1 terbuka), Low 1 (ditutup).
+Ringkas: Critical 0, High 0, Medium 5 (semua ditutup; D-06 ditutup 26 Oktober 2026), Low 1 (ditutup).
 
 ### Known issue (bukan defect produk)
 
@@ -122,7 +122,7 @@ Setelah perbaikan: Chromium 3/3 run lulus, Firefox dan WebKit lulus.
 
 | Gate | Status | Bukti |
 |---|---|---|
-| Tidak ada defect Critical/High terbuka untuk release scope | **Lulus** | §5. D-06 terbuka sebagai Medium (dev tooling) |
+| Tidak ada defect Critical/High terbuka untuk release scope | **Lulus** | §5. D-06 (Medium, dev tooling) ditutup 26 Oktober 2026 |
 | Seluruh acceptance criteria rilis inti memiliki evidence | **Sebagian** | AC-01 s.d. AC-11 punya bukti teknis; AC-12 (UAT) belum; penerimaan bisnis AC-03/04/05 BLOCKED |
 | Authorization negative tests lulus | **Lulus** | Suite default + 6 direct URL di browser |
 | Scoring cocok dengan golden example bisnis | **BLOCKED** | Cocok dengan contoh sintetis; contoh bisnis belum ditandatangani (DEC-004) |
@@ -131,6 +131,6 @@ Setelah perbaikan: Chromium 3/3 run lulus, Firefox dan WebKit lulus.
 
 ## 8. Keputusan dan langkah berikutnya
 
-- Core readiness **teknis**: tidak ada penghalang dari sisi kode untuk menyiapkan staging, kecuali D-06 yang membuat job CI `frontend` merah sampai `vite-plus` dimigrasi.
+- Core readiness **teknis**: tidak ada penghalang dari sisi kode untuk menyiapkan staging. D-06 (job CI `frontend` merah karena `vite-plus` 0.3.0) ditutup dengan migrasi `vite-plus` 1.4.0.
 - Pilot (Step 20) tetap memerlukan: DEC-002, DEC-004, DEC-006, DEC-007, DEC-013, DEC-014, daftar browser (DEC-010), golden example bertanda tangan, dan review aksesibilitas manual.
 - Step 19 diulang sebagai full regression setelah fitur khusus/integrasi diaktifkan, dengan beban DEC-007 di staging.
