@@ -6,7 +6,7 @@
 
 Demo ini membantu pemilik proyek melihat tampilan, struktur organisasi, dan batas akses dengan **data fiktif**. Ini tidak menetapkan team pilot, KPI, bobot, formula, target, approver, atau skor resmi. Jangan menyalin data pegawai/customer asli. Akun System Admin di demo lokal adalah akun fiktif `dev.sysadmin@kpi.example.test`, **bukan akun pribadi pemilik**. Seeder `StagingPilotSeeder` memang menolak `APP_ENV=local`; jangan mengubah guard itu untuk demo.
 
-Yang tersedia setelah seed lokal: 1 company, 3 department, 21 team; 13 akun `[DEV]` ber-domain `kpi.example.test` untuk Management, HR, Auditor, System Admin, tiga Head, dan TL/Staff Sales, AR, Woven; serta 252 kandidat KPI PRD **DRAFT**. Tidak ada template atau KPI published otomatis. Bukti yang membutuhkan scan malware tetap tidak boleh dianggap aman untuk staging/production.
+Yang tersedia setelah seed lokal: 1 company, 3 department, 21 team; 13 akun `[DEV]` ber-domain `kpi.example.test` untuk Management, HR, Auditor, System Admin, tiga Head, dan TL/Staff Sales, AR, Woven; 252 kandidat KPI PRD **DRAFT**; serta dataset operasional `[DEMO]` yang terdiri dari 6 KPI published, 3 template, 1 periode, 12 target, dan 12 aktual sintetis. Semua kode dataset operasional diawali `DEMO-`, hanya dapat dibuat pada `APP_ENV=local`, dan bukan KPI, bobot, formula, target, aktual, sign-off, atau hasil bisnis resmi. Bukti yang membutuhkan scan malware tetap tidak boleh dianggap aman untuk staging/production.
 
 ## Sebelum menjalankan
 
@@ -39,6 +39,7 @@ Sesudah persiapan isolasi tersebut:
 |---|---|---|
 | Login dan menu administrasi | `dev.sysadmin@kpi.example.test` | Bisa mengelola akun/role, tidak mengubah nilai KPI atau approval |
 | Organisasi dan kandidat KPI | `dev.hr@kpi.example.test` | Tiga kelompok dan 21 team terlihat; 252 kandidat tetap DRAFT |
+| Periode dan data operasional demo | `dev.hr@kpi.example.test` | Periode `[DEMO] Pilot KPI Lokal`, 12 target, dan 12 aktual sintetis terlihat; scoring resmi tetap tidak tersedia selama DEC-004 terbuka |
 | Lingkup satu department | `dev.head.accounting@kpi.example.test` | Tidak melihat/mengubah data di luar scope yang diizinkan |
 | Lingkup team Sales, AR, Woven | `dev.tl.sales@kpi.example.test`, `dev.tl.ar@kpi.example.test`, `dev.tl.woven@kpi.example.test` | Akses team masing-masing, bukan team lain |
 | Data sendiri | `dev.staff.sales@kpi.example.test`, `dev.staff.ar@kpi.example.test`, `dev.staff.woven@kpi.example.test` | Akses terbatas ke data milik sendiri |

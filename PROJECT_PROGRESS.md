@@ -2490,3 +2490,17 @@ Stack utama di port 8088 masih aktif dengan UI baru:
 - Infrastruktur production harus tersedia sesuai `PRODUCTION_READINESS_CHECKLIST.md`.
 
 **Step 20 tetap BLOCKED untuk eksekusi nyata. Step 21 belum dimulai.**
+
+### Addendum 2026-10-27 — dataset operasional demo lokal
+
+**Status:** Dataset demo lokal lengkap berhasil dibuat pada stack Docker utama. Ini bukan staging, UAT, sign-off, atau data bisnis resmi.
+
+- `DevelopmentDemoSeeder` ditambahkan dengan guard ketat `APP_ENV=local` dan idempotensi berdasarkan periode `DEMO-PILOT`.
+- Dataset memakai prefix/label `DEMO` dan referensi `LOCAL-DEMO-NOT-BUSINESS-APPROVAL` agar tidak disalahartikan sebagai keputusan bisnis.
+- Hasil runtime lokal: 6 KPI demo published, 3 template demo, 1 periode in-progress, 12 target approved, dan 12 aktual verified untuk Sales, Account Receivable, dan Woven.
+- Total database lokal setelah seed: 13 akun fiktif, 25 unit organisasi, 258 definisi KPI (252 kandidat DRAFT + 6 demo published), 12 target demo, dan 12 aktual demo.
+- Scoring/rating resmi tidak di-seed karena DEC-004 tetap terbuka; `config/scoring.php` tetap tidak memiliki policy approved.
+- Pengujian seeder membuktikan alur lengkap, idempotensi, dan penolakan pada environment testing/staging/production.
+- Validasi akhir: Pint 591 file PASS; PHPStan seeder PASS; suite aplikasi 1.077 PASS, 3 SKIP, 0 FAIL (15.173 assertions).
+
+**Gate Step 20 tidak berubah:** tetap **BLOCKED** sampai staging nyata, UAT pengguna, rekonsiliasi, dan sign-off manusia tersedia. Step 21 belum dimulai.
