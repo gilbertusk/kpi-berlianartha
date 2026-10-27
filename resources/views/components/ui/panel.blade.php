@@ -3,7 +3,7 @@
     'description' => null,
 ])
 
-<section {{ $attributes->class('rounded-lg border border-zinc-200 bg-white p-4 sm:p-6 dark:border-zinc-700 dark:bg-zinc-900') }}>
+<section {{ $attributes->class('rounded-xl border border-zinc-200 bg-white p-4 sm:p-6 shadow-sm dark:border-zinc-800 dark:bg-zinc-900') }}>
     <h2 class="text-base font-semibold text-zinc-900 dark:text-white">{{ $title }}</h2>
 
     @if ($description)

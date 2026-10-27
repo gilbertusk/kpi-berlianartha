@@ -27,9 +27,9 @@
         @if ($describedBy !== '') aria-describedby="{{ $describedBy }}" @endif
         @if ($hasError) aria-invalid="true" @endif
         {{ $attributes->class([
-            'block w-full rounded-md border bg-white px-3 py-2 text-sm text-zinc-900 shadow-xs placeholder:text-zinc-400 dark:bg-zinc-900 dark:text-zinc-100',
-            'border-zinc-500 dark:border-zinc-400' => ! $hasError,
-            'border-danger-600 dark:border-danger-400' => $hasError,
+            'block w-full rounded-md border bg-white px-3 py-2 text-sm text-zinc-900 shadow-sm placeholder:text-zinc-400 dark:bg-zinc-900 dark:text-zinc-100',
+            'border-zinc-300 dark:border-zinc-600' => ! $hasError,
+            'border-danger-500 dark:border-danger-400' => $hasError,
         ]) }}
     />
 

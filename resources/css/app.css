@@ -23,8 +23,8 @@
     --color-zinc-900: #171717;
     --color-zinc-950: #0a0a0a;
 
-    --color-accent: var(--color-brand-700);
-    --color-accent-content: var(--color-brand-700);
+    --color-accent: var(--color-brand-600);
+    --color-accent-content: var(--color-brand-600);
     --color-accent-foreground: var(--color-white);
 
     /* Design tokens — brand and semantic status colors. Status must always
@@ -132,4 +132,57 @@ input:focus[data-flux-control],
 textarea:focus[data-flux-control],
 select:focus[data-flux-control] {
     @apply outline-hidden ring-2 ring-accent ring-offset-2 ring-offset-accent-foreground;
+}
+
+/* Design tokens — light default, optional dark variant. Warna tidak pernah
+   menjadi arti tunggal (NFR 007); ikon/teks tetap menjadi penyampaian makna. */
+@layer theme {
+    :root {
+        --color-ui-surface: #ffffff;
+        --color-ui-surface-hover: #f8fafc;
+        --color-ui-text: #0f172a;
+        --color-ui-text-muted: #475569;
+        --color-ui-border: #e2e8f0;
+        --color-ui-border-hover: #cbd5e1;
+        --color-ui-shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+        --color-ui-shadow-base: 0 1px 3px 0 rgb(0 0 0 / 0.1),
+            0 1px 2px -1px rgb(0 0 0 / 0.1);
+        --color-ui-radius: 0.75rem;
+        --color-ui-transition: 150ms cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    .dark {
+        --color-ui-surface: #0b1020;
+        --color-ui-surface-hover: #111827;
+        --color-ui-text: #f3f4f6;
+        --color-ui-text-muted: #9ca3af;
+        --color-ui-border: #374151;
+        --color-ui-border-hover: #4b5563;
+        --color-ui-shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.4);
+        --color-ui-shadow-base: 0 10px 15px -3px rgb(0 0 0 / 0.4),
+            0 4px 6px -4px rgb(0 0 0 / 0.4);
+    }
+}
+
+@layer base {
+    html {
+        color-scheme: light;
+    }
+
+    .dark {
+        color-scheme: dark;
+    }
+
+    body {
+        background-color: var(--color-ui-surface);
+        color: var(--color-ui-text);
+    }
+
+    table.ui-table tbody > tr {
+        transition: background-color var(--color-ui-transition);
+    }
+
+    table.ui-table tbody > tr:hover {
+        background-color: var(--color-ui-surface-hover);
+    }
 }
