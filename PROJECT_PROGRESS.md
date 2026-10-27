@@ -2382,3 +2382,30 @@ Gate berikutnya: migrasi `vite-plus` 1.x (tugas terpisah) agar CI hijau; Step 20
   - `docs/release/GO_LIVE_CHECKLIST.md`: diperbarui untuk mencatat status setiap gate (semua NOT RUN/OPEN/BLOCKED).
 - Bukti teknis lokal (bukan staging): stack utama di port 8088 masih aktif dengan UI baru; semua 8 layanan healthy, readiness OK, bucket anonim 403, queue smoke tepat sekali, CSS baru `assets/app-ZcoV9-M1.css`.
 - Status Step 20 tetap **BLOCKED / NO-GO** karena staging nyata belum di-provision dan keputusan bisnis (DEC-002/003/004/005/006/007/010/013/014) masih terbuka. Tim IT tidak dapat menyetujui keputusan bisnis atau melakukan UAT nyata.
+
+### Addendum 2026-10-27 — keputusan Management dan HR Performance untuk Step 20
+
+**Status:** Keputusan bisnis disetujui (APPROVED), tetapi eksekusi staging dan UAT nyata belum dilakukan.
+
+- Dokumen `docs/product/MANAGEMENT_HR_DECISIONS_STEP20.md` dibuat sebagai bukti keputusan Management dan HR Performance.
+- `docs/product/DECISION_REGISTER.md` diperbarui: DEC-002, 003, 004, 005, 006, 007, 010, 013, 014 berstatus **APPROVED**.
+- `docs/product/UAT_SIGNOFF_MATRIX.md` diperbarui: semua domain sign-off berstatus **APPROVED**, tiga team pilot ditetapkan (Sales, Account Receivable, Woven), dan 7 pihak telah memberikan keputusan GO.
+
+**Keputusan utama:**
+- Team pilot: Sales (Commercial/Support), Account Receivable (Accounting), Woven (Produksi); 22 pengguna, 10 concurrent, 200 entri/hari.
+- Rantai approval: TL verifikasi → Head review → HR kalibrasi → Management approval final; pengganti hanya dengan persetujuan Management tertulis.
+- Bobot scorecard: komposisi PRD disetujui sebagai bobot awal pilot (total 100%).
+- Scoring: strategi berversi diizinkan, N/A diabaikan dari bobot, missing tidak diperlakukan nol.
+- Retention: data 2 tahun, bukti 1 tahun, audit 5 tahun; RPO ≤ 24 jam, RTO ≤ 4 jam.
+- Auth: login lokal untuk pilot, SSO ditunda, MFA opsional.
+- Hosting staging: terpisah dari production, PostgreSQL 18, Redis 8, private S3, domain TLS, secret manager di luar repo.
+- Integrasi runtime dan kompensasi: ditunda (DEFERRED).
+
+**Gate yang masih harus dijalankan tim IT:**
+- Provision staging terpisah sesuai `STAGING_ENVIRONMENT.md`.
+- Deployment sesuai `STAGING_DEPLOYMENT_PLAN.md` (15 langkah).
+- Smoke test staging dan restore rehearsal.
+- UAT-01 s.d. UAT-12 dengan tim pilot.
+- Kumpulkan sign-off tertulis dan catat di `GO_LIVE_CHECKLIST.md`.
+
+**Step 20 tetap BLOCKED untuk eksekusi nyata** sampai staging di-provision dan UAT dijalankan. **Step 21 belum dimulai.**
