@@ -2347,3 +2347,9 @@ Gate berikutnya: migrasi `vite-plus` 1.x (tugas terpisah) agar CI hijau; Step 20
 - Regresi lokal `AccountLifecycleTest.php` + `StagingPilotSeederTest.php`: 23 test lulus, 81 assertion; `git diff --cached --check` bersih.
 - Masih perlu IT menyediakan staging, keputusan kebijakan email/SSO/MFA, persetujuan data/master/team pilot dan review akses sebelum seeder boleh dieksekusi di sana.
 - Docker Engine tidak tersedia pada sesi ini (`docker info`: pipe Docker Desktop Linux Engine tidak ditemukan); suite PostgreSQL/Redis lokal tidak dapat dijalankan. Test SQLite bukan bukti PostgreSQL atau staging.
+
+### Addendum 2026-10-27 — hasil suite penuh lokal untuk seed staging
+
+- Perintah: PHP 8.4 `artisan test` (SQLite in-memory). Hasil run: **1.075 test; 1.072 lulus, 3 skip, 0 gagal; 15.159 assertion**; durasi 510,88 detik. Skip mengikuti alasan Step 19 (dua registrasi publik nonaktif dan satu constraint khusus PostgreSQL).
+- Run suite dimulai ketika test seed baru berisi enam kasus; sebelum run selesai, satu kasus tambahan tentang benturan role bisnis serta validasi tanggal efektif ditambahkan. Perubahan terakhir diuji secara terpisah: `StagingPilotSeederTest.php` **7 lulus, 22 assertion**; `AccountLifecycleTest.php` bersama test seed **23 lulus, 81 assertion**. Jadi hasil 1.075 test tidak diklaim sebagai run ulang suite penuh pada snapshot final.
+- Performa dan ekspor sintetis yang muncul selama run (`20.000` row, 5,30 detik; `50.000` row, 8,45 detik) bukan bukti beban pilot DEC-007. Tidak ada test PostgreSQL/Redis/staging pada run ini. Status Step 20 tetap **BLOCKED**.
