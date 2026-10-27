@@ -2367,3 +2367,9 @@ Gate berikutnya: migrasi `vite-plus` 1.x (tugas terpisah) agar CI hijau; Step 20
 - `dev.ps1 bootstrap` lulus: build, delapan service healthy, migrasi PostgreSQL, smoke `/health` 200, readiness database/cache/storage/queue OK, bucket anonim 403, queue smoke tepat sekali, heartbeat sehat.
 - `dev.ps1 seed` lulus: **25 unit, 13 akun fiktif, 252 KPI kandidat DRAFT, 0 KPI published, 0 template published**. Guest `/login` 200, `/dashboard` 302, Mailpit 200. Reset link untuk System Admin fiktif dikirim hanya ke Mailpit lokal; password dan token tidak dicetak atau dimasukkan ke repo.
 - Belum ada login manual, review pemilik, staging, data/aturan bisnis approved, UAT, atau sign-off. Ini **demo lokal**, bukan Step 20 PASS. Petunjuk dan bukti tanpa credential ada di `docs/release/LOCAL_DEMO.md`.
+
+### Addendum 2026-10-27 — umpan balik pemilik atas demo
+
+- Pemilik menyatakan berhasil login ke demo lokal dan tidak meminta revisi. Ini bukti penerimaan **review tampilan/demo awal** saja; bukan sign-off UAT atau keputusan KPI, approver, beban pilot, keamanan, dan operasi.
+- Belum ada lingkungan staging terpisah/operator IT, definisi KPI dan golden example bisnis bertanda tangan, eksekusi UAT 12 kasus, rekonsiliasi bisnis, restore staging, review akses owner, maupun sign-off Management/HR/unit pilot/IT/data owner. **Step 20 tetap BLOCKED/NO-GO; Step 21 tidak dimulai.**
+- Agar dapat diselesaikan, pemilik perlu menunjuk operator/penyedia staging dan pihak pengambil keputusan untuk DEC-002/003/004/005/006/007/010/013/014; setelah persetujuan tersebut, deployment dan UAT nyata harus dijalankan sebelum status diubah.

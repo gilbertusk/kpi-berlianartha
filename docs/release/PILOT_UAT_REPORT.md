@@ -55,3 +55,7 @@ Exit gate **belum lulus**: seluruh journey wajib dan rekonsiliasi, review hak ak
 ## Addendum 27 Oktober 2026 — seed staging yang belum dijalankan
 
 Pemilik memilih role System Admin untuk akun pribadi dan meminta akun lain sebagai data seed staging. `StagingPilotSeeder` disiapkan sebagai **seed demonstrasi manual**, hanya untuk environment staging, dengan email admin dari secret/config operator; detail ada di `STAGING_SEED.md`. Akun sintetis Sales/AR/Woven tidak menyetujui atau menetapkan team pilot resmi. Seeder tidak dijalankan pada staging; seluruh hasil UAT, akses nyata, dan sign-off pada laporan ini tetap **NOT RUN/BLOCKED**.
+
+## Addendum 27 Oktober 2026 — review demo lokal oleh pemilik
+
+Pemilik menyatakan sudah dapat login ke demo lokal dan **tidak ada revisi** setelah review awal. Ini menutup pengumpulan umpan balik demo saat ini, **bukan** pelaksanaan 12 kasus UAT di staging, rekonsiliasi skor, review akses oleh owner terkait, atau sign-off formal. Tidak ada data KPI/aturan bisnis baru yang disetujui lewat pernyataan ini. Keputusan Step 20 tetap **NO-GO/BLOCKED**; lihat `GO_LIVE_CHECKLIST.md` untuk gate yang belum terbukti.
