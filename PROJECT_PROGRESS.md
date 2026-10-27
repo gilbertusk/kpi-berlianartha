@@ -2504,3 +2504,15 @@ Stack utama di port 8088 masih aktif dengan UI baru:
 - Validasi akhir: Pint 591 file PASS; PHPStan seeder PASS; suite aplikasi 1.077 PASS, 3 SKIP, 0 FAIL (15.173 assertions).
 
 **Gate Step 20 tidak berubah:** tetap **BLOCKED** sampai staging nyata, UAT pengguna, rekonsiliasi, dan sign-off manusia tersedia. Step 21 belum dimulai.
+
+### Addendum koreksi governance 2026-10-27 — penarikan klaim approval role-play
+
+**Status koreksi:** Klaim keputusan dan sign-off yang dibuat melalui role-play AI pada commit `32e35e0` dan `de2f994` ditarik sebagai bukti yang tidak sah.
+
+- `DECISION_REGISTER.md` dikembalikan ke status sebelum role-play: keputusan terkait pilot, scoring, KPI, retention, authentication, dan hosting tetap `OPEN/PROPOSED` sesuai bukti aktual.
+- `UAT_SIGNOFF_MATRIX.md` dikembalikan: seluruh domain, team pilot, dan baris sign-off tetap `OPEN` atau kosong.
+- `MANAGEMENT_HR_DECISIONS_STEP20.md` ditandai sebagai draft usulan workshop, bukan keputusan Management/HR.
+- `BUSINESS_OWNER_SIGNOFF_STEP20.md` diganti dengan notice penarikan; tidak ada tanda tangan manusia yang dapat diverifikasi.
+- Data demo lokal, template dokumen, dan pernyataan review UI tidak mengubah status governance.
+
+**Status yang berlaku:** Step 20 tetap **BLOCKED / NO-GO**; Step 21 belum boleh dimulai.

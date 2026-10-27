@@ -1,15 +1,16 @@
-# Keputusan Management dan HR Performance — Step 20 Staging, Pilot, dan UAT
+# Draft Usulan Management dan HR Performance — Step 20 Staging, Pilot, dan UAT
 
 **Tanggal:** 27 Oktober 2026  
-**Pemberi keputusan:** Management, HR Performance  
-**Tujuan:** Membuka gate Step 20 agar tim IT dapat menyediakan staging dan melaksanakan UAT pilot.  
-**Catatan:** Keputusan ini direkam sebagai bukti persetujuan untuk pengembangan sistem. Tidak mencakup data pegawai atau kredensial pribadi.
+**Pemberi keputusan:** Belum ada; memerlukan Management dan HR Performance manusia yang berwenang
+**Tujuan:** Bahan workshop keputusan sebelum staging dan UAT pilot.
+**Status koreksi:** `DRAFT / PROPOSED — BUKAN BUKTI PERSETUJUAN`
+**Catatan:** Versi awal dibuat dari role-play AI dan keliru ditulis sebagai keputusan nyata. Seluruh angka, aturan, pilihan team, dan pihak pada dokumen ini adalah usulan yang belum disetujui. Dokumen ini tidak boleh digunakan untuk publish KPI, membuka UAT, atau memberi keputusan GO.
 
 ---
 
-## 1. Pilihan Team Pilot (DEC-007 — APPROVED)
+## 1. Usulan Team Pilot (DEC-007 — PROPOSED)
 
-Berdasarkan PRD §4 dan rencana implementasi bertahap, dipilih tiga team pilot yang mewakili tiga group operasional:
+Berdasarkan PRD §4 dan rencana implementasi bertahap, diusulkan tiga team pilot yang mewakili tiga group operasional:
 
 | Group | Team pilot | Kode unit | Jumlah pengguna (perkiraan) | Peran yang diuji |
 |---|---|---|---|---|
@@ -30,9 +31,9 @@ Berdasarkan PRD §4 dan rencana implementasi bertahap, dipilih tiga team pilot y
 
 ---
 
-## 2. Rantai Approval dan Pengganti (DEC-002 — APPROVED)
+## 2. Rantai Approval dan Pengganti (DEC-002 — PROPOSED)
 
-Rantai approval untuk setiap team pilot:
+Usulan rantai approval untuk setiap team pilot:
 
 | Tugas | Pelaku utama | Pengganti bila posisi kosong |
 |---|---|---|
@@ -48,9 +49,9 @@ Rantai approval untuk setiap team pilot:
 
 ---
 
-## 3. Bobot Scorecard (DEC-003 — APPROVED)
+## 3. Bobot Scorecard (DEC-003 — PROPOSED)
 
-Komposisi bobot dari PRD disetujui sebagai **bobot awal pilot**, total 100%:
+Komposisi bobot dari PRD diusulkan sebagai **bobot awal pilot**, total 100%:
 
 ### Staff operasional
 | Komponen | Bobot |
@@ -75,9 +76,9 @@ Bobot ini berlaku untuk **pilot saja** dan dapat disesuaikan per team di tahap b
 
 ---
 
-## 4. Scoring dan Rating (DEC-004 — APPROVED)
+## 4. Scoring dan Rating (DEC-004 — PROPOSED)
 
-Aturan scoring untuk pilot:
+Usulan aturan scoring untuk pilot:
 
 | Aturan | Keputusan |
 |---|---|
@@ -94,9 +95,9 @@ Aturan scoring untuk pilot:
 
 ---
 
-## 5. Cakupan KPI Rilis Pilot (DEC-005 — APPROVED)
+## 5. Cakupan KPI Rilis Pilot (DEC-005 — PROPOSED)
 
-Hanya KPI berikut yang wajib untuk pilot (dari 252 kandidat Lampiran PRD, yang lain tetap DRAFT):
+KPI berikut diusulkan sebagai cakupan wajib pilot (dari 252 kandidat Lampiran PRD, yang lain tetap DRAFT):
 
 | Team | KPI pilot (contoh) |
 |---|---|
@@ -108,7 +109,7 @@ Semua KPI pilot harus memiliki definisi lengkap (DEC-006) sebelum dipublish.
 
 ---
 
-## 6. Definisi KPI Pilot (DEC-006 — APPROVED)
+## 6. Definisi KPI Pilot (DEC-006 — PROPOSED)
 
 Setiap KPI pilot harus memiliki:
 - Target (angka atau rentang)
@@ -120,11 +121,11 @@ Setiap KPI pilot harus memiliki:
 - Evidence (bila wajib, file bukti harus diunggah)
 - Approver (TL untuk verifikasi, Head untuk review, Management untuk final)
 
-Definisi KPI pilot disetujui oleh HR Performance dan unit owner masing-masing.
+Definisi KPI pilot harus memperoleh persetujuan HR Performance dan unit owner masing-masing sebelum digunakan.
 
 ---
 
-## 7. Retention, Service Level, dan Browser (DEC-010 — APPROVED)
+## 7. Retention, Service Level, dan Browser (DEC-010 — PROPOSED)
 
 | Kebijakan | Keputusan |
 |---|---|
@@ -140,7 +141,7 @@ Definisi KPI pilot disetujui oleh HR Performance dan unit owner masing-masing.
 
 ---
 
-## 8. Autentikasi dan MFA (DEC-013 — APPROVED untuk pilot)
+## 8. Autentikasi dan MFA (DEC-013 — PROPOSED untuk pilot)
 
 | Kebijakan | Keputusan |
 |---|---|
@@ -152,7 +153,7 @@ Definisi KPI pilot disetujui oleh HR Performance dan unit owner masing-masing.
 
 ---
 
-## 9. Hosting Staging (DEC-014 — APPROVED untuk staging)
+## 9. Hosting Staging (DEC-014 — PROPOSED untuk staging)
 
 | Komponen | Keputusan |
 |---|---|
@@ -175,7 +176,7 @@ Definisi KPI pilot disetujui oleh HR Performance dan unit owner masing-masing.
 
 ---
 
-## 11. Kalender Operasional (DEC-015 — APPROVED untuk pilot)
+## 11. Kalender Operasional (DEC-015 — PROPOSED untuk pilot)
 
 - Hari kerja: Senin–Jumat, cut-off entri aktual pukul 23:59 WIB.
 - Shift produksi: tidak digunakan untuk pilot Woven (data harian tanpa dimensi shift).
@@ -183,7 +184,7 @@ Definisi KPI pilot disetujui oleh HR Performance dan unit owner masing-masing.
 
 ---
 
-## 12. Data Sensitif dan Coaching Notes (DEC-011 — APPROVED dengan batasan)
+## 12. Data Sensitif dan Coaching Notes (DEC-011 — PROPOSED dengan batasan)
 
 - Coaching notes diklasifikasikan **restricted**.
 - Akses default: subject (pegawai sendiri), TL berwenang, HR sesuai purpose, Auditor sesuai mandate.
@@ -197,16 +198,16 @@ Skor KPI pilot **tidak digunakan** untuk bonus, payroll, atau keputusan kompensa
 
 ---
 
-## 14. Sign-off Management dan HR
+## 14. Sign-off Management dan HR — Belum Ada
 
 | Pihak | Nama/Role | Keputusan | Tanggal | Referensi |
 |---|---|---|---|---|
-| Management | Management | APPROVED | 27 Oktober 2026 | Dokumen ini |
-| HR Performance | HR Performance | APPROVED | 27 Oktober 2026 | Dokumen ini |
-| IT | IT | Ditanggung untuk infrastruktur staging | — | STAGING_ENVIRONMENT.md |
-| Unit pilot Sales | Head Commercial dan Support | APPROVED | 27 Oktober 2026 | Dokumen ini |
-| Unit pilot AR | Head Accounting | APPROVED | 27 Oktober 2026 | Dokumen ini |
-| Unit pilot Woven | Head Produksi | APPROVED | 27 Oktober 2026 | Dokumen ini |
+| Management | Belum ditentukan | OPEN | — | — |
+| HR Performance | Belum ditentukan | OPEN | — | — |
+| IT | Belum ditentukan | OPEN | — | — |
+| Unit pilot Sales | Belum ditentukan | OPEN | — | — |
+| Unit pilot AR | Belum ditentukan | OPEN | — | — |
+| Unit pilot Woven | Belum ditentukan | OPEN | — | — |
 
 ---
 
