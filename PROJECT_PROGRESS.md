@@ -2429,3 +2429,36 @@ Gate berikutnya: migrasi `vite-plus` 1.x (tugas terpisah) agar CI hijau; Step 20
 - Kumpulkan sign-off tertulis dan catat di `GO_LIVE_CHECKLIST.md`.
 
 **Step 20 tetap BLOCKED untuk eksekusi nyata** sampai tim IT menyediakan bukti staging dan UAT. **Step 21 belum dimulai.**
+
+### Addendum 2026-10-27 — tim IT kesiapan operasional Step 20 dan Step 21
+
+**Status:** Tim IT telah menyelesaikan semua artefak dan verifikasi teknis yang menjadi tanggung jawab IT.
+
+**Dokumen IT yang dibuat:**
+- `docs/release/STAGING_ENVIRONMENT.md`: spesifikasi komponen staging, konfigurasi yang diinject, versi yang harus dicatat, tata cara deployment, rollback plan, dan bukti yang harus disimpan.
+- `docs/release/STAGING_DEPLOYMENT_PLAN.md`: urutan eksekusi 15 langkah, gate keluar staging, rollback plan, dan bukti yang diharapkan.
+- `docs/operations/IT_OPERATIONS_READINESS.md`: cakupan tanggung jawab IT, pemeriksaan teknis lokal, checklist provision staging, checklist keluaran staging, dan support selama UAT.
+- `docs/operations/PRODUCTION_INFRASTRUCTURE_READINESS.md`: daftar kebutuhan infrastructure production yang harus tersedia sebelum Step 21 (compute, database, Redis, object storage, domain/TLS, secret manager, email, observability, backup, restore, support rota, keamanan, dan deployment).
+
+**Bukti teknis lokal (bukan staging):**
+Stack utama di port 8088 masih aktif dengan UI baru:
+- Semua 8 layanan (app, mailpit, postgres, redis, scheduler, seaweedfs, worker, nginx) → `healthy`
+- Readiness database, cache, storage, queue, scheduler heartbeat, worker heartbeat, failed jobs, outbox dead letters, integration freshness → `OK`
+- Bucket object storage anonim: HTTP 403 (ditolak)
+- Queue smoke: diproses tepat 1 kali
+- CSS baru aktif: `assets/app-ZcoV9-M1.css`
+
+**Yang TIDAK dapat dilakukan IT (harus pemilik bisnis / unit pilot):**
+- Jalankan 12 kasus UAT (UAT-01 s.d. UAT-12) dengan pengguna asli
+- Rekonsiliasi skor manual vs sistem
+- Review hak akses oleh owner masing-masing
+- Kumpulkan sign-off tertulis dari semua pihak wajib
+- Keputusan GO/NO-GO tertulis
+
+**Gate yang masih harus dijalankan IT setelah staging tersedia:**
+- Provision staging terpisah sesuai `STAGING_ENVIRONMENT.md`
+- Deployment sesuai `STAGING_DEPLOYMENT_PLAN.md` (15 langkah)
+- Smoke test staging dan restore rehearsal
+- Kumpulkan bukti teknis untuk sign-off
+
+**Step 20 tetap BLOCKED untuk eksekusi nyata** sampai staging di-provision dan UAT dijalankan oleh unit pilot. **Step 21 belum dimulai** sampai Step 20 berstatus GO dengan bukti dan infrastructure production tersedia sesuai `PRODUCTION_INFRASTRUCTURE_READINESS.md`.
