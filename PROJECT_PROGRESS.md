@@ -2360,3 +2360,10 @@ Gate berikutnya: migrasi `vite-plus` 1.x (tugas terpisah) agar CI hijau; Step 20
 - Pemeriksaan runtime: Docker CLI ada, tetapi `docker info` gagal (`dockerDesktopLinuxEngine` pipe tidak ditemukan); **bootstrap, seed, smoke, login browser, dan demo belum dijalankan**. Tidak ada `.env` atau data repo kerja yang diubah untuk demo.
 - Test in-memory `AccountLifecycleTest.php --filter="fictitious development accounts"`: 1 lulus, 5 assertion; memeriksa label akun DEV dan penolakan seeder lokal di production. Ini bukan bukti bahwa demo berjalan.
 - Guide membedakan 13 akun lokal `[DEV]` dari 12 akun sintetis staging + System Admin via konfigurasi; tidak memasukkan email pribadi ke repo dan tidak menetapkan Sales/AR/Woven sebagai team pilot resmi. Step 20 tetap **BLOCKED**.
+
+### Addendum 2026-10-27 — demo lokal berhasil dijalankan
+
+- Setelah pemilik mengaktifkan Docker Engine, dibuat checkout `D:\KERJA\WEB\kpi-berlianartha-demo` dari `d509e86`, dengan `.env` dan override Compose khusus demo di luar repository utama. Project `kpi-berlianartha-demo`, image `kpi-berlianartha-demo-app:dev`, port 18088/18025/18333, dan volume terpisah; stack lama `kpi-berlianartha` tetap berjalan. Tidak ada reset atau seed pada database repo kerja.
+- `dev.ps1 bootstrap` lulus: build, delapan service healthy, migrasi PostgreSQL, smoke `/health` 200, readiness database/cache/storage/queue OK, bucket anonim 403, queue smoke tepat sekali, heartbeat sehat.
+- `dev.ps1 seed` lulus: **25 unit, 13 akun fiktif, 252 KPI kandidat DRAFT, 0 KPI published, 0 template published**. Guest `/login` 200, `/dashboard` 302, Mailpit 200. Reset link untuk System Admin fiktif dikirim hanya ke Mailpit lokal; password dan token tidak dicetak atau dimasukkan ke repo.
+- Belum ada login manual, review pemilik, staging, data/aturan bisnis approved, UAT, atau sign-off. Ini **demo lokal**, bukan Step 20 PASS. Petunjuk dan bukti tanpa credential ada di `docs/release/LOCAL_DEMO.md`.
