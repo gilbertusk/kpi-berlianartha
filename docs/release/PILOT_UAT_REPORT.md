@@ -51,3 +51,7 @@ Training singkat dan user guide dibutuhkan untuk Employee (entri/privasi), TL (v
 Saat ini belum ada eksekusi staging/pilot untuk dicatat. Saat prasyarat terpenuhi, buat record per kasus: ID, team/role, versi image dan konfigurasi, waktu, expected/actual, hasil, tautan bukti terbatas, defect ID, owner, fix version, retest, dan keputusan owner. Register defect memakai severity `docs/product/UAT_SIGNOFF_MATRIX.md`: Critical wajib tutup; High wajib tutup atau keputusan NO-GO formal; Medium butuh workaround aman, owner, target dan risk acceptance. Tidak ada penerimaan implisit.
 
 Exit gate **belum lulus**: seluruh journey wajib dan rekonsiliasi, review hak akses owner, restore staging, runbook/support owner, serta sign-off tertulis Management, HR Performance, perwakilan masing-masing tiga kelompok pilot, IT/Security, dan data owner. Lihat `GO_LIVE_CHECKLIST.md`. **Production tetap BLOCKED.**
+
+## Addendum 27 Oktober 2026 — seed staging yang belum dijalankan
+
+Pemilik memilih role System Admin untuk akun pribadi dan meminta akun lain sebagai data seed staging. `StagingPilotSeeder` disiapkan sebagai **seed demonstrasi manual**, hanya untuk environment staging, dengan email admin dari secret/config operator; detail ada di `STAGING_SEED.md`. Akun sintetis Sales/AR/Woven tidak menyetujui atau menetapkan team pilot resmi. Seeder tidak dijalankan pada staging; seluruh hasil UAT, akses nyata, dan sign-off pada laporan ini tetap **NOT RUN/BLOCKED**.

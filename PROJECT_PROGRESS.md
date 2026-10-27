@@ -2336,3 +2336,14 @@ Gate berikutnya: migrasi `vite-plus` 1.x (tugas terpisah) agar CI hijau; Step 20
 ### Gate berikutnya
 
 - Management/HR/IT dan owner terkait menyelesaikan keputusan dan daftar pilot; IT menyediakan staging terpisah dan artefak image immutable yang dapat dilacak. Setelah itu deploy, uji runtime/restore, laksanakan UAT nyata dan kumpulkan persetujuan tertulis sesuai checklist. Jangan lanjut Step 21 sebelum Step 20 berstatus GO dengan bukti.
+
+### Addendum 2026-10-27 — permintaan seed demonstrasi staging
+
+**Status Step 20 tetap BLOCKED.** Pemilik memilih peran System Admin untuk akun pribadinya dan meminta akun lainnya berupa seed staging; ini bukan sign-off DEC-002/007/013/014, persetujuan akses lintas peran, atau bukti deploy.
+
+- Seeder manual `StagingPilotSeeder` dibuat untuk `APP_ENV=staging` saja; butuh konfirmasi eksplisit, email owner lewat konfigurasi operator di luar repository, dan tanggal efektif organisasi. Akun owner hanya diberi role System Admin (tanpa hak mengubah nilai/approval). Dua belas akun sintetis non-admin mewakili Management, HR, Auditor, Head, TL dan Staff di tiga kelompok melalui Sales, AR, Woven. Mereka **bukan** team pilot resmi. Tidak ada password bersama, password tercetak, email personal di source, KPI, target, atau policy scoring yang di-seed.
+- Seeder tidak dijalankan otomatis atau di staging; tidak ada environment staging yang dapat diverifikasi. `docs/release/STAGING_SEED.md` mencatat langkah operator dan batasannya; laporan/checklist Step 20 diberi addendum tanpa mengubah status gate.
+- TDD: test pertama RED karena seeder belum ada (6 test), lalu target `StagingPilotSeederTest.php` GREEN 7 test/22 assertion (SQLite in-memory). Pint dan PHPStan level 7 lulus. Coverage baris tidak tersedia. Full suite sedang/akan diverifikasi terpisah; hasilnya tidak menggantikan bukti runtime staging.
+- Regresi lokal `AccountLifecycleTest.php` + `StagingPilotSeederTest.php`: 23 test lulus, 81 assertion; `git diff --cached --check` bersih.
+- Masih perlu IT menyediakan staging, keputusan kebijakan email/SSO/MFA, persetujuan data/master/team pilot dan review akses sebelum seeder boleh dieksekusi di sana.
+- Docker Engine tidak tersedia pada sesi ini (`docker info`: pipe Docker Desktop Linux Engine tidak ditemukan); suite PostgreSQL/Redis lokal tidak dapat dijalankan. Test SQLite bukan bukti PostgreSQL atau staging.

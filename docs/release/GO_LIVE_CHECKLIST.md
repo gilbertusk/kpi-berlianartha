@@ -18,3 +18,5 @@
 | Keputusan release | GO hanya bila semua gate relevan dibuktikan dan disetujui; jika gagal NO-GO/BLOCKED, catat owner dan tindakan | [ ] BLOCKED |
 
 Urutan pelaksanaan setelah approval: tinjau konfigurasi dan data → backup/recovery point → deploy immutable image + migration rehearsal/eksekusi sekali → smoke/restore → training → UAT dan rekonsiliasi → tinjau defect/akses → sign-off. Gunakan `docs/implementation/RELEASE_STRATEGY.md`, `docs/operations/MIGRATION_POLICY.md`, `docs/operations/BACKUP_RESTORE.md`, dan `docs/product/UAT_SIGNOFF_MATRIX.md`. Jangan gunakan `scripts/dev.sh reset-db` atau `migrate:rollback` sebagai rollback staging.
+
+Seed demo `STAGING_SEED.md` tidak menandai gate apa pun selesai; akun dan team pilot nyata tetap memerlukan persetujuan DEC-007 dan access review.

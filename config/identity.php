@@ -41,4 +41,9 @@ return [
 
     'development_seed_password' => env('DEV_SEED_PASSWORD'),
 
+    // Explicit, manual staging-only demo seed. No personal email is stored
+    // in this repository; operators inject it through their secret manager.
+    'staging_admin_email' => env('STAGING_PILOT_ADMIN_EMAIL'),
+    'staging_seed_confirm' => env('STAGING_PILOT_SEED_CONFIRM'),
+
 ];
