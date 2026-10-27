@@ -2462,3 +2462,31 @@ Stack utama di port 8088 masih aktif dengan UI baru:
 - Kumpulkan bukti teknis untuk sign-off
 
 **Step 20 tetap BLOCKED untuk eksekusi nyata** sampai staging di-provision dan UAT dijalankan oleh unit pilot. **Step 21 belum dimulai** sampai Step 20 berstatus GO dengan bukti dan infrastructure production tersedia sesuai `PRODUCTION_INFRASTRUCTURE_READINESS.md`.
+
+### Addendum 2026-10-27 — paket eksekusi semua peran (Template Siap Digunakan)
+
+**Status:** Semua peran telah memiliki dokumen template siap eksekusi, tetapi **tidak ada eksekusi nyata yang dilakukan**. Ini bukan bukti UAT, bukan sign-off nyata, dan bukan GO untuk produksi.
+
+**Dokumen template yang dibuat (siap diisi saat staging tersedia):**
+- `docs/release/UAT_EXECUTION_PACKAGE.md`: 12 kasus UAT, defect register, sign-off akhir, dan keputusan GO/NO-GO untuk semua peran.
+- `docs/release/STAGING_SMOKE_TEST_REPORT.md`: template pemeriksaan teknis staging untuk Tim IT.
+- `docs/release/RESTORE_REHEARSAL_REPORT.md`: template restore rehearsal untuk Tim IT.
+- `docs/release/PRODUCTION_READINESS_CHECKLIST.md`: checklist infrastruktur production untuk Step 21.
+
+**Tanggung jawab per peran (sudah ditetapkan):**
+1. **Tim IT:** Provision staging, build/deploy image, migrasi, smoke test, restore rehearsal, perbaikan defect teknis, support UAT, provision production, dokumentasi operasi. Tidak boleh memberikan sign-off bisnis atau keputusan GO.
+2. **Management dan HR Performance:** Keputusan bisnis DEC-002 s.d. DEC-014, team pilot, KPI/bobot/scoring, keputusan GO/NO-GO tertulis, risiko residual. Tidak boleh provision staging atau menjalankan smoke test teknis.
+3. **Unit Pilot (Sales, Account Receivable, Woven):** Jalankan 12 kasus UAT, rekonsiliasi skor, verifikasi defect, review hak akses, training, sign-off tertulis.
+4. **Data Owner:** Rekonsiliasi data dan skor, persetujuan data pilot, verifikasi rekonsiliasi sumber vs staging, sign-off tertulis.
+5. **IT/Security:** Review keamanan staging dan production, verifikasi secret manager/TLS/akses, sign-off keamanan. Tidak boleh memberikan sign-off bisnis untuk UAT.
+6. **Auditor/Compliance (bila berlaku):** Audit read-only, verifikasi audit trail dan compliance, sign-off tertulis.
+
+**Yang masih harus dilakukan secara nyata (bukan simulasi):**
+- Staging harus di-provision oleh Tim IT dengan infrastruktur nyata.
+- UAT-01 s.d. UAT-12 harus dijalankan oleh Unit Pilot dengan pengguna asli di staging.
+- Defect Critical/High harus diperbaiki dan diverifikasi.
+- Sign-off tertulis harus dikumpulkan dari 7 pihak wajib.
+- Keputusan GO tertulis harus dibuat oleh Management dan HR Performance.
+- Infrastruktur production harus tersedia sesuai `PRODUCTION_READINESS_CHECKLIST.md`.
+
+**Step 20 tetap BLOCKED untuk eksekusi nyata. Step 21 belum dimulai.**
