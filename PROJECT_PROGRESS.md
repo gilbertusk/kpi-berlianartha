@@ -2353,3 +2353,10 @@ Gate berikutnya: migrasi `vite-plus` 1.x (tugas terpisah) agar CI hijau; Step 20
 - Perintah: PHP 8.4 `artisan test` (SQLite in-memory). Hasil run: **1.075 test; 1.072 lulus, 3 skip, 0 gagal; 15.159 assertion**; durasi 510,88 detik. Skip mengikuti alasan Step 19 (dua registrasi publik nonaktif dan satu constraint khusus PostgreSQL).
 - Run suite dimulai ketika test seed baru berisi enam kasus; sebelum run selesai, satu kasus tambahan tentang benturan role bisnis serta validasi tanggal efektif ditambahkan. Perubahan terakhir diuji secara terpisah: `StagingPilotSeederTest.php` **7 lulus, 22 assertion**; `AccountLifecycleTest.php` bersama test seed **23 lulus, 81 assertion**. Jadi hasil 1.075 test tidak diklaim sebagai run ulang suite penuh pada snapshot final.
 - Performa dan ekspor sintetis yang muncul selama run (`20.000` row, 5,30 detik; `50.000` row, 8,45 detik) bukan bukti beban pilot DEC-007. Tidak ada test PostgreSQL/Redis/staging pada run ini. Status Step 20 tetap **BLOCKED**.
+
+### Addendum 2026-10-27 — persiapan demo lokal untuk review pemilik
+
+- Pemilik menyatakan belum ada IT atau server staging dan menyetujui persiapan demo lokal. `docs/release/LOCAL_DEMO.md` dibuat sebagai panduan checkout terpisah, Compose project name terpisah, seed fiktif yang sudah ada, pemeriksaan per role, dan cara berhenti tanpa menghapus volume.
+- Pemeriksaan runtime: Docker CLI ada, tetapi `docker info` gagal (`dockerDesktopLinuxEngine` pipe tidak ditemukan); **bootstrap, seed, smoke, login browser, dan demo belum dijalankan**. Tidak ada `.env` atau data repo kerja yang diubah untuk demo.
+- Test in-memory `AccountLifecycleTest.php --filter="fictitious development accounts"`: 1 lulus, 5 assertion; memeriksa label akun DEV dan penolakan seeder lokal di production. Ini bukan bukti bahwa demo berjalan.
+- Guide membedakan 13 akun lokal `[DEV]` dari 12 akun sintetis staging + System Admin via konfigurasi; tidak memasukkan email pribadi ke repo dan tidak menetapkan Sales/AR/Woven sebagai team pilot resmi. Step 20 tetap **BLOCKED**.
