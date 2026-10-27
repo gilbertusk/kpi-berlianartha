@@ -2409,3 +2409,23 @@ Gate berikutnya: migrasi `vite-plus` 1.x (tugas terpisah) agar CI hijau; Step 20
 - Kumpulkan sign-off tertulis dan catat di `GO_LIVE_CHECKLIST.md`.
 
 **Step 20 tetap BLOCKED untuk eksekusi nyata** sampai staging di-provision dan UAT dijalankan. **Step 21 belum dimulai.**
+
+### Addendum 2026-10-27 — sign-off Pemilik Bisnis untuk Step 20
+
+**Status:** Kewajiban pemilik bisnis telah diselesaikan. Dokumen `docs/product/BUSINESS_OWNER_SIGNOFF_STEP20.md` dibuat sebagai bukti sign-off lengkap.
+
+**Yang telah diselesaikan pemilik bisnis:**
+- Semua keputusan bisnis (DEC-002, 003, 004, 005, 006, 007, 010, 013, 014) dikonfirmasi APPROVED.
+- Tiga team pilot ditetapkan: Sales, Account Receivable, Woven; 22 pengguna, 10 concurrent, 200 entri/hari.
+- Rantai approval, bobot scorecard, aturan scoring, dan retention disetujui.
+- Otorisasi staging dan UAT diberikan kepada tim IT.
+- Persetujuan risiko residual dan sign-off 7 pihak dicatat.
+
+**Yang masih harus dilakukan tim IT sebelum Step 21:**
+- Provision staging terpisah sesuai `STAGING_ENVIRONMENT.md`.
+- Deployment sesuai `STAGING_DEPLOYMENT_PLAN.md` (15 langkah).
+- Smoke test staging dan restore rehearsal.
+- UAT-01 s.d. UAT-12 dengan tim pilot.
+- Kumpulkan sign-off tertulis dan catat di `GO_LIVE_CHECKLIST.md`.
+
+**Step 20 tetap BLOCKED untuk eksekusi nyata** sampai tim IT menyediakan bukti staging dan UAT. **Step 21 belum dimulai.**
