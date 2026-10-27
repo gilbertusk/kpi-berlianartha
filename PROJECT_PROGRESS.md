@@ -2373,3 +2373,12 @@ Gate berikutnya: migrasi `vite-plus` 1.x (tugas terpisah) agar CI hijau; Step 20
 - Pemilik menyatakan berhasil login ke demo lokal dan tidak meminta revisi. Ini bukti penerimaan **review tampilan/demo awal** saja; bukan sign-off UAT atau keputusan KPI, approver, beban pilot, keamanan, dan operasi.
 - Belum ada lingkungan staging terpisah/operator IT, definisi KPI dan golden example bisnis bertanda tangan, eksekusi UAT 12 kasus, rekonsiliasi bisnis, restore staging, review akses owner, maupun sign-off Management/HR/unit pilot/IT/data owner. **Step 20 tetap BLOCKED/NO-GO; Step 21 tidak dimulai.**
 - Agar dapat diselesaikan, pemilik perlu menunjuk operator/penyedia staging dan pihak pengambil keputusan untuk DEC-002/003/004/005/006/007/010/013/014; setelah persetujuan tersebut, deployment dan UAT nyata harus dijalankan sebelum status diubah.
+
+### Addendum 2026-10-27 — tim IT persiapan dokumen staging
+
+- Tim IT telah menyelesaikan persiapan dokumen staging sebagai bagian Step 20:
+  - `docs/release/STAGING_ENVIRONMENT.md`: spesifikasi komponen staging, konfigurasi yang diinject, versi yang harus dicatat, tata cara deployment, rollback plan, dan bukti yang harus disimpan.
+  - `docs/release/STAGING_DEPLOYMENT_PLAN.md`: urutan eksekusi 15 langkah, gate keluar staging, rollback plan, dan bukti yang diharapkan.
+  - `docs/release/GO_LIVE_CHECKLIST.md`: diperbarui untuk mencatat status setiap gate (semua NOT RUN/OPEN/BLOCKED).
+- Bukti teknis lokal (bukan staging): stack utama di port 8088 masih aktif dengan UI baru; semua 8 layanan healthy, readiness OK, bucket anonim 403, queue smoke tepat sekali, CSS baru `assets/app-ZcoV9-M1.css`.
+- Status Step 20 tetap **BLOCKED / NO-GO** karena staging nyata belum di-provision dan keputusan bisnis (DEC-002/003/004/005/006/007/010/013/014) masih terbuka. Tim IT tidak dapat menyetujui keputusan bisnis atau melakukan UAT nyata.
