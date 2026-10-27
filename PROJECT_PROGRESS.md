@@ -2305,3 +2305,34 @@ Gate berikutnya: migrasi `vite-plus` 1.x (tugas terpisah) agar CI hijau; Step 20
 - **Dokumen:** N-01 di `docs/security/VULNERABILITY_EXCEPTIONS.md` dan D-06 di `docs/qa/RELEASE_TEST_REPORT.md` ditandai ditutup; tabel override di `docs/operations/DEPENDENCY_POLICY.md` diganti dengan alias `vite`.
 - **Catatan:** setiap kenaikan `vite-plus` berikutnya harus menaikkan versi alias `vite` ke versi yang sama.
 - **CI:** GitHub Actions run [`40271393130`](https://github.com/gilbertusk/kpi-berlianartha/actions/runs/40271393130) untuk `002184e` lulus di keenam job (`php-quality`, `tests`, `e2e`, `frontend`, `compose-smoke`, `docker-image`). Percobaan pertama job `frontend` lulus `npm audit` tetapi `npm run build` gagal karena `laravel:fonts` timeout mengambil font Bunny (`fetch failed`, `ETIMEDOUT`); job itu dijalankan ulang tanpa perubahan dan lulus. Build aset bergantung pada jaringan ke `fonts.bunny.net` saat build.
+
+## 2026-10-27 — Step 20 Staging, Pilot, dan UAT (persiapan)
+
+**Status:** BLOCKED untuk deployment staging, pilot, UAT dan sign-off; dokumen persiapan dibuat tanpa menyatakan runtime lulus. Keputusan Step 20: **NO-GO** ke production.
+
+### Git preflight
+
+- Branch `main` bersih dan sama dengan `origin/main` pada `f68769bed8392944b64994c585b59c99ec0ab1b9` sebelum perubahan.
+- `git pull --ff-only origin main`: already up to date.
+
+### Scope yang disiapkan
+
+- `docs/release/PILOT_UAT_REPORT.md`: register status aktual, 12 skenario UAT lintas role dan minimal tiga kelompok, prasyarat per kasus, bukti yang harus dikumpulkan, defect/training/sign-off yang belum dilakukan.
+- `docs/release/GO_LIVE_CHECKLIST.md`: gate keputusan, deployment staging, backup/restore, UAT, akses, dan persetujuan eksplisit tanpa menandai satu pun gate lulus.
+- `docs/release/RELEASE_CANDIDATE_NOTES.md`: cakupan kandidat, known issues, serta rencana rollback staging yang masih memerlukan review/rehearsal operator.
+- Tidak ada perubahan kode aplikasi, konfigurasi runtime, data, atau migrasi. Tidak ada staging atau production deployment.
+
+### Bukti dan blocker
+
+- Bukti teknis terdahulu: Step 19 masih PARTIAL walaupun CI enam job terakhir lulus; Step 18 masih PARTIAL. Tidak ada bukti baru untuk staging, image digest yang dipromosikan, backup/restore staging, performa pada volume pilot, training, rekonsiliasi bisnis, atau UAT.
+- DEC-002/003/004/005/006/007/010/013/014 masih terbuka/diusulkan. Team pilot, pengguna, pemilik data, approver UAT, training owner, cutover, support channel, KPI/policy/golden example bertanda tangan, browser resmi, provider staging dan identitas belum disetujui. Scanner malware evidence juga belum terintegrasi. DEC-008/009/015/016 diperlukan sesuai scope yang nantinya dipilih.
+- Kesiapan staging/UAT yang **terverifikasi**: 0/5 kelompok gate; 12 kasus direncanakan, 0 dijalankan, 0 lulus/gagal. Ini bukan ukuran penyelesaian keseluruhan proyek. Tidak ada sign-off.
+
+### Validasi yang dilakukan
+
+- Pemeriksaan `git diff --check` dan referensi dokumen lokal: lulus setelah whitespace dirapikan; staged diff diperiksa untuk memastikan hanya empat dokumen tanpa secret atau data personal.
+- Suite aplikasi, migration, smoke, backup/restore staging, dan UAT tidak dijalankan: tidak ada perubahan kode dan lingkungan/keputusan pilot belum tersedia. Hasil Step 18–19 bukan pengganti bukti Step 20.
+
+### Gate berikutnya
+
+- Management/HR/IT dan owner terkait menyelesaikan keputusan dan daftar pilot; IT menyediakan staging terpisah dan artefak image immutable yang dapat dilacak. Setelah itu deploy, uji runtime/restore, laksanakan UAT nyata dan kumpulkan persetujuan tertulis sesuai checklist. Jangan lanjut Step 21 sebelum Step 20 berstatus GO dengan bukti.
