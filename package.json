@@ -17,7 +17,7 @@
     },
     "optionalDependencies": {
         "@laravel/multiplex": "^0.4.1",
-        "@rollup/rollup-linux-x64-gnu": "4.64.5",
+        "@rollup/rollup-linux-x64-gnu": "4.65.0",
         "@tailwindcss/oxide-linux-x64-gnu": "^4.0.1",
         "lightningcss-linux-x64-gnu": "^1.29.1"
     },
@@ -25,6 +25,6 @@
         "vite": "npm:@voidzero-dev/vite-plus-core@1.4.0"
     },
     "devDependencies": {
-        "playwright": "1.64.0"
+        "playwright": "1.64.1"
     }
 }
