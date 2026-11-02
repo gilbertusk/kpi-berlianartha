@@ -11,7 +11,7 @@
 # No .env, credentials, tests, or development dependencies enter production.
 # Base images are pinned with literal FROM lines so Dependabot can update them.
 
-FROM composer:2.10.3 AS composer
+FROM composer:2.11.0 AS composer
 FROM mlocati/php-extension-installer:2.12.0 AS php-extension-installer
 
 # -----------------------------------------------------------------------------
