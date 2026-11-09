@@ -7,17 +7,17 @@
         "dev": "vp dev"
     },
     "dependencies": {
-        "@laravel/passkeys": "^0.4.0",
-        "@tailwindcss/vite": "^4.1.11",
+        "@laravel/passkeys": "^0.4.1",
+        "@tailwindcss/vite": "^4.3.5",
         "concurrently": "^10.0.3",
-        "laravel-vite-plugin": "^3.1",
+        "laravel-vite-plugin": "^3.2",
         "tailwindcss": "^4.0.7",
         "vite": "npm:@voidzero-dev/vite-plus-core@1.4.0",
-        "vite-plus": "1.4.0"
+        "vite-plus": "1.5.0"
     },
     "optionalDependencies": {
         "@laravel/multiplex": "^0.4.1",
-        "@rollup/rollup-linux-x64-gnu": "4.64.5",
+        "@rollup/rollup-linux-x64-gnu": "4.67.5",
         "@tailwindcss/oxide-linux-x64-gnu": "^4.0.1",
         "lightningcss-linux-x64-gnu": "^1.29.1"
     },
@@ -25,6 +25,6 @@
         "vite": "npm:@voidzero-dev/vite-plus-core@1.4.0"
     },
     "devDependencies": {
-        "playwright": "1.64.0"
+        "playwright": "1.65.0"
     }
 }
